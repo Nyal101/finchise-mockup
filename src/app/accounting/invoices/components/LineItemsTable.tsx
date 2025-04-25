@@ -44,7 +44,7 @@ export function LineItemsTable({
   }
 
   // Update a line item property
-  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+  const updateLineItem = (id: string, field: keyof LineItem, value: unknown) => {
     const updatedItems = lineItems.map(item => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value }

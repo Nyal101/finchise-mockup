@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Edit, MoreHorizontal, Plus, Trash, Search, Filter, RefreshCw } from "lucide-react"
+import { Edit, MoreHorizontal, Plus, Trash, Search, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -27,7 +27,7 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs"
-import { Badge as UIBadge } from "@/components/ui/badge"
+
 
 export default function DominosManagementPage() {
   const [searchQuery, setSearchQuery] = React.useState("")

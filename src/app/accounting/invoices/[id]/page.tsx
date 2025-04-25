@@ -53,8 +53,7 @@ export default function InvoiceDetailPage() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [lineItems, setLineItems] = useState<LineItem[]>(invoice.lineItems);
-  const [date, setDate] = useState<Date | undefined>(invoice.date);
-  
+    
   // In the component function, add new state for store allocations
   const [storeAllocations, setStoreAllocations] = useState<StoreAllocation[]>(invoice.storeAllocations || [
     { id: v4(), store: invoice.store, percentage: 100, amount: invoice.total }
@@ -103,13 +102,7 @@ export default function InvoiceDetailPage() {
     }));
   };
 
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      handleInvoiceFieldChange('date', date);
-      setDate(date);
-    }
-  };
-
+  
   const handleNotesChange = (notes: string) => {
     handleInvoiceFieldChange('notes', notes);
   };
@@ -174,7 +167,6 @@ export default function InvoiceDetailPage() {
     setStoreAllocations(invoice.storeAllocations || [
       { id: v4(), store: invoice.store, percentage: 100, amount: invoice.total }
     ]);
-    setDate(invoice.date);
     
     // Exit edit mode
     setIsEditing(false);
