@@ -5,8 +5,8 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { ExternalLink, FileUp, Filter, Mail, Search } from "lucide-react"
 import { DateRangePicker } from "@/components/date-range-picker"
+import type { InvoiceData, LineItem, StoreAllocation } from "./components/types"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Table,
@@ -36,6 +36,8 @@ import {
 import { InvoiceCompanySelector } from "./components/InvoiceCompanySelector";
 import InvoicePdfPreviewer from "./components/InvoicePdfPreviewer";
 
+// Removed unused Card, CardContent imports
+
 export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [storeFilter, setStoreFilter] = React.useState<string | null>(null)
@@ -44,7 +46,32 @@ export default function InvoicesPage() {
   const [invoiceTypeFilter, setInvoiceTypeFilter] = React.useState<string | null>(null)
   const [activeTab, setActiveTab] = React.useState<string>("all")
   const [selectedCompanies, setSelectedCompanies] = React.useState<string[]>([])
-  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = React.useState<InvoiceData | null>(null)
+
+  // Patch: Add a runtime type adapter for InvoiceData selection
+  function toInvoiceData(invoice: Record<string, unknown>): InvoiceData {
+    return {
+      id: invoice.id as string,
+      invoiceNumber: invoice.invoiceNumber as string,
+      store: invoice.store as string,
+      supplier: invoice.supplier as string,
+      date: invoice.date as Date,
+      subtotal: (invoice.subtotal as number) ?? (invoice.amount as number) ?? 0,
+      vatRate: (invoice.vatRate as number) ?? 20,
+      vat: (invoice.vat as number) ?? 0,
+      total: (invoice.total as number) ?? ((invoice.amount as number) ?? 0) + ((invoice.vat as number) ?? 0),
+      accountCode: invoice.accountCode as string,
+      invoiceType: invoice.invoiceType as string,
+      status: invoice.status as string,
+      previewType: invoice.previewType as string,
+      previewUrl: invoice.previewUrl as string,
+      archived: (invoice.archived as boolean) ?? false,
+      deleted: (invoice.deleted as boolean) ?? false,
+      notes: (invoice.notes as string) ?? '',
+      lineItems: Array.isArray(invoice.lineItems) ? (invoice.lineItems as LineItem[]) : [],
+      storeAllocations: Array.isArray(invoice.storeAllocations) ? (invoice.storeAllocations as StoreAllocation[]) : [],
+    };
+  }
 
   const filteredInvoices = invoices.filter(invoice => {
     // Filter by tab
@@ -286,7 +313,7 @@ export default function InvoicesPage() {
                           onClick={e => {
                             // Prevent row click if invoice number link is clicked
                             if ((e.target as HTMLElement).closest("a")) return;
-                            setSelectedInvoice(invoice);
+                            setSelectedInvoice(toInvoiceData(invoice));
                           }}
                           style={{ userSelect: "none" }}
                         >

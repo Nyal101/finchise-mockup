@@ -51,10 +51,10 @@ export function DateAndStoreFilter({ className, storeValue, onStoreChange, dateV
 
   React.useEffect(() => {
     if (onStoreChange) onStoreChange(selectedStores.includes("all") ? "all" : selectedStores.join(","));
-  }, [selectedStores]);
+  }, [selectedStores, onStoreChange]);
   React.useEffect(() => {
     if (onDateChange) onDateChange(date);
-  }, [date]);
+  }, [date, onDateChange]);
 
   // Helper for toggling store selection
   const handleStoreToggle = (id: string) => {

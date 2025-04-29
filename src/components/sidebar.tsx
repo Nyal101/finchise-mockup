@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import {
   ChevronDown,
@@ -48,8 +49,14 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between">
                 <span className="flex items-center gap-2">
-                  {stores.find(s => s.name === selectedStore) && (
-                    <img src={stores.find(s => s.name === selectedStore)?.logo} alt="logo" className="h-5 w-5 rounded-full" />
+                  {stores.find(s => s.name === selectedStore)?.logo && (
+                    <Image
+                      src={stores.find(s => s.name === selectedStore)!.logo}
+                      alt="logo"
+                      width={20}
+                      height={20}
+                      className="h-5 w-5 rounded-full"
+                    />
                   )}
                   {selectedStore}
                 </span>
@@ -62,7 +69,15 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
                   key={store.id}
                   onClick={() => setSelectedStore(store.name)}
                 >
-                  <img src={store.logo} alt={store.name + " logo"} className="mr-2 h-5 w-5 rounded-full" />
+                  {store.logo && (
+                    <Image
+                      src={store.logo}
+                      alt={store.name + " logo"}
+                      width={20}
+                      height={20}
+                      className="mr-2 h-5 w-5 rounded-full"
+                    />
+                  )}
                   <span>{store.name}</span>
                 </DropdownMenuItem>
               ))}
