@@ -36,16 +36,16 @@ export const InvoiceCompanySelector: React.FC<InvoiceCompanySelectorProps> = ({
 
   return (
     <div className="border rounded-lg bg-white h-full flex flex-col shadow-sm w-full max-w-full">
-      <div className="p-4 border-b">
+      <div className="px-6 pt-6 pb-4 border-b flex flex-col gap-3">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search companies..."
-          className="w-full px-3 py-2 border rounded focus:outline-none mb-3"
+          className="w-full px-3 py-2 border rounded focus:outline-none mb-0 text-sm placeholder:text-sm"
         />
         <button
-          className={`w-full px-3 py-2 rounded text-sm font-medium border ${allSelected ? 'bg-primary text-white' : 'bg-white text-primary'} transition mb-2`}
+          className={`w-full px-3 py-2 rounded text-sm font-medium border ${allSelected ? 'bg-primary text-white' : 'bg-white text-primary'} transition`}
           onClick={handleAllInvoices}
           type="button"
         >
