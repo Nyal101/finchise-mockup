@@ -1,0 +1,7 @@
+{
+  "/accounting/invoices/page": "app/accounting/invoices/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/accounting/integrations/page": "app/accounting/integrations/page.js",
+  "/accounting/payroll/page": "app/accounting/payroll/page.js",
+  "/insights/chatbot/page": "app/insights/chatbot/page.js"
+}

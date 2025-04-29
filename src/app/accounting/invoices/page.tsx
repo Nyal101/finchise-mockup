@@ -33,6 +33,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { InvoiceCompanySelector } from "./components/InvoiceCompanySelector";
+import InvoicePdfPreviewer from "./components/InvoicePdfPreviewer";
 
 export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -41,25 +43,26 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = React.useState<string | null>(null)
   const [invoiceTypeFilter, setInvoiceTypeFilter] = React.useState<string | null>(null)
   const [activeTab, setActiveTab] = React.useState<string>("all")
-  
+  const [selectedCompanies, setSelectedCompanies] = React.useState<string[]>([])
+  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null)
+
   const filteredInvoices = invoices.filter(invoice => {
     // Filter by tab
     if (activeTab === "archived" && !invoice.archived) return false;
     if (activeTab === "deleted" && !invoice.deleted) return false;
     if (activeTab === "all" && (invoice.archived || invoice.deleted)) return false;
-    
+    // Company (store) filter
+    if (selectedCompanies.length > 0 && !selectedCompanies.includes(invoice.store)) return false;
     // Search filter
     const matchesSearch = 
       invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.store.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.supplier.toLowerCase().includes(searchQuery.toLowerCase());
-    
     // Other filters
     const matchesStore = storeFilter ? invoice.store === storeFilter : true;
     const matchesSupplier = supplierFilter ? invoice.supplier === supplierFilter : true;
     const matchesStatus = statusFilter ? invoice.status === statusFilter : true;
     const matchesInvoiceType = invoiceTypeFilter ? invoice.invoiceType === invoiceTypeFilter : true;
-    
     return matchesSearch && matchesStore && matchesSupplier && matchesStatus && matchesInvoiceType;
   });
 
@@ -82,6 +85,9 @@ export default function InvoicesPage() {
     setInvoiceTypeFilter(null);
   };
 
+  // Only show invoices if all companies are selected
+  const showInvoices = selectedCompanies.length === stores.length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -89,207 +95,240 @@ export default function InvoicesPage() {
         <DateRangePicker />
       </div>
       
-      <Tabs defaultValue="all" onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">All Invoices ({allCount})</TabsTrigger>
-          <TabsTrigger value="archived">Archived ({archivedCount})</TabsTrigger>
-          <TabsTrigger value="deleted">Deleted ({deletedCount})</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Tabs and actions row */}
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+        {/* Tabs (All Invoices, Archived, Deleted) */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-w-[320px]">
+          <TabsList>
+            <TabsTrigger value="all">All Invoices ({allCount})</TabsTrigger>
+            <TabsTrigger value="archived">Archived ({archivedCount})</TabsTrigger>
+            <TabsTrigger value="deleted">Deleted ({deletedCount})</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {/* Actions: Email and Upload button */}
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-sm flex items-center gap-1">
+            <Mail className="h-4 w-4" /> invoices@franchiseai.com
+          </span>
+          <Button variant="default" className="ml-2 flex items-center gap-2">
+            <FileUp className="h-4 w-4" /> Upload Invoice
+          </Button>
+        </div>
+      </div>
       
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center mb-6 gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search invoices..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+      <div className="flex gap-8 h-[600px]">
+        {/* Company Selector Card */}
+        <div className="h-full flex-[1_1_0%] min-w-[200px]">
+          <div className="h-full flex flex-col">
+            <div className="border rounded-lg bg-white h-full flex flex-col shadow-sm">
+              <InvoiceCompanySelector
+                companies={stores}
+                selectedCompanies={selectedCompanies}
+                setSelectedCompanies={setSelectedCompanies}
               />
             </div>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  Filters
-                  {(storeFilter || supplierFilter || statusFilter || invoiceTypeFilter) && (
-                    <span className="ml-1 rounded-full bg-primary w-2 h-2" />
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Filter Invoices</h4>
-                  
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium">Store</h5>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
-                          {storeFilter || "All Stores"}
-                          <Filter className="ml-2 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56">
-                        <DropdownMenuItem onClick={() => setStoreFilter(null)}>
-                          All Stores
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {stores.map(store => (
-                          <DropdownMenuItem key={store} onClick={() => setStoreFilter(store)}>
-                            {store}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium">Supplier</h5>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
-                          {supplierFilter || "All Suppliers"}
-                          <Filter className="ml-2 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56">
-                        <DropdownMenuItem onClick={() => setSupplierFilter(null)}>
-                          All Suppliers
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {suppliers.map(supplier => (
-                          <DropdownMenuItem key={supplier} onClick={() => setSupplierFilter(supplier)}>
-                            {supplier}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium">Status</h5>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
-                          {statusFilter || "All Statuses"}
-                          <Filter className="ml-2 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56">
-                        <DropdownMenuItem onClick={() => setStatusFilter(null)}>
-                          All Statuses
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {statuses.map(status => (
-                          <DropdownMenuItem key={status} onClick={() => setStatusFilter(status)}>
-                            {status}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium">Invoice Type</h5>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
-                          {invoiceTypeFilter || "All Types"}
-                          <Filter className="ml-2 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56">
-                        <DropdownMenuItem onClick={() => setInvoiceTypeFilter(null)}>
-                          All Types
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {invoiceTypes.map(type => (
-                          <DropdownMenuItem key={type} onClick={() => setInvoiceTypeFilter(type)}>
-                            {type}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  <Button variant="outline" className="w-full" onClick={resetFilters}>
-                    Reset Filters
-                  </Button>
+          </div>
+        </div>
+        {/* Invoice List Card */}
+        <div className="flex-[3_1_0%] flex-1 h-full min-w-[400px]">
+          <div className="border rounded-lg bg-white h-full flex flex-col shadow-sm">
+            <div className="p-6 flex-1 flex flex-col overflow-x-auto">
+              <div className="flex items-center mb-6 gap-4 flex-wrap">
+                <div className="relative flex-1 min-w-[240px]">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search invoices..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
-              </PopoverContent>
-            </Popover>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      Filters
+                      {(storeFilter || supplierFilter || statusFilter || invoiceTypeFilter) && (
+                        <span className="ml-1 rounded-full bg-primary w-2 h-2" />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Filter Invoices</h4>
+                      <div className="space-y-2">
+                        <h5 className="text-sm font-medium">Store</h5>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between">
+                              {storeFilter || "All Stores"}
+                              <Filter className="ml-2 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-56">
+                            <DropdownMenuItem onClick={() => setStoreFilter(null)}>
+                              All Stores
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {stores.map(store => (
+                              <DropdownMenuItem key={store} onClick={() => setStoreFilter(store)}>
+                                {store}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="space-y-2">
+                        <h5 className="text-sm font-medium">Supplier</h5>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between">
+                              {supplierFilter || "All Suppliers"}
+                              <Filter className="ml-2 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-56">
+                            <DropdownMenuItem onClick={() => setSupplierFilter(null)}>
+                              All Suppliers
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {suppliers.map(supplier => (
+                              <DropdownMenuItem key={supplier} onClick={() => setSupplierFilter(supplier)}>
+                                {supplier}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="space-y-2">
+                        <h5 className="text-sm font-medium">Status</h5>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between">
+                              {statusFilter || "All Statuses"}
+                              <Filter className="ml-2 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-56">
+                            <DropdownMenuItem onClick={() => setStatusFilter(null)}>
+                              All Statuses
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {statuses.map(status => (
+                              <DropdownMenuItem key={status} onClick={() => setStatusFilter(status)}>
+                                {status}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="space-y-2">
+                        <h5 className="text-sm font-medium">Invoice Type</h5>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between">
+                              {invoiceTypeFilter || "All Types"}
+                              <Filter className="ml-2 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-56">
+                            <DropdownMenuItem onClick={() => setInvoiceTypeFilter(null)}>
+                              All Types
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {invoiceTypes.map(type => (
+                              <DropdownMenuItem key={type} onClick={() => setInvoiceTypeFilter(type)}>
+                                {type}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <Button variant="outline" onClick={resetFilters} className="w-full mt-4">
+                        Reset Filters
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4" />
-                <span className="text-muted-foreground">invoices@franchiseai.com</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    
+                  </div>
+                  
+                </div>
               </div>
               
-              <Button className="gap-2">
-                <FileUp className="h-4 w-4" />
-                Upload Invoice
-              </Button>
+              {showInvoices ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Supplier Contact</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount (£)</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                          No invoices found matching your filters
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredInvoices.map((invoice) => (
+                        <TableRow
+                          key={invoice.id}
+                          className={invoice.archived ? "opacity-70 cursor-pointer" : "cursor-pointer"}
+                          onClick={e => {
+                            // Prevent row click if invoice number link is clicked
+                            if ((e.target as HTMLElement).closest("a")) return;
+                            setSelectedInvoice(invoice);
+                          }}
+                          style={{ userSelect: "none" }}
+                        >
+                          <TableCell>
+                            <Link 
+                              href={`/accounting/invoices/${invoice.id}`}
+                              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              {invoice.invoiceNumber}
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          </TableCell>
+                          <TableCell>{invoice.supplier}</TableCell>
+                          <TableCell>{format(invoice.date, "dd/MM/yyyy")}</TableCell>
+                          <TableCell>£{invoice.amount.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <span className={getStatusClass(invoice.status)}>
+                              {invoice.status}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-lg text-muted-foreground">
+                  Select stores
+                </div>
+              )}
             </div>
           </div>
-          
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Store</TableHead>
-                <TableHead>Supplier Contact</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount (£)</TableHead>
-                <TableHead>VAT (£)</TableHead>
-                <TableHead>Account Code</TableHead>
-                <TableHead>Invoice Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-center border-l pl-2">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInvoices.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
-                    No invoices found matching your filters
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id} className={invoice.archived ? "opacity-70" : ""}>
-                    <TableCell>{invoice.invoiceNumber}</TableCell>
-                    <TableCell>{invoice.store}</TableCell>
-                    <TableCell>{invoice.supplier}</TableCell>
-                    <TableCell>{format(invoice.date, "dd/MM/yyyy")}</TableCell>
-                    <TableCell>£{invoice.amount.toFixed(2)}</TableCell>
-                    <TableCell>£{invoice.vat.toFixed(2)}</TableCell>
-                    <TableCell>{invoice.accountCode}</TableCell>
-                    <TableCell>{invoice.invoiceType}</TableCell>
-                    <TableCell>
-                      <span className={getStatusClass(invoice.status)}>
-                        {invoice.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center border-l pl-2">
-                      <Link 
-                        href={`/accounting/invoices/${invoice.id}`}
-                        className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                      >
-                        View
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        </div>
+        {/* Invoice PDF Previewer Card */}
+        <div className="flex-[2_1_0%] h-full min-w-[320px]">
+          <InvoicePdfPreviewer
+            pdfUrl={selectedInvoice && selectedInvoice.previewType === "pdf" && selectedInvoice.previewUrl ? `/invoice-previews/${selectedInvoice.previewUrl}` : undefined}
+            invoiceNumber={selectedInvoice?.invoiceNumber}
+          />
+        </div>
+      </div>
     </div>
   )
 }
@@ -309,7 +348,17 @@ function getStatusClass(status: string) {
   }
 }
 
-// Sample invoice data
+// After already-mapped invoices, sequentially assign these PDF filenames to the next unmapped invoices:
+const pdfFilenames = [
+  "1st_Waste_Management_2024-10-...Credit Memo).pdf",
+  "CustAccountStatementExt.Report....pdf",
+  "CustAccountStatementExt.Report....pdf",
+  "KeyIndicatorsStoreDhillon - Novem....pdf",
+  "Text_Management_2024-10-08_28....pdf",
+  "Verlingue_2024-10-09_42693.99.pdf"
+];
+
+let pdfIndex = 0;
 const invoices = [
   {
     id: "1",
@@ -323,7 +372,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "AI Processed",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: "INV-001.pdf"
   },
   {
     id: "2",
@@ -337,7 +388,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "AI Processed",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: "invoice-eden-farms.pdf"
   },
   {
     id: "3",
@@ -351,7 +404,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "Pending AI",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "4",
@@ -365,7 +420,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "AI Processed",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "5",
@@ -379,7 +436,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "Needs Human Review",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "6",
@@ -393,7 +452,9 @@ const invoices = [
     invoiceType: "Credit Note",
     status: "Pending AI",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "7",
@@ -407,7 +468,9 @@ const invoices = [
     invoiceType: "Sales Invoice",
     status: "AI Processed",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "8",
@@ -421,9 +484,10 @@ const invoices = [
     invoiceType: "Sales Invoice",
     status: "Needs Human Review",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
-  // 10 additional invoice examples
   {
     id: "9",
     invoiceNumber: "INV-006",
@@ -436,7 +500,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "AI Processed",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "10",
@@ -450,7 +516,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "Duplicate?",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "11",
@@ -464,7 +532,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "AI Processed",
     archived: true,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "12",
@@ -478,7 +548,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "Pending AI",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "13",
@@ -492,7 +564,9 @@ const invoices = [
     invoiceType: "Credit Note",
     status: "AI Processed",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "14",
@@ -506,7 +580,9 @@ const invoices = [
     invoiceType: "Sales Invoice",
     status: "Duplicate?",
     archived: false,
-    deleted: true
+    deleted: true,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "15",
@@ -520,7 +596,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "Duplicate?",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "16",
@@ -534,7 +612,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "Needs Human Review",
     archived: true,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "17",
@@ -548,7 +628,9 @@ const invoices = [
     invoiceType: "Purchase Invoice",
     status: "AI Processed",
     archived: true,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   },
   {
     id: "18",
@@ -562,6 +644,8 @@ const invoices = [
     invoiceType: "Sales Invoice",
     status: "AI Processed",
     archived: false,
-    deleted: false
+    deleted: false,
+    previewType: "pdf",
+    previewUrl: pdfFilenames[pdfIndex++]
   }
 ] 

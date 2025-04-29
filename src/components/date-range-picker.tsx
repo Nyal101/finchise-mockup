@@ -20,18 +20,64 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-interface DateRangePickerProps {
-  className?: string
+interface DateAndStoreFilterProps {
+  className?: string;
+  storeValue?: string;
+  onStoreChange?: (storeId: string) => void;
+  dateValue?: DateRange | undefined;
+  onDateChange?: (range: DateRange | undefined) => void;
 }
 
-export function DateRangePicker({ className }: DateRangePickerProps) {
-  const [date, setDate] = React.useState<DateRange | undefined>({
+// Store options, including an 'All Stores' option at the top
+const stores = [
+  { id: "all", name: "All Stores" },
+  { id: "STR-001", name: "Kings Hill" },
+  { id: "STR-002", name: "Tonbridge Main" },
+  { id: "STR-003", name: "Tunbridge Wells" },
+  { id: "STR-004", name: "Southborough" },
+  { id: "STR-005", name: "Maidstone" },
+  { id: "STR-006", name: "Sevenoaks" },
+];
+
+export function DateAndStoreFilter({ className, storeValue, onStoreChange, dateValue, onDateChange }: DateAndStoreFilterProps) {
+  // Multi-select state: array of selected store IDs (default to 'all')
+  const [selectedStores, setSelectedStores] = React.useState<string[]>(storeValue ? storeValue.split(",") : ["all"]);
+  const [date, setDate] = React.useState<DateRange | undefined>(dateValue ?? {
     from: new Date(2023, 0, 1),
     to: new Date(),
-  })
-  
-  const [currentMonth, setCurrentMonth] = React.useState(new Date())
-  
+  });
+  const [currentMonth, setCurrentMonth] = React.useState(new Date());
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (onStoreChange) onStoreChange(selectedStores.includes("all") ? "all" : selectedStores.join(","));
+  }, [selectedStores]);
+  React.useEffect(() => {
+    if (onDateChange) onDateChange(date);
+  }, [date]);
+
+  // Helper for toggling store selection
+  const handleStoreToggle = (id: string) => {
+    if (id === "all") {
+      setSelectedStores(["all"]);
+    } else {
+      let next;
+      if (selectedStores.includes(id)) {
+        next = selectedStores.filter(s => s !== id && s !== "all");
+        if (next.length === 0) next = ["all"];
+      } else {
+        next = selectedStores.filter(s => s !== "all").concat(id);
+      }
+      setSelectedStores(next);
+    }
+    // Do NOT close the dropdown on selection
+  };
+
+  // Label for button
+  const displayLabel = selectedStores.includes("all")
+    ? "All Stores"
+    : stores.filter(s => selectedStores.includes(s.id) && s.id !== "all").map(s => s.name).join(", ");
+
   // List of months
   const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -56,7 +102,31 @@ export function DateRangePicker({ className }: DateRangePickerProps) {
   }
 
   return (
-    <div className={cn("grid gap-2", className)}>
+    <div className={cn("flex items-center gap-2", className)}>
+      {/* Multi-select dropdown using DropdownMenu */}
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+        <DropdownMenuTrigger asChild>
+          <button className="w-[220px] border border-input bg-white rounded-md px-3 py-2 text-sm flex items-center justify-between shadow-xs focus:outline-none">
+            <span className="truncate">{displayLabel || "Select store(s)"}</span>
+            <ChevronDown className="size-4 opacity-50 ml-2" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[220px]">
+          {stores.map(store => (
+            <DropdownMenuItem asChild key={store.id} className={store.id === "all" ? "font-semibold" : ""}>
+              <label className="flex items-center gap-2 cursor-pointer w-full" onClick={e => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={selectedStores.includes(store.id)}
+                  onChange={() => handleStoreToggle(store.id)}
+                  className="accent-primary"
+                />
+                <span>{store.name}</span>
+              </label>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -109,7 +179,6 @@ export function DateRangePicker({ className }: DateRangePickerProps) {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1 h-7 px-2 text-center">
@@ -136,7 +205,6 @@ export function DateRangePicker({ className }: DateRangePickerProps) {
               </DropdownMenu>
             </div>
           </div>
-          
           <Calendar
             initialFocus
             mode="range"
@@ -155,7 +223,6 @@ export function DateRangePicker({ className }: DateRangePickerProps) {
               head_cell: "text-center text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
             }}
           />
-          
           <div className="p-2 border-t flex justify-center gap-2">
             <Button 
               variant="outline" 
@@ -168,7 +235,6 @@ export function DateRangePicker({ className }: DateRangePickerProps) {
             >
               Current Month
             </Button>
-            
             <Button 
               variant="outline" 
               size="sm" 
@@ -184,5 +250,8 @@ export function DateRangePicker({ className }: DateRangePickerProps) {
         </PopoverContent>
       </Popover>
     </div>
-  )
-} 
+  );
+}
+
+// Backwards compatibility export
+export { DateAndStoreFilter as DateRangePicker };

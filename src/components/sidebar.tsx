@@ -29,13 +29,12 @@ import { Separator } from "@/components/ui/separator"
 
 export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
   const pathname = usePathname()
-  const [selectedStore, setSelectedStore] = React.useState<string>("All Stores")
+  const [selectedStore, setSelectedStore] = React.useState<string>("Dominos")
 
   const stores = [
-    { id: "all", name: "All Stores" },
-    { id: "store1", name: "Store 1" },
-    { id: "store2", name: "Store 2" },
-    { id: "store3", name: "Store 3" },
+    { id: "dominos", name: "Dominos", logo: "/logos/dominos.png" },
+    { id: "gdk", name: "GDK", logo: "/logos/gdk.webp" },
+    { id: "costa", name: "Costa", logo: "/logos/costa.png" },
   ]
 
   return (
@@ -48,7 +47,12 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between">
-                {selectedStore}
+                <span className="flex items-center gap-2">
+                  {stores.find(s => s.name === selectedStore) && (
+                    <img src={stores.find(s => s.name === selectedStore)?.logo} alt="logo" className="h-5 w-5 rounded-full" />
+                  )}
+                  {selectedStore}
+                </span>
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -58,7 +62,7 @@ export function Sidebar({ className }: React.HTMLAttributes<HTMLDivElement>) {
                   key={store.id}
                   onClick={() => setSelectedStore(store.name)}
                 >
-                  <Store className="mr-2 h-4 w-4" />
+                  <img src={store.logo} alt={store.name + " logo"} className="mr-2 h-5 w-5 rounded-full" />
                   <span>{store.name}</span>
                 </DropdownMenuItem>
               ))}
