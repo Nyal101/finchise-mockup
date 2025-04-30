@@ -1,6 +1,4 @@
 {
-  "/accounting/invoices/page": "app/accounting/invoices/page.js",
-  "/insights/reports/page": "app/insights/reports/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/accounting/payroll/page": "app/accounting/payroll/page.js"
+  "/accounting/invoices/page": "app/accounting/invoices/page.js"
 }

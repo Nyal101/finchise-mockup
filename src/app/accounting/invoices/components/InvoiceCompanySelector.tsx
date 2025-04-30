@@ -1,4 +1,5 @@
-import React from "react";
+/**
+ import React from "react";
 
 interface InvoiceCompanySelectorProps {
   companies: string[];
@@ -75,3 +76,4 @@ export const InvoiceCompanySelector: React.FC<InvoiceCompanySelectorProps> = ({
     </div>
   );
 };
+**/

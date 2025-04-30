@@ -19,9 +19,10 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import {
   Popover,
@@ -33,19 +34,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { InvoiceCompanySelector } from "./components/InvoiceCompanySelector";
 import InvoicePdfPreviewer from "./components/InvoicePdfPreviewer";
 
 // Removed unused Card, CardContent imports
 
 export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
-  const [storeFilter, setStoreFilter] = React.useState<string | null>(null)
-  const [supplierFilter, setSupplierFilter] = React.useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = React.useState<string | null>(null)
-  const [invoiceTypeFilter, setInvoiceTypeFilter] = React.useState<string | null>(null)
+  const [storeFilter, setStoreFilter] = React.useState<string[]>([])
+  const [supplierFilter, setSupplierFilter] = React.useState<string[]>([])
+  const [statusFilter, setStatusFilter] = React.useState<string[]>([])
+  const [invoiceTypeFilter, setInvoiceTypeFilter] = React.useState<string[]>([])
   const [activeTab, setActiveTab] = React.useState<string>("all")
-  const [selectedCompanies, setSelectedCompanies] = React.useState<string[]>([])
   const [selectedInvoice, setSelectedInvoice] = React.useState<InvoiceData | null>(null)
 
   // Patch: Add a runtime type adapter for InvoiceData selection
@@ -81,27 +80,25 @@ export default function InvoicesPage() {
 
   // Simplified and robust filtering logic
   const filteredInvoices = React.useMemo(() => {
-    const showAll = selectedCompanies.length === 0 || selectedCompanies.length === stores.length;
+    const showAll = true;
     return invoices.filter(invoice => {
       // Filter by tab
       if (activeTab === "archived" && !invoice.archived) return false;
       if (activeTab === "deleted" && !invoice.deleted) return false;
       if (activeTab === "all" && (invoice.archived || invoice.deleted)) return false;
-      // Company (store) filter
-      if (!showAll && !selectedCompanies.includes(invoice.store)) return false;
       // Search filter
       const matchesSearch = 
         invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         invoice.store.toLowerCase().includes(searchQuery.toLowerCase()) ||
         invoice.supplier.toLowerCase().includes(searchQuery.toLowerCase());
       // Other filters
-      const matchesStore = storeFilter ? invoice.store === storeFilter : true;
-      const matchesSupplier = supplierFilter ? invoice.supplier === supplierFilter : true;
-      const matchesStatus = statusFilter ? invoice.status === statusFilter : true;
-      const matchesInvoiceType = invoiceTypeFilter ? invoice.invoiceType === invoiceTypeFilter : true;
+      const matchesStore = storeFilter.length ? storeFilter.includes(invoice.store) : true;
+      const matchesSupplier = supplierFilter.length ? supplierFilter.includes(invoice.supplier) : true;
+      const matchesStatus = statusFilter.length ? statusFilter.includes(invoice.status) : true;
+      const matchesInvoiceType = invoiceTypeFilter.length ? invoiceTypeFilter.includes(invoice.invoiceType) : true;
       return matchesSearch && matchesStore && matchesSupplier && matchesStatus && matchesInvoiceType;
     });
-  }, [invoices, stores, selectedCompanies, activeTab, searchQuery, storeFilter, supplierFilter, statusFilter, invoiceTypeFilter]);
+  }, [invoices, activeTab, searchQuery, storeFilter, supplierFilter, statusFilter, invoiceTypeFilter]);
 
   // Get unique values for filters
   const suppliers = Array.from(new Set(invoices.map(invoice => invoice.supplier)));
@@ -115,14 +112,14 @@ export default function InvoicesPage() {
 
   // Reset all filters
   const resetFilters = () => {
-    setStoreFilter(null);
-    setSupplierFilter(null);
-    setStatusFilter(null);
-    setInvoiceTypeFilter(null);
+    setStoreFilter([]);
+    setSupplierFilter([]);
+    setStatusFilter([]);
+    setInvoiceTypeFilter([]);
   };
 
   // Only show invoices if all companies are selected
-  const showInvoices = selectedCompanies.length === 0 || selectedCompanies.length === stores.length;
+  const showInvoices = true;
 
   return (
     <div className="space-y-6">
@@ -153,22 +150,117 @@ export default function InvoicesPage() {
       </div>
       
       <div className="flex gap-8 flex-1 min-h-0" style={{height: 'calc(100vh - 180px)'}}>
-        {/* Company Selector Card */}
-        <div className="flex-[1_1_0%] min-w-[200px] flex flex-col min-h-0">
-          <div className="flex flex-col flex-1 min-h-0">
-            <div className="border rounded-lg bg-white flex flex-col shadow-sm flex-1 min-h-0">
-              <InvoiceCompanySelector
-                companies={stores}
-                selectedCompanies={selectedCompanies}
-                setSelectedCompanies={setSelectedCompanies}
-              />
-            </div>
-          </div>
-        </div>
         {/* Invoice List Card */}
-        <div className="flex-[3_1_0%] flex-1 min-w-[400px] flex flex-col min-h-0">
+        <div className="flex-1 min-w-[400px] flex flex-col min-h-0">
           <div className="border rounded-lg bg-white flex flex-col shadow-sm flex-1 min-h-0">
             <div className="p-6 flex-1 flex flex-col overflow-x-auto min-h-0">
+              {/* Filter buttons row */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium">Filters</h2>
+                <Button variant="secondary" onClick={resetFilters}>Reset Filters</Button>
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                {/* Store Filter Button */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center justify-center px-2 py-1 text-sm">
+                      Stores
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuItem onClick={() => setStoreFilter([])}>
+                      All Stores
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {stores.map(store => (
+                      <DropdownMenuCheckboxItem key={store} checked={storeFilter.includes(store)} onClick={() => {
+                        if (storeFilter.includes(store)) {
+                          setStoreFilter(storeFilter.filter(s => s !== store));
+                        } else {
+                          setStoreFilter([...storeFilter, store]);
+                        }
+                      }}>
+                        {store}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {/* Supplier Filter Button */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center justify-center px-2 py-1 text-sm">
+                      Suppliers
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuItem onClick={() => setSupplierFilter([])}>
+                      All Suppliers
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {suppliers.map(supplier => (
+                      <DropdownMenuCheckboxItem key={supplier} checked={supplierFilter.includes(supplier)} onClick={() => {
+                        if (supplierFilter.includes(supplier)) {
+                          setSupplierFilter(supplierFilter.filter(s => s !== supplier));
+                        } else {
+                          setSupplierFilter([...supplierFilter, supplier]);
+                        }
+                      }}>
+                        {supplier}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {/* Status Filter Button */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center justify-center px-2 py-1 text-sm">
+                      Statuses
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuItem onClick={() => setStatusFilter([])}>
+                      All Statuses
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {statuses.map(status => (
+                      <DropdownMenuCheckboxItem key={status} checked={statusFilter.includes(status)} onClick={() => {
+                        if (statusFilter.includes(status)) {
+                          setStatusFilter(statusFilter.filter(s => s !== status));
+                        } else {
+                          setStatusFilter([...statusFilter, status]);
+                        }
+                      }}>
+                        {status}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {/* Invoice Type Filter Button */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center justify-center px-2 py-1 text-sm">
+                      Types
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuItem onClick={() => setInvoiceTypeFilter([])}>
+                      All Types
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {invoiceTypes.map(type => (
+                      <DropdownMenuCheckboxItem key={type} checked={invoiceTypeFilter.includes(type)} onClick={() => {
+                        if (invoiceTypeFilter.includes(type)) {
+                          setInvoiceTypeFilter(invoiceTypeFilter.filter(t => t !== type));
+                        } else {
+                          setInvoiceTypeFilter([...invoiceTypeFilter, type]);
+                        }
+                      }}>
+                        {type}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <div className="flex items-center mb-6 gap-4 flex-wrap">
                 <div className="relative flex-1 min-w-[240px]">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -180,112 +272,6 @@ export default function InvoicesPage() {
                   />
                 </div>
                 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <Filter className="h-4 w-4" />
-                      Filters
-                      {(storeFilter || supplierFilter || statusFilter || invoiceTypeFilter) && (
-                        <span className="ml-1 rounded-full bg-primary w-2 h-2" />
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Filter Invoices</h4>
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-medium">Store</h5>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between">
-                              {storeFilter || "All Stores"}
-                              <Filter className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-56">
-                            <DropdownMenuItem onClick={() => setStoreFilter(null)}>
-                              All Stores
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {stores.map(store => (
-                              <DropdownMenuItem key={store} onClick={() => setStoreFilter(store)}>
-                                {store}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-medium">Supplier</h5>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between">
-                              {supplierFilter || "All Suppliers"}
-                              <Filter className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-56">
-                            <DropdownMenuItem onClick={() => setSupplierFilter(null)}>
-                              All Suppliers
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {suppliers.map(supplier => (
-                              <DropdownMenuItem key={supplier} onClick={() => setSupplierFilter(supplier)}>
-                                {supplier}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-medium">Status</h5>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between">
-                              {statusFilter || "All Statuses"}
-                              <Filter className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-56">
-                            <DropdownMenuItem onClick={() => setStatusFilter(null)}>
-                              All Statuses
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {statuses.map(status => (
-                              <DropdownMenuItem key={status} onClick={() => setStatusFilter(status)}>
-                                {status}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-medium">Invoice Type</h5>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full justify-between">
-                              {invoiceTypeFilter || "All Types"}
-                              <Filter className="ml-2 h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-56">
-                            <DropdownMenuItem onClick={() => setInvoiceTypeFilter(null)}>
-                              All Types
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {invoiceTypes.map(type => (
-                              <DropdownMenuItem key={type} onClick={() => setInvoiceTypeFilter(type)}>
-                                {type}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <Button variant="outline" className="w-full mt-4" onClick={resetFilters}>Reset Filters</Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 text-sm">
                     
