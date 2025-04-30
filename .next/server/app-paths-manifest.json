@@ -1,6 +1,15 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/accounting/invoices/[id]/page": "app/accounting/invoices/[id]/page.js",
+  "/accounting/integrations/page": "app/accounting/integrations/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/insights/chatbot/page": "app/insights/chatbot/page.js",
+  "/accounting/payroll/page": "app/accounting/payroll/page.js",
   "/page": "app/page.js",
-  "/accounting/invoices/page": "app/accounting/invoices/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/settings/dominoes-management/page": "app/settings/dominoes-management/page.js",
+  "/settings/user-management/page": "app/settings/user-management/page.js",
+  "/insights/reports/page": "app/insights/reports/page.js",
+  "/settings/store-management/page": "app/settings/store-management/page.js",
+  "/accounting/invoices/page": "app/accounting/invoices/page.js"
 }

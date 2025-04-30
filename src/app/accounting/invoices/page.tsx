@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { ExternalLink, FileUp, Filter, Mail, Search } from "lucide-react"
+import { ExternalLink, FileUp, Mail, Search } from "lucide-react"
 import { DateRangePicker } from "@/components/date-range-picker"
 import type { InvoiceData, LineItem, StoreAllocation } from "./components/types"
 import { Button } from "@/components/ui/button"
@@ -24,11 +24,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import {
   Tabs,
   TabsList,
@@ -76,11 +71,10 @@ export default function InvoicesPage() {
   const stores = React.useMemo(() => {
     // Defensive: filter out falsy/empty store names
     return Array.from(new Set((invoices ?? []).map(invoice => invoice.store).filter(Boolean)));
-  }, [invoices]);
+  }, []);
 
   // Simplified and robust filtering logic
   const filteredInvoices = React.useMemo(() => {
-    const showAll = true;
     return invoices.filter(invoice => {
       // Filter by tab
       if (activeTab === "archived" && !invoice.archived) return false;
@@ -98,7 +92,7 @@ export default function InvoicesPage() {
       const matchesInvoiceType = invoiceTypeFilter.length ? invoiceTypeFilter.includes(invoice.invoiceType) : true;
       return matchesSearch && matchesStore && matchesSupplier && matchesStatus && matchesInvoiceType;
     });
-  }, [invoices, activeTab, searchQuery, storeFilter, supplierFilter, statusFilter, invoiceTypeFilter]);
+  }, [activeTab, searchQuery, storeFilter, supplierFilter, statusFilter, invoiceTypeFilter]);
 
   // Get unique values for filters
   const suppliers = Array.from(new Set(invoices.map(invoice => invoice.supplier)));

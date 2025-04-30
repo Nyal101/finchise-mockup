@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/accounting/invoices/[id]/page": "/accounting/invoices/[id]",
+  "/accounting/integrations/page": "/accounting/integrations",
+  "/dashboard/page": "/dashboard",
+  "/insights/chatbot/page": "/insights/chatbot",
+  "/accounting/payroll/page": "/accounting/payroll",
+  "/page": "/",
+  "/settings/dominoes-management/page": "/settings/dominoes-management",
+  "/settings/user-management/page": "/settings/user-management",
+  "/insights/reports/page": "/insights/reports",
+  "/settings/store-management/page": "/settings/store-management",
+  "/accounting/invoices/page": "/accounting/invoices"
+}
