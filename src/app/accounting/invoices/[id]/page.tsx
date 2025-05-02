@@ -29,38 +29,71 @@ import InvoiceActions from "@/app/accounting/invoices/components/InvoiceActions"
 export default function InvoiceDetailPage() {
   // Use the useParams hook to safely access route params
   const params = useParams();
-  const id = params.id as string;
+  const id = params && 'id' in params ? (params.id as string) : undefined;
 
-  // Find the invoice with the provided ID
-  const invoiceData = invoiceDetails.find(invoice => invoice.id === id) || invoiceDetails[0];
-  
-  // Initialize with proper type casting
-  const [invoice, setInvoice] = useState<InvoiceData>({
-    ...invoiceData,
-    notes: invoiceData.notes || '',
-    lineItems: invoiceData.lineItems.map(item => ({
-      id: v4(),
-      description: item.description,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      total: item.quantity * item.unitPrice,
-      accountCode: item.accountCode
-    })),
-    storeAllocations: invoiceData.storeAllocations || [
-      { id: v4(), store: invoiceData.store, percentage: 100, amount: invoiceData.total }
-    ]
+  // Find the invoice with the provided ID (do NOT return early yet)
+  const invoiceData = id
+    ? invoiceDetails.find(invoice => invoice.id === id)
+    : undefined;
+
+  // Always call hooks at the top level
+  const [invoice, setInvoice] = useState<InvoiceData>(() => {
+    if (invoiceData) {
+      return {
+        ...invoiceData,
+        date: new Date(invoiceData.date),
+        lineItems: [],
+        storeAllocations: [],
+      };
+    }
+    // fallback dummy invoice to avoid hook conditional
+    return {
+      id: '',
+      invoiceNumber: '',
+      store: '',
+      supplier: '',
+      date: new Date(),
+      subtotal: 0,
+      vatRate: 0,
+      vat: 0,
+      total: 0,
+      accountCode: '',
+      invoiceType: '',
+      status: '',
+      previewType: '',
+      previewUrl: '',
+      notes: '',
+      archived: false,
+      deleted: false,
+      lineItems: [
+        {
+          id: v4(),
+          description: '',
+          quantity: 0,
+          unitPrice: 0,
+          total: 0,
+          accountCode: '',
+        }
+      ],
+      storeAllocations: [
+        {
+          id: v4(),
+          store: '',
+          percentage: 100,
+          amount: 0,
+        }
+      ],
+    };
   });
-  
   const [isEditing, setIsEditing] = useState(false);
-  const [lineItems, setLineItems] = useState<LineItem[]>(invoice.lineItems);
-    
-  // In the component function, add new state for store allocations
+  const [lineItems, setLineItems] = useState<LineItem[]>(invoice.lineItems || []);
   const [storeAllocations, setStoreAllocations] = useState<StoreAllocation[]>(invoice.storeAllocations || [
     { id: v4(), store: invoice.store, percentage: 100, amount: invoice.total }
   ]);
-  
-  if (!invoice) {
-    return <div>Invoice not found</div>
+
+  // After all hooks, now check for invoice existence
+  if (!invoiceData) {
+    return <div>Invoice not found.</div>;
   }
 
   const stores = [
