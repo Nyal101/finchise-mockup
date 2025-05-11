@@ -108,6 +108,11 @@ export function HorizontalNavBar({
         icon: FileText 
       },
       { 
+        name: "Contacts", 
+        href: "/accounting/Contacts", 
+        icon: User 
+      },
+      { 
         name: "Manual Journals", 
         href: "/accounting/Journals", 
         icon: FileText 
@@ -180,6 +185,11 @@ export function HorizontalNavBar({
       name: "Sales - Invoices", 
       href: "/accounting/Sales", 
       icon: FileText 
+    },
+    { 
+      name: "Contacts", 
+      href: "/accounting/Contacts", 
+      icon: User 
     },
     { 
       name: "Manual Journals", 
