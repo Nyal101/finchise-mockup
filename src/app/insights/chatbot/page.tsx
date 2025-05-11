@@ -68,7 +68,7 @@ export default function ChatbotPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <main className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">AI Chatbot</h1>
         <DateRangePicker />
@@ -159,7 +159,7 @@ export default function ChatbotPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   )
 }
 

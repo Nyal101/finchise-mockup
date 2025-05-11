@@ -2,81 +2,91 @@
 
 import * as React from "react"
 import { format } from "date-fns"
-import { Calendar, CheckCircle, Clock, Download, FileText, Filter, User } from "lucide-react"
+import { Calendar, Download, FileText, Filter, User } from "lucide-react"
 import { DateRangePicker } from "@/components/date-range-picker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { MonthSelector } from "./Components/Summary"
 
 export default function PayrollPage() {
+  // State for the center (current) month
+  const [centerMonth, setCenterMonth] = React.useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  // State for selected month (for detailed view)
+  const [selectedMonth, setSelectedMonth] = React.useState<Date | null>(null);
+  const [activeTab, setActiveTab] = React.useState("payroll-run");
+
+  // Handlers
+  function handleBackToMonths() {
+    setSelectedMonth(null);
+  }
+
   return (
-    <div className="space-y-6">
+    <main className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Payroll</h1>
         <DateRangePicker />
       </div>
-      
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Next Pay Run</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">June 30, 2023</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              14 days remaining
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Payroll</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$128,459.00</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              This month
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">87</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Across all stores
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs defaultValue="payroll-runs">
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="payroll-runs">Payroll Runs</TabsTrigger>
-            <TabsTrigger value="employees">Employees</TabsTrigger>
-            <TabsTrigger value="timesheets">Timesheets</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" />
-              Filter
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+
+      {/* Tabs Nav Bar */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="mb-4">
+          <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="payroll-run">Payroll Run</TabsTrigger>
+          <TabsTrigger value="employee-management">Employee Management</TabsTrigger>
+        </TabsList>
+
+        {/* Summary Tab */}
+        <TabsContent value="summary">
+          {/* Summary Cards */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Next Pay Run</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">June 30, 2023</div>
+                <p className="text-xs text-muted-foreground mt-1">14 days remaining</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Total Payroll</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">£128,459.00</div>
+                <p className="text-xs text-muted-foreground mt-1">This month</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+                <User className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">87</div>
+                <p className="text-xs text-muted-foreground mt-1">Across all stores</p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-        
-        <TabsContent value="payroll-runs">
+
+          {/* Sub-tabs for summary */}
+          <div className="flex items-center gap-2 mb-4">
+            <Button variant="outline" className="rounded-full px-4 py-1 text-sm font-medium">Payroll Runs</Button>
+            <Button variant="ghost" className="rounded-full px-4 py-1 text-sm font-medium">Employees</Button>
+            <Button variant="ghost" className="rounded-full px-4 py-1 text-sm font-medium">Timesheets</Button>
+            <div className="flex-1" />
+            <Button variant="outline" size="sm" className="flex items-center gap-1"><Filter className="h-4 w-4" />Filter</Button>
+            <Button variant="outline" size="sm" className="flex items-center gap-1"><Download className="h-4 w-4" />Export</Button>
+          </div>
+
+          {/* Recent Payroll Runs Table */}
           <Card>
             <CardHeader>
               <CardTitle>Recent Payroll Runs</CardTitle>
@@ -98,7 +108,7 @@ export default function PayrollPage() {
                   {payrollRuns.map((run) => (
                     <TableRow key={run.id}>
                       <TableCell>
-                        {format(run.periodStart, "MMM d")} - {format(run.periodEnd, "MMM d, yyyy")}
+                        {format(run.periodStart, "MMM d, yyyy")} - {format(run.periodEnd, "MMM d, yyyy")}
                       </TableCell>
                       <TableCell>{format(run.payDate, "MMM d, yyyy")}</TableCell>
                       <TableCell>
@@ -108,7 +118,7 @@ export default function PayrollPage() {
                       </TableCell>
                       <TableCell>{run.employeeCount}</TableCell>
                       <TableCell>{run.totalHours}</TableCell>
-                      <TableCell>${run.totalAmount.toFixed(2)}</TableCell>
+                      <TableCell>${run.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm">
                           <Download className="h-4 w-4" />
@@ -121,11 +131,125 @@ export default function PayrollPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="employees">
+
+        {/* Payroll Run Tab */}
+        <TabsContent value="payroll-run">
+          <MonthSelector
+            centerMonth={centerMonth}
+            setCenterMonth={setCenterMonth}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+          />
+          {selectedMonth && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">
+                  Payroll for {selectedMonth.toLocaleString('default', { month: 'long' })}, {selectedMonth.getFullYear()}
+                </h2>
+                <Button variant="outline" onClick={handleBackToMonths}>Back</Button>
+              </div>
+              {/* --- BEGIN: DETAILED PAYROLL MOCKUP --- */}
+              <div className="flex gap-4 items-center mb-4">
+                <Button variant="default">Update</Button>
+                <Button variant="destructive">Delete Payroll</Button>
+              </div>
+              <div className="flex gap-2 mb-4">
+                <Button variant="secondary">Payroll Errors</Button>
+                <Button variant="secondary">COS Managers</Button>
+                <Button variant="secondary">Students</Button>
+                <Button variant="secondary">Deferred Pay</Button>
+                <Button variant="secondary">Bonuses</Button>
+                <Button variant="secondary">Deleted</Button>
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">COS Managers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>First Name</TableHead>
+                        <TableHead>Last Name</TableHead>
+                        <TableHead>NI Number</TableHead>
+                        <TableHead>Salary</TableHead>
+                        <TableHead>Hours Per Week</TableHead>
+                        <TableHead>Total Hours Worked</TableHead>
+                        <TableHead>Hours Difference</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {/* Mock rows */}
+                      <TableRow>
+                        <TableCell>Ramanathan</TableCell>
+                        <TableCell>Thirumalai</TableCell>
+                        <TableCell>NJ007412A</TableCell>
+                        <TableCell>29000</TableCell>
+                        <TableCell>44</TableCell>
+                        <TableCell>234.2</TableCell>
+                        <TableCell>58.20</TableCell>
+                        <TableCell><Button variant="link">View Details</Button></TableCell>
+                      </TableRow>
+                      {/* Add more rows as needed */}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Payroll Monthly Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>First Name</TableHead>
+                        <TableHead>Last Name</TableHead>
+                        <TableHead>Hours Worked</TableHead>
+                        <TableHead>Pay Rate</TableHead>
+                        <TableHead>Total Pay</TableHead>
+                        <TableHead>Store Name</TableHead>
+                        <TableHead>Employing Entity</TableHead>
+                        <TableHead>Store ID</TableHead>
+                        <TableHead>Payroll ID</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Payroll Type</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {/* Mock rows */}
+                      <TableRow>
+                        <TableCell>Dilakshana</TableCell>
+                        <TableCell>Sri Prasath</TableCell>
+                        <TableCell>2</TableCell>
+                        <TableCell>11.44</TableCell>
+                        <TableCell>22.88</TableCell>
+                        <TableCell>BUXTON</TableCell>
+                        <TableCell>R & D 2</TableCell>
+                        <TableCell>28826</TableCell>
+                        <TableCell>RZ58346</TableCell>
+                        <TableCell>Instore</TableCell>
+                        <TableCell>Manual</TableCell>
+                        <TableCell><Button variant="link" className="text-red-500">Delete</Button></TableCell>
+                      </TableRow>
+                      {/* Add more rows as needed */}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              {/* --- END: DETAILED PAYROLL MOCKUP --- */}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Employee Management Tab */}
+        <TabsContent value="employee-management">
           <Card>
             <CardHeader>
-              <CardTitle>Employees</CardTitle>
+              <CardTitle>Employee Management</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -159,60 +283,8 @@ export default function PayrollPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="timesheets">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Timesheets</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Store</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Regular Hours</TableHead>
-                    <TableHead>Overtime</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {timesheets.map((timesheet) => (
-                    <TableRow key={timesheet.id}>
-                      <TableCell className="font-medium">{timesheet.employee}</TableCell>
-                      <TableCell>
-                        {format(timesheet.periodStart, "MMM d")} - {format(timesheet.periodEnd, "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell>{timesheet.store}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          {timesheet.status === "Approved" ? (
-                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                          ) : (
-                            <Clock className="mr-2 h-4 w-4 text-yellow-500" />
-                          )}
-                          {timesheet.status}
-                        </div>
-                      </TableCell>
-                      <TableCell>{timesheet.regularHours}</TableCell>
-                      <TableCell>{timesheet.overtimeHours}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
-      
-    </div>
+    </main>
   )
 }
 
@@ -339,59 +411,5 @@ const employees = [
     status: "Active",
     payRate: 15.50,
     hoursThisMonth: 138
-  }
-]
-
-// Sample timesheets data
-const timesheets = [
-  {
-    id: "1",
-    employee: "John Smith",
-    periodStart: new Date("2023-05-16"),
-    periodEnd: new Date("2023-05-31"),
-    store: "Store 1",
-    status: "Approved",
-    regularHours: 80,
-    overtimeHours: 4
-  },
-  {
-    id: "2",
-    employee: "Emily Johnson",
-    periodStart: new Date("2023-05-16"),
-    periodEnd: new Date("2023-05-31"),
-    store: "Store 2",
-    status: "Approved",
-    regularHours: 80,
-    overtimeHours: 0
-  },
-  {
-    id: "3",
-    employee: "Michael Davis",
-    periodStart: new Date("2023-05-16"),
-    periodEnd: new Date("2023-05-31"),
-    store: "Store 3",
-    status: "Approved",
-    regularHours: 76,
-    overtimeHours: 0
-  },
-  {
-    id: "4",
-    employee: "Sarah Wilson",
-    periodStart: new Date("2023-06-01"),
-    periodEnd: new Date("2023-06-15"),
-    store: "Store 1",
-    status: "Pending",
-    regularHours: 70,
-    overtimeHours: 0
-  },
-  {
-    id: "5",
-    employee: "David Thompson",
-    periodStart: new Date("2023-06-01"),
-    periodEnd: new Date("2023-06-15"),
-    store: "Store 2",
-    status: "Pending",
-    regularHours: 68,
-    overtimeHours: 2
   }
 ] 

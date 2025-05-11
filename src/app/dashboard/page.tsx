@@ -7,7 +7,7 @@ import { BarChart3, DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-r
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <main className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <DateRangePicker />
@@ -20,7 +20,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
+            <div className="text-2xl font-bold">£45,231.89</div>
             <p className="text-xs text-muted-foreground">
               +20.1% from last month
             </p>
@@ -103,7 +103,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   )
 }
 

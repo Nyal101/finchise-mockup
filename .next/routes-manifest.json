@@ -15,12 +15,12 @@
   "headers": [],
   "dynamicRoutes": [
     {
-      "page": "/accounting/invoices/[id]",
-      "regex": "^/accounting/invoices/([^/]+?)(?:/)?$",
+      "page": "/accounting/Purchases/[id]",
+      "regex": "^/accounting/Purchases/([^/]+?)(?:/)?$",
       "routeKeys": {
         "nxtPid": "nxtPid"
       },
-      "namedRegex": "^/accounting/invoices/(?<nxtPid>[^/]+?)(?:/)?$"
+      "namedRegex": "^/accounting/Purchases/(?<nxtPid>[^/]+?)(?:/)?$"
     }
   ],
   "staticRoutes": [
@@ -31,34 +31,46 @@
       "namedRegex": "^/(?:/)?$"
     },
     {
+      "page": "/Dashboard",
+      "regex": "^/Dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/Dashboard(?:/)?$"
+    },
+    {
       "page": "/_not-found",
       "regex": "^/_not\\-found(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
-      "page": "/accounting/integrations",
-      "regex": "^/accounting/integrations(?:/)?$",
+      "page": "/accounting/Journals",
+      "regex": "^/accounting/Journals(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/accounting/integrations(?:/)?$"
+      "namedRegex": "^/accounting/Journals(?:/)?$"
     },
     {
-      "page": "/accounting/invoices",
-      "regex": "^/accounting/invoices(?:/)?$",
+      "page": "/accounting/Payroll",
+      "regex": "^/accounting/Payroll(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/accounting/invoices(?:/)?$"
+      "namedRegex": "^/accounting/Payroll(?:/)?$"
     },
     {
-      "page": "/accounting/payroll",
-      "regex": "^/accounting/payroll(?:/)?$",
+      "page": "/accounting/Purchases",
+      "regex": "^/accounting/Purchases(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/accounting/payroll(?:/)?$"
+      "namedRegex": "^/accounting/Purchases(?:/)?$"
     },
     {
-      "page": "/dashboard",
-      "regex": "^/dashboard(?:/)?$",
+      "page": "/accounting/Sales",
+      "regex": "^/accounting/Sales(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/dashboard(?:/)?$"
+      "namedRegex": "^/accounting/Sales(?:/)?$"
+    },
+    {
+      "page": "/accounting/StockControl",
+      "regex": "^/accounting/StockControl(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/accounting/StockControl(?:/)?$"
     },
     {
       "page": "/favicon.ico",
@@ -67,34 +79,70 @@
       "namedRegex": "^/favicon\\.ico(?:/)?$"
     },
     {
-      "page": "/insights/chatbot",
-      "regex": "^/insights/chatbot(?:/)?$",
+      "page": "/insights/Chatbot",
+      "regex": "^/insights/Chatbot(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/insights/chatbot(?:/)?$"
+      "namedRegex": "^/insights/Chatbot(?:/)?$"
     },
     {
-      "page": "/insights/reports",
-      "regex": "^/insights/reports(?:/)?$",
+      "page": "/insights/FinancialReports",
+      "regex": "^/insights/FinancialReports(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/insights/reports(?:/)?$"
+      "namedRegex": "^/insights/FinancialReports(?:/)?$"
     },
     {
-      "page": "/settings/dominoes-management",
-      "regex": "^/settings/dominoes\\-management(?:/)?$",
+      "page": "/insights/ManagementReports",
+      "regex": "^/insights/ManagementReports(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/settings/dominoes\\-management(?:/)?$"
+      "namedRegex": "^/insights/ManagementReports(?:/)?$"
     },
     {
-      "page": "/settings/store-management",
-      "regex": "^/settings/store\\-management(?:/)?$",
+      "page": "/settings/AccountCodeMappings",
+      "regex": "^/settings/AccountCodeMappings(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/settings/store\\-management(?:/)?$"
+      "namedRegex": "^/settings/AccountCodeMappings(?:/)?$"
     },
     {
-      "page": "/settings/user-management",
-      "regex": "^/settings/user\\-management(?:/)?$",
+      "page": "/settings/COASync",
+      "regex": "^/settings/COASync(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/settings/user\\-management(?:/)?$"
+      "namedRegex": "^/settings/COASync(?:/)?$"
+    },
+    {
+      "page": "/settings/FranchiseManagement",
+      "regex": "^/settings/FranchiseManagement(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings/FranchiseManagement(?:/)?$"
+    },
+    {
+      "page": "/settings/Integrations",
+      "regex": "^/settings/Integrations(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings/Integrations(?:/)?$"
+    },
+    {
+      "page": "/settings/StoreMx",
+      "regex": "^/settings/StoreMx(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings/StoreMx(?:/)?$"
+    },
+    {
+      "page": "/settings/Subscription",
+      "regex": "^/settings/Subscription(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings/Subscription(?:/)?$"
+    },
+    {
+      "page": "/settings/Suppliers",
+      "regex": "^/settings/Suppliers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings/Suppliers(?:/)?$"
+    },
+    {
+      "page": "/settings/UserManagement",
+      "regex": "^/settings/UserManagement(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings/UserManagement(?:/)?$"
     }
   ],
   "dataRoutes": [],
