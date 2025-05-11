@@ -294,7 +294,7 @@ export function HorizontalNavBar({
   }
 
   return (
-    <div className={cn("border-b bg-white", className)}>
+    <div className={cn("border-b", className)} style={{ backgroundColor: '#0081cc' }}>
       <div className="flex h-16 items-center px-4 justify-between">
         {/* Left side - navigation tabs */}
         <nav className="flex items-center space-x-4 lg:space-x-6 overflow-x-auto">
@@ -311,13 +311,15 @@ export function HorizontalNavBar({
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
                       "flex items-center justify-center px-4",
-                      isActive ? "text-black font-bold bg-gray-100" : ""
+                      isActive 
+                        ? "text-white font-bold bg-[#0081cc] hover:bg-[#0071b3]"
+                        : "text-white hover:text-white hover:bg-[#0071b3]"
                     )}
                   >
-                    <item.icon className="mr-2 h-4 w-4" />
+                    <item.icon className="mr-2 h-4 w-4 text-white" />
                     <span>{item.name}</span>
                     {item.beta && (
-                      <span className="ml-2 text-xs text-muted-foreground">(beta)</span>
+                      <span className="ml-2 text-xs text-white/80 font-normal">(beta)</span>
                     )}
                   </Button>
                 </Link>
@@ -332,11 +334,11 @@ export function HorizontalNavBar({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative"
+                variant="ghost"
+                size="icon"
+                className="relative bg-transparent text-white hover:bg-white/20"
               >
-                <Plus className="h-5 w-5" />
+                <Plus className="h-5 w-5 text-white" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-80" align="end" forceMount>
@@ -410,17 +412,17 @@ export function HorizontalNavBar({
           </DropdownMenu>
 
           {/* Notifications bell */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="relative bg-transparent text-white hover:bg-white/20">
+            <Bell className="h-5 w-5 text-white" />
             <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
           </Button>
 
           {/* User profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-transparent text-white hover:bg-white/20">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                  <AvatarFallback className="bg-white text-[#0081cc] font-bold">
                     {currentUser.initials}
                   </AvatarFallback>
                 </Avatar>
