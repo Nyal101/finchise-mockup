@@ -1,4 +1,4 @@
-// File: /Users/siyanpatel/Documents/GitHub/franchise-ai-mockup/src/app/insights/FinancialReports/page.tsx
+// File: /Users/nyalpatel/Desktop/FranchiseAIMockup/src/app/insights/FinancialReports/page.tsx
 import * as entry from '../../../../../src/app/insights/FinancialReports/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

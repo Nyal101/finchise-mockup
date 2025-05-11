@@ -56,7 +56,7 @@ export function VerticalNavBar({
 
   // Define the default/first page for each section
   const sectionDefaultPages = {
-    dashboard: "/Dashboard",
+    dashboard: "/dashboard",
     insights: "/insights/FinancialReports",
     accounting: "/accounting/Purchases",
     settings: "/settings/Suppliers",

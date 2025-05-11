@@ -74,7 +74,7 @@ export function HorizontalNavBar({
     dashboard: [
       { 
         name: "Dashboard", 
-        href: "/Dashboard", 
+        href: "/dashboard", 
         icon: Home 
       },
     ],
@@ -91,7 +91,7 @@ export function HorizontalNavBar({
       },
       { 
         name: "AI Chatbot", 
-        href: "/insights/Chatbot", 
+        href: "/insights/chatbot", 
         icon: MessageSquare, 
         beta: true 
       },
