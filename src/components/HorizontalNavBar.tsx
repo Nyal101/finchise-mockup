@@ -15,7 +15,6 @@ import {
   User,
   Zap,
   LucideIcon,
-  Bell,
   LogOut,
   UserCircle,
   KeyRound,
@@ -35,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { NotificationsPopover } from "@/components/NotificationsPopover"
 
 interface HorizontalNavBarProps extends React.HTMLAttributes<HTMLDivElement> {
   activeSection: string;
@@ -411,11 +411,8 @@ export function HorizontalNavBar({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Notifications bell */}
-          <Button variant="ghost" size="icon" className="relative bg-transparent text-white hover:bg-white/20">
-            <Bell className="h-5 w-5 text-white" />
-            <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-          </Button>
+          {/* Notifications */}
+          <NotificationsPopover />
 
           {/* User profile dropdown */}
           <DropdownMenu>
