@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
   CreditCard,
@@ -15,34 +14,23 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface VerticalNavBarProps extends React.HTMLAttributes<HTMLDivElement> {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  onCollapseChange?: (collapsed: boolean) => void;
 }
 
 export function VerticalNavBar({ 
   className, 
   activeSection, 
-  onSectionChange 
+  onSectionChange,
+  onCollapseChange
 }: VerticalNavBarProps) {
-  const [selectedStore, setSelectedStore] = React.useState<string>("Dominos")
   const [isCollapsed, setIsCollapsed] = React.useState(true)
   const router = useRouter()
-
-  const stores = [
-    { id: "dominos", name: "Dominos", logo: "/logos/dominos.png" },
-    { id: "gdk", name: "GDK", logo: "/logos/gdk.webp" },
-    { id: "costa", name: "Costa", logo: "/logos/costa.png" },
-  ]
 
   const sections = [
     { id: "dashboard", name: "Dashboard", icon: Home },
@@ -51,8 +39,6 @@ export function VerticalNavBar({
     { id: "settings", name: "Settings", icon: Settings },
     { id: "subscription", name: "Subscription", icon: Store },
   ]
-
-  const currentStore = stores.find(s => s.name === selectedStore)!
 
   // Define the default/first page for each section
   const sectionDefaultPages = {
@@ -64,7 +50,11 @@ export function VerticalNavBar({
   }
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    const newCollapsedState = !isCollapsed;
+    setIsCollapsed(newCollapsedState);
+    if (onCollapseChange) {
+      onCollapseChange(newCollapsedState);
+    }
   };
 
   const handleSectionClick = (sectionId: string) => {
@@ -80,67 +70,13 @@ export function VerticalNavBar({
   return (
     <div 
       className={cn(
-        "min-h-screen bg-white border-r transition-all duration-300 ease-in-out",
+        "bg-gray-100 border-r transition-all duration-300 ease-in-out fixed top-16 left-0 h-[calc(100vh-4rem)]",
         isCollapsed ? "w-20" : "w-60",
         className
       )}
     >
-      <div className="flex flex-col h-screen">
-        {/* Header with logo and toggle button */}
-        <div className="p-4 flex items-center justify-between">
-          {/* Store selector */}
-          <DropdownMenu>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="rounded-full p-0 h-9 w-9 overflow-hidden"
-                    >
-                      <Image
-                        src={currentStore.logo}
-                        alt={currentStore.name}
-                        width={35}
-                        height={35}
-                        className="rounded-full object-cover"
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="right" className={isCollapsed ? "block" : "hidden"}>
-                  {currentStore.name}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <DropdownMenuContent align="center">
-              {stores.map((store) => (
-                <DropdownMenuItem
-                  key={store.id}
-                  onClick={() => setSelectedStore(store.name)}
-                  className="flex items-center gap-2"
-                >
-                  <Image
-                    src={store.logo}
-                    alt={store.name + " logo"}
-                    width={24}
-                    height={24}
-                    className="rounded-full"
-                  />
-                  <span>{store.name}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          {/* Store name when expanded */}
-          {!isCollapsed && (
-            <span className="text-sm font-medium truncate flex-1 mx-2">{currentStore.name}</span>
-          )}
-        </div>
-
-        <Separator className="my-3" />
+      <div className="flex flex-col h-full">
+        {/* Remove the header with logo/franchise selector */}
 
         {/* Navigation items */}
         <div className="px-2 py-4 flex-1 overflow-y-auto">
@@ -159,7 +95,7 @@ export function VerticalNavBar({
                           className={cn(
                             "flex items-center h-10 px-3 w-full relative",
                             isCollapsed ? "justify-center px-0" : "justify-start gap-3",
-                            isActive ? "bg-gray-100" : ""
+                            isActive ? "bg-gray-200" : ""
                           )}
                           onClick={() => handleSectionClick(section.id)}
                         >

@@ -25,8 +25,7 @@ const InvoicePdfPreviewer: React.FC<InvoicePdfPreviewerProps> = ({ pdfUrl, invoi
   }, [pdfUrl]);
 
   return (
-    <div className="border rounded-lg bg-white h-full flex flex-col shadow-sm w-full max-w-full">
-      <div className="p-4 border-b font-semibold">Invoice PDF Preview</div>
+    <div className="h-full flex flex-col w-full max-w-full">
       <div className="flex-1 flex items-center justify-center bg-gray-50">
         {!pdfUrl ? (
           <span className="text-muted-foreground text-center">Select an invoice to preview its PDF</span>

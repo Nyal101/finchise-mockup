@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import {
   BarChart2,
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { NotificationsPopover } from "@/components/NotificationsPopover"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface HorizontalNavBarProps extends React.HTMLAttributes<HTMLDivElement> {
   activeSection: string;
@@ -61,6 +63,7 @@ export function HorizontalNavBar({
   const [isDragging, setIsDragging] = React.useState(false)
   const [files, setFiles] = React.useState<File[]>([])
   const fileUploadRef = React.useRef<HTMLInputElement>(null)
+  const [selectedStore, setSelectedStore] = React.useState<string>("Dominos")
   
   // Mock user data - in a real app, this would come from authentication
   const [currentUser] = React.useState<User>({
@@ -68,6 +71,14 @@ export function HorizontalNavBar({
     email: "john.doe@example.com",
     initials: "JD"
   })
+
+  const stores = [
+    { id: "dominos", name: "Dominos", logo: "/logos/dominos.png" },
+    { id: "gdk", name: "GDK", logo: "/logos/gdk.webp" },
+    { id: "costa", name: "Costa", logo: "/logos/costa.png" },
+  ]
+
+  const currentStore = stores.find(s => s.name === selectedStore)!
 
   // Define all navigation items organized by section
   const navItems: Record<string, NavItem[]> = {
@@ -294,39 +305,90 @@ export function HorizontalNavBar({
   }
 
   return (
-    <div className={cn("border-b", className)} style={{ backgroundColor: '#0081cc' }}>
+    <div className={cn("border-b w-full fixed top-0 z-10", className)} style={{ backgroundColor: '#0081cc' }}>
       <div className="flex h-16 items-center px-4 justify-between">
-        {/* Left side - navigation tabs */}
-        <nav className="flex items-center space-x-4 lg:space-x-6 overflow-x-auto">
-          {activeItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <div key={item.href} className="relative flex flex-col items-center">
-                <Link 
-                  href={item.href} 
-                  passHref 
-                  className="relative"
-                >
-                  <Button
-                    variant={isActive ? "secondary" : "ghost"}
-                    className={cn(
-                      "flex items-center justify-center px-4",
-                      isActive 
-                        ? "text-white font-bold bg-[#0081cc] hover:bg-[#0071b3]"
-                        : "text-white hover:text-white hover:bg-[#0071b3]"
-                    )}
+        {/* Left side - franchise selector and navigation tabs */}
+        <div className="flex items-center">
+          {/* Franchise selector */}
+          <div className="mr-6">
+            <DropdownMenu>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="rounded-full p-0 h-9 w-9 overflow-hidden bg-white"
+                      >
+                        <Image
+                          src={currentStore.logo}
+                          alt={currentStore.name}
+                          width={35}
+                          height={35}
+                          className="rounded-full object-cover"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {currentStore.name}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <DropdownMenuContent align="center">
+                {stores.map((store) => (
+                  <DropdownMenuItem
+                    key={store.id}
+                    onClick={() => setSelectedStore(store.name)}
+                    className="flex items-center gap-2"
                   >
-                    <item.icon className="mr-2 h-4 w-4 text-white" />
-                    <span>{item.name}</span>
-                    {item.beta && (
-                      <span className="ml-2 text-xs text-white/80 font-normal">(beta)</span>
-                    )}
-                  </Button>
-                </Link>
-              </div>
-            );
-          })}
-        </nav>
+                    <Image
+                      src={store.logo}
+                      alt={store.name + " logo"}
+                      width={24}
+                      height={24}
+                      className="rounded-full"
+                    />
+                    <span>{store.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Navigation tabs */}
+          <nav className="flex items-center space-x-4 lg:space-x-6 overflow-x-auto">
+            {activeItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <div key={item.href} className="relative flex flex-col items-center">
+                  <Link 
+                    href={item.href} 
+                    passHref 
+                    className="relative"
+                  >
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      className={cn(
+                        "flex items-center justify-center px-4",
+                        isActive 
+                          ? "text-white font-bold bg-[#0081cc] hover:bg-[#0071b3]"
+                          : "text-white hover:text-white hover:bg-[#0071b3]"
+                      )}
+                    >
+                      <item.icon className="mr-2 h-4 w-4 text-white" />
+                      <span>{item.name}</span>
+                      {item.beta && (
+                        <span className="ml-2 text-xs text-white/80 font-normal">(beta)</span>
+                      )}
+                    </Button>
+                  </Link>
+                </div>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* Right side - notifications and user profile */}
         <div className="flex items-center space-x-4">

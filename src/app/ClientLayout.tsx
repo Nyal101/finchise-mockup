@@ -5,21 +5,28 @@ import { HorizontalNavBar } from "@/components/HorizontalNavBar";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const [activeSection, setActiveSection] = useState<string>("dashboard");
+  const [isNavCollapsed, setIsNavCollapsed] = useState<boolean>(true);
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
   };
 
+  const handleNavCollapseChange = (collapsed: boolean) => {
+    setIsNavCollapsed(collapsed);
+  };
+
   return (
-    <div className="flex min-h-screen">
+    <div className="min-h-screen pt-16">
+      <HorizontalNavBar activeSection={activeSection} />
       <VerticalNavBar 
-        className="border-r bg-[#ffffff]"
         activeSection={activeSection}
         onSectionChange={handleSectionChange}
+        onCollapseChange={handleNavCollapseChange}
       />
-      <div className="flex-1 flex flex-col">
-        <HorizontalNavBar activeSection={activeSection} />
-        <main className="flex-1 p-6">
+      <div 
+        className={`transition-all duration-300 ease-in-out pt-4 ${isNavCollapsed ? 'ml-20' : 'ml-60'}`}
+      >
+        <main className="p-6">
           {children}
         </main>
       </div>
