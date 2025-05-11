@@ -239,7 +239,7 @@ export function HorizontalNavBar({
   navItems.subscription = [
     { 
       name: "Subscription and Billing", 
-      href: "/settings/SubscriptionBilling", 
+      href: "/settings/Subscription", 
       icon: CreditCard 
     },
   ];
