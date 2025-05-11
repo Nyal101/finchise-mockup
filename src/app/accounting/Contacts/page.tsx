@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, RefreshCw, Check, Filter, AlertCircle } from "lucide-react"
+import { Plus, Search, RefreshCw, Check, Filter } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -230,42 +230,6 @@ export default function ContactsPage() {
     }
   ]
 
-  const pendingApprovals = [
-    {
-      id: "PA1",
-      type: "new_contact",
-      name: "Eden Farm",
-      company: "Suppliers",
-      createdBy: "Invoice Agent 1",
-      createdAt: "2024-03-21",
-      defaultAccountCode: "5001",
-      balance: 3997.25,
-      status: "pending_approval"
-    },
-    {
-      id: "PA2",
-      type: "new_account_code",
-      contactName: "Jestic",
-      company: "Suppliers",
-      accountCode: "5001",
-      createdBy: "Invoice Agent 2",
-      createdAt: "2024-03-21",
-      balance: 112.50,
-      status: "pending_approval"
-    },
-    {
-      id: "PA3",
-      type: "new_contact",
-      name: "Leaflet",
-      company: "Marketing",
-      createdBy: "Invoice Agent 1",
-      createdAt: "2024-03-20",
-      defaultAccountCode: "6203",
-      balance: 5293.96,
-      status: "pending_approval"
-    }
-  ]
-
   const handleSync = async () => {
     setIsSyncing(true)
     // Implement Xero sync logic here
@@ -345,16 +309,6 @@ export default function ContactsPage() {
     setSelectedContactIds((ids) =>
       ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id]
     )
-  }
-
-  const handleApprove = (approvalId: string) => {
-    // Implement approval logic here
-    console.log("Approving:", approvalId)
-  }
-
-  const handleReject = (approvalId: string) => {
-    // Implement rejection logic here
-    console.log("Rejecting:", approvalId)
   }
 
   return (
@@ -451,52 +405,6 @@ export default function ContactsPage() {
           </Dialog>
         </div>
       </div>
-
-      {/* Pending Approvals Section */}
-      {pendingApprovals.length > 0 && (
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertCircle className="h-4 w-4 text-yellow-500" />
-              Pending Approvals
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="py-2">
-            <div className="space-y-2">
-              {pendingApprovals.map((approval) => (
-                <div key={approval.id} className="flex items-center justify-between p-2 border rounded-md">
-                  <div className="flex-1">
-                    {approval.type === "new_contact" ? (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="default" className="whitespace-nowrap">NEW CONTACT</Badge>
-                        <span className="font-medium">{approval.name}</span>
-                        <span className="text-muted-foreground text-sm">• {approval.company}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="whitespace-nowrap">NEW DEFAULT ACCOUNT CODE</Badge>
-                        <span className="font-medium">{approval.contactName}</span>
-                        <span className="text-muted-foreground text-sm">→</span>
-                        <Badge variant="outline">
-                          {accountCodes.find(code => code.id === approval.accountCode)?.name || approval.accountCode}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <Button variant="outline" size="sm" onClick={() => handleReject(approval.id)}>
-                      Reject
-                    </Button>
-                    <Button size="sm" onClick={() => handleApprove(approval.id)}>
-                      Approve
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
