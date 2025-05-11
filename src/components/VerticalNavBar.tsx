@@ -159,13 +159,13 @@ export function VerticalNavBar({
                           className={cn(
                             "flex items-center h-10 px-3 w-full relative",
                             isCollapsed ? "justify-center px-0" : "justify-start gap-3",
-                            isActive ? "border-r-4 border-orange-500 bg-gray-100" : ""
+                            isActive ? "bg-gray-100" : ""
                           )}
                           onClick={() => handleSectionClick(section.id)}
                         >
-                          <Icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-orange-500" : "")} />
+                          <Icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-black" : "")} />
                           {!isCollapsed && (
-                            <span className="text-sm font-medium">
+                            <span className={cn("text-sm", isActive ? "font-bold text-black" : "font-medium")}>
                               {section.name}
                             </span>
                           )}

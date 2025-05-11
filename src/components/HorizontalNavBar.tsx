@@ -311,7 +311,7 @@ export function HorizontalNavBar({
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
                       "flex items-center justify-center px-4",
-                      isActive ? "text-orange-500 font-medium border-orange-500 border-b-2 bg-gray-100" : ""
+                      isActive ? "text-black font-bold bg-gray-100" : ""
                     )}
                   >
                     <item.icon className="mr-2 h-4 w-4" />
