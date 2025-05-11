@@ -2,8 +2,7 @@
 
 import * as React from "react"
 import { format } from "date-fns"
-import { FileUp, Mail, Search, ChevronDown, ChevronUp, Maximize2, Minimize2 } from "lucide-react"
-import { DateRangePicker } from "@/components/date-range-picker"
+import { FileUp, Mail, Search, Maximize2, Minimize2 } from "lucide-react"
 import type { InvoiceData, LineItem, StoreAllocation } from "./components/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,7 +26,6 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent,
 } from "@/components/ui/tabs"
 import InvoicePdfPreviewer from "./components/InvoicePdfPreviewer";
 import LineItemsSection from "./components/LineItemsSection";
@@ -36,9 +34,6 @@ import NotesSection from "./components/NotesSection";
 import StoreAllocationSection from "./components/StoreAllocationSection";
 import InvoiceBot from "./components/InvoiceBot";
 import { invoices } from "./invoiceData";
-import { Card, CardContent } from "@/components/ui/card"
-
-// Removed unused Card, CardContent imports
 
 export default function PurchasesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -153,22 +148,8 @@ export default function PurchasesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Purchases</h1>
-        <DateRangePicker />
-      </div>
-
-      {/* Tabs and actions row */}
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        {/* Tabs (All Invoices, Archived, Deleted) */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-w-[320px]">
-          <TabsList>
-            <TabsTrigger value="all">All Invoices ({allCount})</TabsTrigger>
-            <TabsTrigger value="archived">Archived ({archivedCount})</TabsTrigger>
-            <TabsTrigger value="deleted">Deleted ({deletedCount})</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        {/* Actions: Email and Upload button */}
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm flex items-center gap-1">
             <Mail className="h-4 w-4" /> invoices@franchiseai.com
@@ -180,11 +161,22 @@ export default function PurchasesPage() {
       </div>
 
       {/* Main content area - Three equal columns layout */}
-      <div className="flex h-[calc(100vh-220px)] w-full gap-4">
+      <div className="flex h-[calc(100vh-140px)] w-full gap-4">
         {/* Left Column: Invoice List (1/3 width) */}
-        <div className="w-1/3 bg-white rounded-lg border shadow-sm overflow-hidden">
+        <div className="w-1/3 bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col">
+          {/* Tabs for invoice filtering */}
+          <div className="px-4 pt-4 pb-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="all" className="flex-1">All ({allCount})</TabsTrigger>
+                <TabsTrigger value="archived" className="flex-1">Archived ({archivedCount})</TabsTrigger>
+                <TabsTrigger value="deleted" className="flex-1">Deleted ({deletedCount})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          
           {/* Search and Filter Bar */}
-          <div className="p-4 border-b">
+          <div className="px-4 pb-4 border-b">
             <div className="relative mb-4">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -327,7 +319,7 @@ export default function PurchasesPage() {
           </div>
 
           {/* Invoice Table */}
-          <div className="overflow-auto h-[calc(100%-110px)]">
+          <div className="overflow-auto flex-1">
             <Table>
               <TableHeader className="sticky top-0 bg-white z-10">
                 <TableRow>
@@ -476,7 +468,7 @@ export default function PurchasesPage() {
               <div className={`bg-white rounded-lg border shadow-sm overflow-hidden mb-4 transition-all duration-300 ease-in-out ${isPdfExpanded ? 'h-[66.6%]' : 'h-[42px]'}`}>
                 <div className="px-4 py-3 border-b font-medium text-sm flex justify-between items-center cursor-pointer" 
                      onClick={() => setIsPdfExpanded(!isPdfExpanded)}>
-                  <span>Invoice PDF Preview</span>
+                  <span>Invoice PDF/CSV Preview</span>
                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => {
                     e.stopPropagation();
                     setIsPdfExpanded(!isPdfExpanded);
