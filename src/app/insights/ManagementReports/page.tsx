@@ -1,14 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { BarChart3, Download, Filter, LineChart, PieChart, ArrowUp, ArrowDown, MoreHorizontal, BarChart2, ArrowRight, ChevronDown, FileSpreadsheet } from "lucide-react"
+import { BarChart3, Download, Filter, LineChart, PieChart } from "lucide-react"
 import { DateRangePicker } from "@/components/date-range-picker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 
 export default function ReportsPage() {
   return (
@@ -25,7 +23,6 @@ export default function ReportsPage() {
             <TabsTrigger value="customers">Customers</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="kpi">KPIs</TabsTrigger>
           </TabsList>
           
           <div className="flex items-center gap-2">
@@ -220,267 +217,6 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        {/* KPI Tab Content */}
-        <TabsContent value="kpi" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="space-y-1">
-              <h2 className="text-2xl font-bold">KPI Report</h2>
-              <p className="text-sm text-muted-foreground">Performance metrics across all stores</p>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs py-1 px-3 rounded-full">
-                  7 of 30 companies selected
-                </Badge>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs py-1 px-3 rounded-full">
-                  British Pound (£)
-                </Badge>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs py-1 px-3 rounded-full">
-                  May 25, compared to 3 periods
-                </Badge>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" className="rounded-full">
-              <BarChart2 className="h-4 w-4 mr-2" />
-              Change
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <BarChart2 className="h-4 w-4 mr-2" />
-              Budget
-            </Button>
-            <Button variant="secondary" size="sm" className="rounded-full">
-              <MoreHorizontal className="h-4 w-4 mr-2" />
-              Total
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Average
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <BarChart2 className="h-4 w-4 mr-2" />
-              Percent of Sales
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Compact View
-            </Button>
-          </div>
-          
-          <Card>
-            <CardHeader className="pb-0">
-              <CardTitle>Revenue vs Expenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full bg-gray-100 rounded-md flex items-center justify-center">
-                <BarChart3 className="h-16 w-16 text-muted-foreground" />
-                <p className="ml-2 text-muted-foreground">Revenue vs Expenses Chart (Placeholder)</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="w-[200px]"></TableHead>
-                    <TableHead className="text-right">Feb 25</TableHead>
-                    <TableHead className="text-right">Mar 25</TableHead>
-                    <TableHead className="text-right">Apr 25</TableHead>
-                    <TableHead className="text-right">May 25</TableHead>
-                    <TableHead className="text-right font-bold">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Total Revenue</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-auto p-0 font-normal">
-                            £1,444,790.48
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Export to Excel</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                    <TableCell className="text-right">£1,616,035.06</TableCell>
-                    <TableCell className="text-right">£1,506,905.98</TableCell>
-                    <TableCell className="text-right">£259,183.50</TableCell>
-                    <TableCell className="text-right font-medium">£4,826,915.02</TableCell>
-                  </TableRow>
-                  
-                  <TableRow>
-                    <TableCell className="font-medium">Gross Profit</TableCell>
-                    <TableCell className="text-right">£540,539.93</TableCell>
-                    <TableCell className="text-right">£578,362.22</TableCell>
-                    <TableCell className="text-right">£550,373.23</TableCell>
-                    <TableCell className="text-right">£198,772.39</TableCell>
-                    <TableCell className="text-right font-medium">£1,868,047.77</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Total Expenses</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-auto p-0 font-normal">
-                        £507,164.42
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-right">£639,182.23</TableCell>
-                    <TableCell className="text-right">£471,636.90</TableCell>
-                    <TableCell className="text-right">£145,076.76</TableCell>
-                    <TableCell className="text-right font-medium">£1,763,040.31</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Cash in Bank</TableCell>
-                    <TableCell className="text-right">£609,674.44</TableCell>
-                    <TableCell className="text-right">£1,880,690.26</TableCell>
-                    <TableCell className="text-right">£2,348,368.25</TableCell>
-                    <TableCell className="text-right">£2,214,504.61</TableCell>
-                    <TableCell className="text-right font-medium">£2,214,504.61</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Gross Profit Margin</TableCell>
-                    <TableCell className="text-right">37.41%</TableCell>
-                    <TableCell className="text-right">35.79%</TableCell>
-                    <TableCell className="text-right">36.55%</TableCell>
-                    <TableCell className="text-right">76.69%</TableCell>
-                    <TableCell className="text-right font-medium">38.71%</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Operating Profit Margin</TableCell>
-                    <TableCell className="text-right">2.31%</TableCell>
-                    <TableCell className="text-right">-3.76%</TableCell>
-                    <TableCell className="text-right">5.23%</TableCell>
-                    <TableCell className="text-right">20.72%</TableCell>
-                    <TableCell className="text-right font-medium">2.18%</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Net Profit Margin</TableCell>
-                    <TableCell className="text-right">2.31%</TableCell>
-                    <TableCell className="text-right">-3.76%</TableCell>
-                    <TableCell className="text-right">5.23%</TableCell>
-                    <TableCell className="text-right">20.72%</TableCell>
-                    <TableCell className="text-right font-medium">2.18%</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">AP Outstanding</TableCell>
-                    <TableCell className="text-right">£753,699.46</TableCell>
-                    <TableCell className="text-right">£854,594.30</TableCell>
-                    <TableCell className="text-right">£687,188.41</TableCell>
-                    <TableCell className="text-right">£644,385.41</TableCell>
-                    <TableCell className="text-right font-medium">£644,385.41</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">AR Outstanding</TableCell>
-                    <TableCell className="text-right">£175,733.07</TableCell>
-                    <TableCell className="text-right">£178,340.39</TableCell>
-                    <TableCell className="text-right">£1,151,258.53</TableCell>
-                    <TableCell className="text-right">£1,461,073.37</TableCell>
-                    <TableCell className="text-right font-medium">£1,461,073.37</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Days Sales Outstanding</TableCell>
-                    <TableCell className="text-right">3.41</TableCell>
-                    <TableCell className="text-right">3.42</TableCell>
-                    <TableCell className="text-right">22.93</TableCell>
-                    <TableCell className="text-right">174.75</TableCell>
-                    <TableCell className="text-right font-medium">51.13</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Activity Ratio</TableCell>
-                    <TableCell className="text-right">1.43</TableCell>
-                    <TableCell className="text-right">1.45</TableCell>
-                    <TableCell className="text-right">1.39</TableCell>
-                    <TableCell className="text-right">0.23</TableCell>
-                    <TableCell className="text-right font-medium">1.12</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Return on Equity</TableCell>
-                    <TableCell className="text-right">3.30%</TableCell>
-                    <TableCell className="text-right">-5.45%</TableCell>
-                    <TableCell className="text-right">7.26%</TableCell>
-                    <TableCell className="text-right">4.77%</TableCell>
-                    <TableCell className="text-right font-medium">2.47%</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Working Capital</TableCell>
-                    <TableCell className="text-right">£1,138,774.99</TableCell>
-                    <TableCell className="text-right">£3,113,709.24</TableCell>
-                    <TableCell className="text-right">£3,267,119.55</TableCell>
-                    <TableCell className="text-right">£3,335,132.84</TableCell>
-                    <TableCell className="text-right font-medium">£2,708,684.16</TableCell>
-                  </TableRow>
-                  
-                  <TableRow className="border-b-0">
-                    <TableCell className="font-medium">Working Capital Ratio</TableCell>
-                    <TableCell className="text-right">121.97%</TableCell>
-                    <TableCell className="text-right">159.76%</TableCell>
-                    <TableCell className="text-right">165.31%</TableCell>
-                    <TableCell className="text-right">172.16%</TableCell>
-                    <TableCell className="text-right font-medium">172.16%</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-          
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" />
-              Remove Eliminated Accounts
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>Export to Excel</DropdownMenuItem>
-                <DropdownMenuItem>Export to PDF</DropdownMenuItem>
-                <DropdownMenuItem>Export to CSV</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Button variant="outline" size="sm">
-              Create custom report
-            </Button>
-            
-            <Button variant="outline" size="sm">
-              Add to report pack
-            </Button>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   )
@@ -514,14 +250,8 @@ function MetricCard({ title, value, trend, trendType, description }: MetricCardP
           >
             {trend}
           </span>
-          {trendType === "positive" ? (
-            <ArrowUp className="h-3 w-3 text-green-500 ml-1" />
-          ) : trendType === "negative" ? (
-            <ArrowDown className="h-3 w-3 text-red-500 ml-1" />
-          ) : null}
-          <span className="text-xs text-muted-foreground ml-1">
-            {description}
-          </span>
+          <Separator orientation="vertical" className="mx-2 h-4" />
+          <span className="text-xs text-muted-foreground">{description}</span>
         </div>
       </CardContent>
     </Card>

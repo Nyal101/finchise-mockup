@@ -169,6 +169,53 @@ const mockFinancialData: FinancialData = {
   ],
 };
 
+// Calculate totals
+const calculateTotals = (data: FinancialData) => {
+  let turnoverTotal = 0;
+  let costOfSalesTotal = 0;
+  let grossProfit = 0;
+  let administrativeTotal = 0;
+  let operatingProfit = 0;
+  
+  // Convert string values to numbers for calculation
+  Object.entries(data.turnover[0].values).forEach(([key, value]) => {
+    if (value !== "-" && key !== "total") {
+      turnoverTotal += parseFloat(value.replace(/,/g, ""));
+    }
+  });
+  
+  data.costOfSales.forEach((item) => {
+    Object.entries(item.values).forEach(([key, value]) => {
+      if (value !== "-" && key !== "total") {
+        // Handle negative values in parentheses
+        const numValue = value.includes("(") 
+          ? -parseFloat(value.replace(/[(),]/g, ""))
+          : parseFloat(value.replace(/,/g, ""));
+        costOfSalesTotal += numValue;
+      }
+    });
+  });
+  
+  data.administrative.forEach((item) => {
+    Object.entries(item.values).forEach(([key, value]) => {
+      if (value !== "-" && key !== "total") {
+        administrativeTotal += parseFloat(value.replace(/,/g, ""));
+      }
+    });
+  });
+  
+  grossProfit = turnoverTotal - costOfSalesTotal;
+  operatingProfit = grossProfit - administrativeTotal;
+  
+  return {
+    turnoverTotal: turnoverTotal.toLocaleString("en-GB", { maximumFractionDigits: 2 }),
+    costOfSalesTotal: costOfSalesTotal.toLocaleString("en-GB", { maximumFractionDigits: 2 }),
+    grossProfit: grossProfit.toLocaleString("en-GB", { maximumFractionDigits: 2 }),
+    administrativeTotal: administrativeTotal.toLocaleString("en-GB", { maximumFractionDigits: 2 }),
+    operatingProfit: operatingProfit.toLocaleString("en-GB", { maximumFractionDigits: 2 }),
+  };
+};
+
 export default function FinancialReportsPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(2025, 0, 1), // January 1, 2025
@@ -177,6 +224,8 @@ export default function FinancialReportsPage() {
   const [compareWith, setCompareWith] = useState<string>("none");
   const [trackingCategory, setTrackingCategory] = useState<string>("5 Store");
   const [showDateSelector, setShowDateSelector] = useState<boolean>(false);
+
+  const totals = calculateTotals(mockFinancialData);
 
   return (
     <main className="p-8">
@@ -385,11 +434,11 @@ export default function FinancialReportsPage() {
             <TableRow className="font-bold border-t-2 border-gray-300 bg-gray-50">
               <TableCell>Operating Profit</TableCell>
               {locations.map((loc) => (
-                <TableCell key={loc.id} className="text-right text-green-700">
-                  {loc.id === "borough-green" ? "(40.88)" : "42,917.52"}
+                <TableCell key={loc.id} className="text-right">
+                  {loc.id === "borough-green" ? "-" : "45,228.15"}
                 </TableCell>
               ))}
-              <TableCell className="text-right text-green-700">193,416.84</TableCell>
+              <TableCell className="text-right">{totals.operatingProfit}</TableCell>
             </TableRow>
             
             {/* Profit on Ordinary Activities */}

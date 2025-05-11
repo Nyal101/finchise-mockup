@@ -60,7 +60,7 @@ export function VerticalNavBar({
     insights: "/insights/FinancialReports",
     accounting: "/accounting/Purchases",
     settings: "/settings/Suppliers",
-    subscription: "/settings/SubscriptionBilling",
+    subscription: "/settings/Subscription",
   }
 
   const toggleCollapse = () => {

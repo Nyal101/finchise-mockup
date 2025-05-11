@@ -11,3 +11,5 @@ export default function SubscriptionPage() {
     </div>
   );
 }
+
+// TODO: Add a table of subscriptions with the following columns:
