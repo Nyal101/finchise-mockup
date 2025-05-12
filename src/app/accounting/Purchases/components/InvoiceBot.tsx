@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Bot, Send, User } from 'lucide-react'
+import { Bot, Send } from 'lucide-react'
 
 type InvoiceBotProps = {
   invoiceNumber: string
@@ -50,7 +50,7 @@ const InvoiceBot: React.FC<InvoiceBotProps> = ({
       timestamp: new Date()
     }
     setMessages([initialMessage])
-  }, [invoiceNumber, invoiceStatus])
+  }, [invoiceNumber, invoiceStatus, generateInitialMessage])
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
