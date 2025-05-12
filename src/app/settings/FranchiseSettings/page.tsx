@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import PurchaseInvoiceSettings from "./PurchaseInvoiceSettings"
 import SalesInvoiceSettings from "./SalesInvoiceSettings"
 import POSSettings from "./POSSettings"
+import DOMPayrollSettings from "./DOMPayrollSettings"
 
 export default function FranchiseSettingsPage() {
   return (
@@ -18,6 +19,7 @@ export default function FranchiseSettingsPage() {
           <TabsTrigger value="purchase">Purchase Invoice Settings</TabsTrigger>
           <TabsTrigger value="sales">Sales Invoice Settings</TabsTrigger>
           <TabsTrigger value="pos">POS Settings</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="purchase" className="space-y-4">
@@ -30,6 +32,10 @@ export default function FranchiseSettingsPage() {
         
         <TabsContent value="pos" className="space-y-4">
           <POSSettings />
+        </TabsContent>
+
+        <TabsContent value="payroll" className="space-y-4">
+          <DOMPayrollSettings />
         </TabsContent>
       </Tabs>
     </div>
