@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Bot, Send } from 'lucide-react'
@@ -26,7 +26,7 @@ const InvoiceBot: React.FC<InvoiceBotProps> = ({
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
 
-  const generateInitialMessage = () => {
+  const generateInitialMessage = useCallback(() => {
     switch (invoiceStatus) {
       case "AI Processed":
         return `This invoice (#${invoiceNumber}) has been automatically processed. All data has been extracted and validated. Feel free to ask me about any details or make changes if needed.`
@@ -39,7 +39,7 @@ const InvoiceBot: React.FC<InvoiceBotProps> = ({
       default:
         return `I'm here to help with invoice #${invoiceNumber}. What would you like to know about this document?`
     }
-  }
+  }, [invoiceNumber, invoiceStatus])
 
   useEffect(() => {
     // Reset messages when invoice changes
