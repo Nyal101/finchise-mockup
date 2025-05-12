@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PayrollSummary from './components/PayrollSummary';
-import PayrollRuns from './components/PayrollRuns';
-import EmployeeManagement from './components/EmployeeManagement';
+import PayrollSummary from './PayrollSummary';
+import PayrollRuns from './PayrollRuns';
+import EmployeeManagement from './EmployeeManagement';
 
 export default function PayrollPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>('March 2025');
