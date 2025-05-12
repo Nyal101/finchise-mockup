@@ -116,60 +116,6 @@ interface Company {
 // Mock data for chart of accounts
 const mockAccounts: Account[] = [
   {
-    id: "POPAT-KINGS",
-    code: "",
-    name: "POPAT KINGS HILL CURRENT",
-    type: "Bank",
-    taxRate: "No VAT",
-    reportCode: "ASS Assets",
-    selected: false
-  },
-  {
-    id: "POPAT-BARMING",
-    code: "",
-    name: "POPAT BARMING CURRENT",
-    type: "Bank",
-    taxRate: "No VAT",
-    reportCode: "ASS Assets",
-    selected: false
-  },
-  {
-    id: "POPAT-LEISURE",
-    code: "",
-    name: "POPAT LEISURE LTD - SNODLAND",
-    type: "Bank",
-    taxRate: "No VAT",
-    reportCode: "ASS Assets",
-    selected: false
-  },
-  {
-    id: "POPAT-LOOSE",
-    code: "",
-    name: "POPAT LOOSE CURRENT",
-    type: "Bank",
-    taxRate: "No VAT",
-    reportCode: "ASS Assets",
-    selected: false
-  },
-  {
-    id: "POPAT-RESERVE",
-    code: "",
-    name: "POPAT RESERVE",
-    type: "Bank",
-    taxRate: "No VAT",
-    reportCode: "ASS Assets",
-    selected: false
-  },
-  {
-    id: "POPAT-MTC",
-    code: "",
-    name: "POPAT MTC CURRENT",
-    type: "Bank",
-    taxRate: "No VAT",
-    reportCode: "ASS Assets",
-    selected: false
-  },
-  {
     id: "0010",
     code: "0010",
     name: "Intangible Asset - Franchise Fee/Goodwill - Cost - b/fwd",

@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, RefreshCw, Check, Filter } from "lucide-react"
+import { Plus, Search, RefreshCw, Filter } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -39,24 +39,21 @@ export default function ContactsPage() {
   const [isSyncing, setIsSyncing] = React.useState<boolean>(false)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [newContactName, setNewContactName] = React.useState("")
-  const [selectedCompanies, setSelectedCompanies] = React.useState<string[]>([])
   const [selectedContactIds, setSelectedContactIds] = React.useState<string[]>([])
   const [contactSearch, setContactSearch] = React.useState("")
   const [selectedCompanyFilter, setSelectedCompanyFilter] = React.useState<string>("all")
   const [selectedAccountCode, setSelectedAccountCode] = React.useState<string>("")
+  const [selectedCompany, setSelectedCompany] = React.useState<string>("")
 
   // Mock data - replace with actual data from your backend
   const companies = [
-    { id: "1", name: "Company A" },
-    { id: "2", name: "Company B" },
-    { id: "3", name: "Company C" },
-    { id: "4", name: "Company D" },
-    { id: "5", name: "Company E" },
-    { id: "6", name: "Company F" },
-    { id: "7", name: "Company G" },
-    { id: "8", name: "Company H" },
-    { id: "9", name: "Company I" },
-    { id: "10", name: "Company J" },
+    { id: "1", name: "Bajs Limited" },
+    { id: "2", name: "Bellam & Co Limited" },
+    { id: "3", name: "Topbake Limited" },
+    { id: "4", name: "R&D Yorkshire Limited" },
+    { id: "5", name: "Dhillon Brothers Limited" },
+    { id: "6", name: "Radas Pizza Ltd" },
+    { id: "7", name: "Nij Enterprises Ltd" },
   ]
 
   const accountCodes = [
@@ -96,7 +93,7 @@ export default function ContactsPage() {
     {
       id: "1",
       name: "1st Waste Management",
-      company: "Waste Management",
+      company: "Bajs Limited",
       lastSynced: "2024-03-20",
       defaultAccountCode: "5001",
       status: "active",
@@ -105,7 +102,7 @@ export default function ContactsPage() {
     {
       id: "2",
       name: "American Express",
-      company: "Payment Processing",
+      company: "Bellam & Co Limited",
       lastSynced: "2024-03-19",
       defaultAccountCode: "4001",
       status: "active",
@@ -114,7 +111,7 @@ export default function ContactsPage() {
     {
       id: "3",
       name: "British Gas",
-      company: "Utilities",
+      company: "Topbake Limited",
       lastSynced: "2024-03-18",
       defaultAccountCode: "6001",
       status: "active",
@@ -123,7 +120,7 @@ export default function ContactsPage() {
     {
       id: "4",
       name: "Business Stream",
-      company: "Utilities",
+      company: "R&D Yorkshire Limited",
       lastSynced: "2024-03-17",
       defaultAccountCode: "6001",
       status: "active",
@@ -132,7 +129,7 @@ export default function ContactsPage() {
     {
       id: "5",
       name: "Cartridge People",
-      company: "Office Supplies",
+      company: "Dhillon Brothers Limited",
       lastSynced: "2024-03-16",
       defaultAccountCode: "6005",
       status: "active",
@@ -141,7 +138,7 @@ export default function ContactsPage() {
     {
       id: "6",
       name: "Castle Water",
-      company: "Utilities",
+      company: "Radas Pizza Ltd",
       lastSynced: "2024-03-15",
       defaultAccountCode: "6001",
       status: "active",
@@ -150,7 +147,7 @@ export default function ContactsPage() {
     {
       id: "7",
       name: "Coca-Cola",
-      company: "Beverages",
+      company: "Nij Enterprises Ltd",
       lastSynced: "2024-03-14",
       defaultAccountCode: "5001",
       status: "active",
@@ -239,26 +236,15 @@ export default function ContactsPage() {
 
   const handleCreateContact = () => {
     // Implement contact creation logic here
-    console.log("Creating contact:", { name: newContactName, companies: selectedCompanies })
+    console.log("Creating contact:", {
+      name: newContactName,
+      company: companies.find(c => c.id === selectedCompany)?.name,
+      defaultAccountCode: selectedAccountCode
+    })
     setIsDialogOpen(false)
     setNewContactName("")
-    setSelectedCompanies([])
-  }
-
-  const toggleCompany = (companyId: string) => {
-    setSelectedCompanies(prev => 
-      prev.includes(companyId)
-        ? prev.filter(id => id !== companyId)
-        : [...prev, companyId]
-    )
-  }
-
-  const toggleAllCompanies = () => {
-    setSelectedCompanies(prev =>
-      prev.length === companies.length
-        ? []
-        : companies.map(company => company.id)
-    )
+    setSelectedCompany("")
+    setSelectedAccountCode("")
   }
 
   // Filter contacts by search and company
@@ -331,7 +317,7 @@ export default function ContactsPage() {
               <DialogHeader>
                 <DialogTitle>Create New Contact</DialogTitle>
                 <DialogDescription>
-                  Add a new contact and select which companies to add it to.
+                  Add a new contact and select a company.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -345,37 +331,19 @@ export default function ContactsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Select Companies</Label>
-                  <div className="relative">
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className="w-full justify-between"
-                      onClick={() => toggleAllCompanies()}
-                    >
-                      {selectedCompanies.length === companies.length
-                        ? "Deselect All"
-                        : "Select All"}
-                    </Button>
-                    <ScrollArea className="h-[200px] w-full rounded-md border mt-2">
-                      <div className="p-2">
-                        {companies.map((company) => (
-                          <div
-                            key={company.id}
-                            className="flex items-center space-x-2 p-2 hover:bg-accent rounded-md cursor-pointer"
-                            onClick={() => toggleCompany(company.id)}
-                          >
-                            <div className="flex h-4 w-4 items-center justify-center rounded-sm border border-primary">
-                              {selectedCompanies.includes(company.id) && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            <span className="text-sm">{company.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
+                  <Label>Company</Label>
+                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label>Default Account Code</Label>
@@ -397,7 +365,7 @@ export default function ContactsPage() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateContact} disabled={!newContactName || selectedCompanies.length === 0 || !selectedAccountCode}>
+                <Button onClick={handleCreateContact} disabled={!newContactName || !selectedCompany || !selectedAccountCode}>
                   Create Contact
                 </Button>
               </DialogFooter>
