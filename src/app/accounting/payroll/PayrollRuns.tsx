@@ -1,217 +1,322 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PlusCircle, ArrowLeft, ArrowRight, ChevronsLeft, ChevronsRight, RefreshCw } from "lucide-react";
 
 interface PayrollRunsProps {
   month: string;
 }
 
-type Employee = {
+type PayrollEntry = {
   id: string;
+  employeeCode: string;
   firstName: string;
   lastName: string;
-  payrollId: string;
-  storeName: string;
   hoursWorked: number;
-  salary: number;
-  tax: number;
-  nationalInsurance: number;
-  netPay: number;
-  category: 'standard' | 'student' | 'cos' | 'deferred';
+  payRate: number;
+  totalPay: number;
+  storeName: string;
+  employingCompany: string;
+  storeId: string;
+  payrollId: string;
+  position: string;
+  payrollType: string;
+  hasError?: boolean;
+  errorType?: 'missing_assignment' | 'invalid_hours' | 'rate_error';
 };
 
 export default function PayrollRuns({ month }: PayrollRunsProps) {
-  // Sample payroll data
-  const [employees, setEmployees] = useState<Employee[]>([
-    { id: '1', firstName: 'Balraj', lastName: 'Singh', payrollId: 'TJ653831D', storeName: 'Dhillon Brands', hoursWorked: 160, salary: 3200, tax: 640, nationalInsurance: 320, netPay: 2240, category: 'standard' },
-    { id: '2', firstName: 'Harpreet', lastName: 'Singh', payrollId: 'TJ468853B', storeName: 'Fans (UK) Ltd', hoursWorked: 160, salary: 2800, tax: 560, nationalInsurance: 280, netPay: 1960, category: 'standard' },
-    { id: '3', firstName: 'Muhammad', lastName: 'Arslan', payrollId: 'ST343016A', storeName: 'R&D Yorkshire', hoursWorked: 160, salary: 3500, tax: 700, nationalInsurance: 350, netPay: 2450, category: 'standard' },
-    { id: '4', firstName: 'Ranjit', lastName: 'Singh', payrollId: 'PW773929B', storeName: 'Dhillon Brands', hoursWorked: 160, salary: 3100, tax: 620, nationalInsurance: 310, netPay: 2170, category: 'standard' },
-    { id: '5', firstName: 'Usman', lastName: 'Arshad', payrollId: 'SN501039D', storeName: 'MDJ Investments', hoursWorked: 80, salary: 1200, tax: 120, nationalInsurance: 60, netPay: 1020, category: 'student' },
-  ]);
-
-  const [activeTab, setActiveTab] = useState('all');
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [payrollEntries, setPayrollEntries] = useState<PayrollEntry[]>([]);
+  const [activeTab, setActiveTab] = useState('processing');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(10);
+  const [totalEntries, setTotalEntries] = useState(196);
+  const [pageSize, setPageSize] = useState(20);
   
-  const filteredEmployees = activeTab === 'all' 
-    ? employees 
-    : employees.filter(employee => employee.category === activeTab);
-
-  const handleExport = (format: 'csv' | 'excel' | 'brightpay') => {
-    // In a real app, this would handle the actual export
-    alert(`Exporting payroll data for ${month} in ${format.toUpperCase()} format`);
+  // Mock fetch payroll data
+  useEffect(() => {
+    const fetchPayrollData = async () => {
+      setIsLoading(true);
+      try {
+        // In a real app, this would be an API call
+        // await fetch('/api/payroll/monthly-data')
+        
+        // Mock data based on screenshot
+        const mockData: PayrollEntry[] = [
+          { id: '1', employeeCode: '', firstName: 'Dilakshana', lastName: 'Sri Prasath', hoursWorked: 2, payRate: 11.44, totalPay: 22.88, storeName: 'BUXTON', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28826', payrollId: 'RZ583465B', position: 'Instore', payrollType: 'Manual Entry' },
+          { id: '2', employeeCode: '', firstName: 'Dilakshana', lastName: 'Sri Prasath', hoursWorked: 2, payRate: 11.44, totalPay: 22.88, storeName: 'BUXTON', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28826', payrollId: 'RZ583465B', position: 'Instore', payrollType: 'Manual Entry' },
+          { id: '3', employeeCode: '', firstName: 'Ajanas', lastName: 'Clinskas', hoursWorked: 2, payRate: 11.54, totalPay: 23.08, storeName: 'PONTEFRACT', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28555', payrollId: 'SN866594C', position: 'TM', payrollType: 'Manual Entry' },
+          { id: '4', employeeCode: '', firstName: 'Joel Mateo', lastName: 'Collison', hoursWorked: 2, payRate: 8.7, totalPay: 17.4, storeName: 'MORECAMBE', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28823', payrollId: 'PK984520A', position: 'TM', payrollType: 'Manual Entry' },
+          { id: '5', employeeCode: '', firstName: 'Jinethra Amitha', lastName: 'Malavi Arachchi', hoursWorked: 2, payRate: 11.54, totalPay: 23.08, storeName: 'PONTEFRACT', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28555', payrollId: 'TK089489B', position: 'TM', payrollType: 'Manual Entry' },
+          { id: '6', employeeCode: '', firstName: 'Laxmi', lastName: 'Khadka', hoursWorked: 2, payRate: 11.44, totalPay: 22.88, storeName: 'MORECAMBE', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28823', payrollId: 'RZ632324A', position: 'TM', payrollType: 'Manual Entry' },
+          { id: '7', employeeCode: '', firstName: 'Carys Ruth', lastName: 'Wilson', hoursWorked: 2, payRate: 11.54, totalPay: 23.08, storeName: 'MORECAMBE', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28823', payrollId: 'PE691734C', position: 'TM', payrollType: 'Manual Entry' },
+          { id: '8', employeeCode: '', firstName: 'Stuart Paul L...', lastName: 'Durkin', hoursWorked: 2, payRate: 11.54, totalPay: 23.08, storeName: 'PONTEFRACT', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28555', payrollId: 'JR604600A', position: 'TM', payrollType: 'Manual Entry' },
+          { id: '9', employeeCode: '', firstName: 'Madisyn Paige', lastName: 'Harkin', hoursWorked: 2, payRate: 8.7, totalPay: 17.4, storeName: 'MORECAMBE', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28823', payrollId: 'PR476318C', position: 'TM', payrollType: 'Manual Entry' },
+          { id: '10', employeeCode: '', firstName: 'Delight Maybe', lastName: 'Santana', hoursWorked: 2, payRate: 11.54, totalPay: 23.08, storeName: 'PONTEFRACT', employingCompany: 'R & D 2 Pizza Ltd', storeId: '28555', payrollId: 'PJ158693B', position: 'TM', payrollType: 'Manual Entry' },
+          // Add more entries to match the screenshot
+        ];
+        
+        setPayrollEntries(mockData);
+        setTotalEntries(196);
+        setTotalPages(10);
+      } catch (error) {
+        console.error("Failed to fetch payroll data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchPayrollData();
+  }, [month]);
+  
+  // For processed payroll data
+  const [processedPayroll] = useState([
+    { id: '1', name: 'Sarayu Poladi', payrollId: 'RZ109814C', amount: 17.32, hours: 80 },
+    // More data would be added here in real implementation
+  ]);
+  
+  const handleUpdatePayroll = async () => {
+    setIsLoading(true);
+    try {
+      // In a real app, this would call the API to update/process payroll
+      // await fetch('/api/payroll/process', { method: 'POST' });
+      
+      setTimeout(() => {
+        setActiveTab('export');
+        setIsLoading(false);
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to process payroll:", error);
+      setIsLoading(false);
+    }
   };
-
-  const updateEmployee = (employee: Employee) => {
-    setEmployees(employees.map(e => 
-      e.id === employee.id ? employee : e
-    ));
-    setEditingEmployee(null);
+  
+  const handleAddEntry = () => {
+    // This would open a form to add a new payroll entry
+    alert('Add new payroll entry');
+  };
+  
+  const handleDelete = (id: string) => {
+    // In a real app, this would call the API to delete the entry
+    setPayrollEntries(payrollEntries.filter(entry => entry.id !== id));
+  };
+  
+  const handleViewDetails = (id: string) => {
+    // This would navigate to details view
+    alert(`View details for entry ${id}`);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Payroll for {month}</h2>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => handleExport('csv')}>
-            Export as CSV
-          </Button>
-          <Button variant="outline" onClick={() => handleExport('excel')}>
-            Export as Excel
-          </Button>
-          <Button onClick={() => handleExport('brightpay')}>
-            Export for BrightPay
-          </Button>
-        </div>
       </div>
 
-      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="processing" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
-          <TabsTrigger value="all">All Employees</TabsTrigger>
-          <TabsTrigger value="standard">Standard</TabsTrigger>
-          <TabsTrigger value="student">Students</TabsTrigger>
-          <TabsTrigger value="cos">COS Managers</TabsTrigger>
-          <TabsTrigger value="deferred">Deferred Pay</TabsTrigger>
+          <TabsTrigger value="processing">Processing</TabsTrigger>
+          <TabsTrigger value="export">Export</TabsTrigger>
         </TabsList>
         
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Payroll ID</TableHead>
-                  <TableHead>Store</TableHead>
-                  <TableHead className="text-right">Hours</TableHead>
-                  <TableHead className="text-right">Salary</TableHead>
-                  <TableHead className="text-right">Tax</TableHead>
-                  <TableHead className="text-right">NI</TableHead>
-                  <TableHead className="text-right">Net Pay</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.map(employee => (
-                  <TableRow key={employee.id}>
-                    <TableCell>{employee.firstName} {employee.lastName}</TableCell>
-                    <TableCell>{employee.payrollId}</TableCell>
-                    <TableCell>{employee.storeName}</TableCell>
-                    <TableCell className="text-right">{employee.hoursWorked}</TableCell>
-                    <TableCell className="text-right">£{employee.salary.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</TableCell>
-                    <TableCell className="text-right">£{employee.tax.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</TableCell>
-                    <TableCell className="text-right">£{employee.nationalInsurance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</TableCell>
-                    <TableCell className="text-right">£{employee.netPay.toLocaleString('en-GB', { minimumFractionDigits: 2 })}</TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setEditingEmployee(employee)}
-                      >
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredEmployees.length === 0 && (
+        <TabsContent value="processing">
+          <div className="mb-4">
+            <Button 
+              onClick={handleUpdatePayroll} 
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Update
+                </>
+              )}
+            </Button>
+          </div>
+          
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee Code</TableHead>
+                      <TableHead>First Name</TableHead>
+                      <TableHead>Last Name</TableHead>
+                      <TableHead>Hours Worked</TableHead>
+                      <TableHead>Pay Rate</TableHead>
+                      <TableHead>Total Pay</TableHead>
+                      <TableHead>Store Name</TableHead>
+                      <TableHead>Employing Company</TableHead>
+                      <TableHead>Store ID</TableHead>
+                      <TableHead>Payroll ID</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Payroll Type</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payrollEntries.map(entry => (
+                      <TableRow key={entry.id} className={entry.hasError ? "bg-red-50" : ""}>
+                        <TableCell>{entry.employeeCode}</TableCell>
+                        <TableCell>{entry.firstName}</TableCell>
+                        <TableCell>{entry.lastName}</TableCell>
+                        <TableCell>{entry.hoursWorked}</TableCell>
+                        <TableCell>{entry.payRate}</TableCell>
+                        <TableCell>{entry.totalPay}</TableCell>
+                        <TableCell>{entry.storeName}</TableCell>
+                        <TableCell>{entry.employingCompany}</TableCell>
+                        <TableCell>{entry.storeId}</TableCell>
+                        <TableCell>{entry.payrollId}</TableCell>
+                        <TableCell>{entry.position}</TableCell>
+                        <TableCell>{entry.payrollType}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDelete(entry.id)}
+                          >
+                            Delete
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {payrollEntries.length === 0 && !isLoading && (
+                      <TableRow>
+                        <TableCell colSpan={13} className="text-center py-6 text-gray-500">
+                          No payroll entries found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {isLoading && (
+                      <TableRow>
+                        <TableCell colSpan={13} className="text-center py-6 text-gray-500">
+                          Loading payroll data...
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="export">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-gray-500">
-                      No employees found for this category
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Payroll ID</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Hours</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </Tabs>
-
-      {editingEmployee && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Edit Employee Payroll</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium">Employee</label>
-                <div className="mt-1 font-bold">
-                  {editingEmployee.firstName} {editingEmployee.lastName} ({editingEmployee.payrollId})
+                </TableHeader>
+                <TableBody>
+                  {processedPayroll.map(entry => (
+                    <TableRow key={entry.id}>
+                      <TableCell>{entry.name}</TableCell>
+                      <TableCell>{entry.payrollId}</TableCell>
+                      <TableCell>{entry.amount}</TableCell>
+                      <TableCell>{entry.hours}</TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="link" 
+                          size="sm"
+                          onClick={() => handleViewDetails(entry.id)}
+                        >
+                          View Details
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              <div className="flex items-center justify-between p-4 border-t">
+                <div className="flex items-center gap-2">
+                  <span>Page Size:</span>
+                  <select 
+                    className="border rounded px-2 py-1"
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                  >
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center">
+                  <span className="mr-4">
+                    {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalEntries)} of {totalEntries}
+                  </span>
+                  
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    
+                    <span className="mx-2">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium">Hours Worked</label>
-                <input 
-                  type="number" 
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={editingEmployee.hoursWorked}
-                  onChange={(e) => setEditingEmployee({
-                    ...editingEmployee,
-                    hoursWorked: parseInt(e.target.value) || 0
-                  })}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium">Salary</label>
-                <input 
-                  type="number" 
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={editingEmployee.salary}
-                  onChange={(e) => setEditingEmployee({
-                    ...editingEmployee,
-                    salary: parseFloat(e.target.value) || 0
-                  })}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium">Tax</label>
-                <input 
-                  type="number" 
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={editingEmployee.tax}
-                  onChange={(e) => setEditingEmployee({
-                    ...editingEmployee,
-                    tax: parseFloat(e.target.value) || 0
-                  })}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium">National Insurance</label>
-                <input 
-                  type="number" 
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  value={editingEmployee.nationalInsurance}
-                  onChange={(e) => setEditingEmployee({
-                    ...editingEmployee,
-                    nationalInsurance: parseFloat(e.target.value) || 0
-                  })}
-                />
-              </div>
-              
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button variant="outline" onClick={() => setEditingEmployee(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  const netPay = editingEmployee.salary - editingEmployee.tax - editingEmployee.nationalInsurance;
-                  updateEmployee({
-                    ...editingEmployee,
-                    netPay
-                  });
-                }}>
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      <div className="flex justify-between items-center mt-8">
+        <h2 className="text-2xl font-bold">Payroll Monthly Data</h2>
+        <Button onClick={handleAddEntry} className="rounded-full" size="icon">
+          <PlusCircle className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   );
 } 
