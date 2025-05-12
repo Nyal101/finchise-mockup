@@ -123,6 +123,11 @@ export function HorizontalNavBar({
         icon: User 
       },
       { 
+        name: "Chart of Accounts", 
+        href: "/accounting/ChartOfAccounts", 
+        icon: FileText 
+      },
+      { 
         name: "Manual Journals", 
         href: "/accounting/Journals", 
         icon: FileText 

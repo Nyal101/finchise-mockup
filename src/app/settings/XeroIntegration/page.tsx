@@ -86,6 +86,177 @@ const connections: XeroConnection[] = [
     status: "Expired",
     lastSyncDate: "2023-11-05T11:22:18Z",
     organization: "MDJ Holdings Ltd"
+  },
+  {
+    id: "4",
+    tenantName: "Popat Leisure Limited",
+    tenantId: "XR-98765-PL",
+    connectedAt: "2023-07-10T11:20:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-11T10:15:22Z",
+    organization: "Popat Leisure Limited"
+  },
+  {
+    id: "5",
+    tenantName: "R & D 2 Pizza Limited",
+    tenantId: "XR-45678-RD",
+    connectedAt: "2023-08-05T13:40:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-09T14:25:18Z",
+    organization: "R & D Enterprise"
+  },
+  {
+    id: "6",
+    tenantName: "DMS1 Limited",
+    tenantId: "XR-23456-DMS",
+    connectedAt: "2023-09-22T08:30:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-08T09:45:30Z",
+    organization: "DMS Group"
+  },
+  {
+    id: "7",
+    tenantName: "KDG Bexleyheath Limited",
+    tenantId: "XR-34567-KDB",
+    connectedAt: "2023-06-15T15:20:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-07T16:10:45Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "8",
+    tenantName: "KDG Canterbury Limited",
+    tenantId: "XR-45678-KDC",
+    connectedAt: "2023-07-25T09:10:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-06T10:30:22Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "9",
+    tenantName: "KDG Gravesend Limited",
+    tenantId: "XR-56789-KDG",
+    connectedAt: "2023-08-12T14:50:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-05T15:40:15Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "10",
+    tenantName: "KDG Greenwich Limited",
+    tenantId: "XR-67890-KDGR",
+    connectedAt: "2023-09-08T10:15:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-04T11:25:30Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "11",
+    tenantName: "KDG Hempstead Ltd",
+    tenantId: "XR-78901-KDH",
+    connectedAt: "2023-10-17T16:30:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-03T17:10:45Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "12",
+    tenantName: "KDG Maidstone Limited",
+    tenantId: "XR-89012-KDM",
+    connectedAt: "2023-06-30T12:45:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-02T13:20:15Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "13",
+    tenantName: "KDG Tunbridge Wells Limited",
+    tenantId: "XR-90123-KDTW",
+    connectedAt: "2023-07-05T08:20:00Z",
+    status: "Active",
+    lastSyncDate: "2023-11-01T09:15:30Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "14",
+    tenantName: "KDG Woolwich Limited",
+    tenantId: "XR-01234-KDW",
+    connectedAt: "2023-08-22T15:10:00Z",
+    status: "Active",
+    lastSyncDate: "2023-10-31T16:45:22Z",
+    organization: "KDG Holdings"
+  },
+  {
+    id: "15",
+    tenantName: "Sui Generis Restaurants Limited",
+    tenantId: "XR-12345-SGR",
+    connectedAt: "2023-09-10T11:30:00Z",
+    status: "Active",
+    lastSyncDate: "2023-10-30T12:20:45Z",
+    organization: "Sui Generis Group"
+  },
+  {
+    id: "16",
+    tenantName: "Bajs Limited",
+    tenantId: "XR-23456-BL",
+    connectedAt: "2023-10-25T09:45:00Z",
+    status: "Active",
+    lastSyncDate: "2023-10-29T10:35:15Z",
+    organization: "Bajs Enterprises"
+  },
+  {
+    id: "17",
+    tenantName: "Bellam & Co Limited",
+    tenantId: "XR-34567-BCL",
+    connectedAt: "2023-06-18T14:15:00Z",
+    status: "Active",
+    lastSyncDate: "2023-10-28T15:05:30Z",
+    organization: "Bellam Holdings"
+  },
+  {
+    id: "18",
+    tenantName: "Topbake Limited",
+    tenantId: "XR-45678-TL",
+    connectedAt: "2023-07-27T10:30:00Z",
+    status: "Expired",
+    lastSyncDate: "2023-10-27T11:50:22Z",
+    organization: "Topbake Foods"
+  },
+  {
+    id: "19",
+    tenantName: "R&D Yorkshire Limited",
+    tenantId: "XR-56789-RDY",
+    connectedAt: "2023-08-15T16:20:00Z",
+    status: "Active",
+    lastSyncDate: "2023-10-26T17:15:45Z",
+    organization: "R&D Group"
+  },
+  {
+    id: "20",
+    tenantName: "Dhillon Brothers Limited",
+    tenantId: "XR-67890-DBL",
+    connectedAt: "2023-09-05T12:10:00Z",
+    status: "Active",
+    lastSyncDate: "2023-10-25T13:40:15Z",
+    organization: "Dhillon Enterprises"
+  },
+  {
+    id: "21",
+    tenantName: "Radas Pizza Ltd",
+    tenantId: "XR-78901-RPL",
+    connectedAt: "2023-10-12T08:35:00Z",
+    status: "Active",
+    lastSyncDate: "2023-10-24T09:30:30Z",
+    organization: "Radas Food Group"
+  },
+  {
+    id: "22",
+    tenantName: "Nij Enterprises Ltd",
+    tenantId: "XR-89012-NEL",
+    connectedAt: "2023-06-25T15:50:00Z",
+    status: "Disconnected",
+    lastSyncDate: "2023-10-23T16:25:45Z",
+    organization: "Nij Holdings"
   }
 ]
 

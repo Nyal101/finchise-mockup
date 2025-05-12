@@ -10,7 +10,7 @@ export default function FranchiseSettingsPage() {
   return (
     <div className="flex-1 space-y-6 p-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Franchise Settings</h1>
+        <h1 className="text-3xl font-bold">Franchise Specific Settings</h1>
       </div>
 
       <Tabs defaultValue="purchase">
