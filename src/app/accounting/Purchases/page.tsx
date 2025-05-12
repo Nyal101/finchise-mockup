@@ -162,8 +162,8 @@ export default function PurchasesPage() {
 
       {/* Main content area - Three equal columns layout */}
       <div className="flex flex-1 w-full gap-4 overflow-hidden">
-        {/* Left Column: Invoice List (1/3 width) */}
-        <div className="w-1/3 bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col">
+        {/* Left Column: Invoice List (full width when no invoice selected) */}
+        <div className={`${selectedInvoice ? 'w-1/3' : 'w-full'} bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col transition-all duration-200`}>
           {/* Tabs for invoice filtering */}
           <div className="px-4 pt-2 pb-2 border-b">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -364,11 +364,34 @@ export default function PurchasesPage() {
         </div>
 
         {/* Middle Column: Invoice Details (1/3 width) */}
-        <div className="w-1/3 overflow-hidden">
+        <div className={`${selectedInvoice ? 'w-1/3' : 'w-0'} overflow-hidden transition-all duration-200`}>
           {selectedInvoice ? (
             <div className="h-full bg-white rounded-lg border shadow-sm p-3 flex flex-col overflow-hidden">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-semibold">{selectedInvoice.invoiceNumber}</h2>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setSelectedInvoice(null)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </Button>
+                  <h2 className="text-xl font-semibold">{selectedInvoice.invoiceNumber}</h2>
+                </div>
                 <div className="flex gap-2">
                   {isEditing ? (
                     <>

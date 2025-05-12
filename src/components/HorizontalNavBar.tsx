@@ -134,7 +134,7 @@ export function HorizontalNavBar({
       },
       { 
         name: "Payroll", 
-        href: "/accounting/Payroll", 
+        href: "/accounting/payroll", 
         icon: CreditCard 
       },
       { 
