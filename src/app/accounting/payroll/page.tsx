@@ -42,6 +42,13 @@ export default function PayrollPage() {
 
         {/* Summary Tab */}
         <TabsContent value="summary">
+          {/* Month Selector Grid */}
+          <MonthSelector
+            centerMonth={centerMonth}
+            setCenterMonth={setCenterMonth}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+          />
           {/* Summary Cards */}
           <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-6">
             <Card>
@@ -134,12 +141,6 @@ export default function PayrollPage() {
 
         {/* Payroll Run Tab */}
         <TabsContent value="payroll-run">
-          <MonthSelector
-            centerMonth={centerMonth}
-            setCenterMonth={setCenterMonth}
-            selectedMonth={selectedMonth}
-            setSelectedMonth={setSelectedMonth}
-          />
           {selectedMonth && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">

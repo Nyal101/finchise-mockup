@@ -147,8 +147,8 @@ export default function PurchasesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="h-screen flex flex-col">
+      <div className="flex items-center justify-between py-4">
         <h1 className="text-3xl font-bold">Purchases</h1>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm flex items-center gap-1">
@@ -161,11 +161,11 @@ export default function PurchasesPage() {
       </div>
 
       {/* Main content area - Three equal columns layout */}
-      <div className="flex h-[calc(100vh-140px)] w-full gap-4">
+      <div className="flex flex-1 w-full gap-4 overflow-hidden">
         {/* Left Column: Invoice List (1/3 width) */}
         <div className="w-1/3 bg-white rounded-lg border shadow-sm overflow-hidden flex flex-col">
           {/* Tabs for invoice filtering */}
-          <div className="px-4 pt-4 pb-2">
+          <div className="px-4 pt-2 pb-2 border-b">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full">
                 <TabsTrigger value="all" className="flex-1">All ({allCount})</TabsTrigger>
@@ -176,8 +176,8 @@ export default function PurchasesPage() {
           </div>
           
           {/* Search and Filter Bar */}
-          <div className="px-4 pb-4 border-b">
-            <div className="relative mb-4">
+          <div className="px-4 py-2 border-b">
+            <div className="relative mb-2">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -364,10 +364,10 @@ export default function PurchasesPage() {
         </div>
 
         {/* Middle Column: Invoice Details (1/3 width) */}
-        <div className="w-1/3 overflow-auto">
+        <div className="w-1/3 overflow-hidden">
           {selectedInvoice ? (
-            <div className="space-y-4 bg-white rounded-lg border shadow-sm p-4 h-full overflow-auto">
-              <div className="flex items-center justify-between">
+            <div className="h-full bg-white rounded-lg border shadow-sm p-3 flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-semibold">{selectedInvoice.invoiceNumber}</h2>
                 <div className="flex gap-2">
                   {isEditing ? (
@@ -387,70 +387,72 @@ export default function PurchasesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Supplier</p>
-                  <p className="font-medium">{selectedInvoice.supplier}</p>
+              <div className="overflow-auto flex-1">
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Supplier</p>
+                    <p className="font-medium">{selectedInvoice.supplier}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Store</p>
+                    <p className="font-medium">{selectedInvoice.store}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Invoice Date</p>
+                    <p className="font-medium">{format(selectedInvoice.date, "dd/MM/yyyy")}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <p className="font-medium">
+                      <span className={getStatusClass(selectedInvoice.status)}>
+                        {selectedInvoice.status}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Account Code</p>
+                    <p className="font-medium">{selectedInvoice.accountCode}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Invoice Type</p>
+                    <p className="font-medium">{selectedInvoice.invoiceType}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Store</p>
-                  <p className="font-medium">{selectedInvoice.store}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Invoice Date</p>
-                  <p className="font-medium">{format(selectedInvoice.date, "dd/MM/yyyy")}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <p className="font-medium">
-                    <span className={getStatusClass(selectedInvoice.status)}>
-                      {selectedInvoice.status}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Account Code</p>
-                  <p className="font-medium">{selectedInvoice.accountCode}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Invoice Type</p>
-                  <p className="font-medium">{selectedInvoice.invoiceType}</p>
-                </div>
-              </div>
 
-              <div className="border-t pt-4">
-                <InvoiceSummary 
-                  subtotal={selectedInvoice.subtotal} 
-                  vatRate={selectedInvoice.vatRate} 
-                  vat={selectedInvoice.vat} 
-                  total={selectedInvoice.total} 
-                />
-              </div>
+                <div className="border-t pt-4">
+                  <InvoiceSummary 
+                    subtotal={selectedInvoice.subtotal} 
+                    vatRate={selectedInvoice.vatRate} 
+                    vat={selectedInvoice.vat} 
+                    total={selectedInvoice.total} 
+                  />
+                </div>
 
-              <div className="border-t pt-4">
-                <LineItemsSection 
-                  lineItems={selectedInvoice.lineItems || []} 
-                  setLineItems={setLineItemsWrapper}
-                  isEditing={isEditing}
-                />
-              </div>
+                <div className="border-t pt-4">
+                  <LineItemsSection 
+                    lineItems={selectedInvoice.lineItems || []} 
+                    setLineItems={setLineItemsWrapper}
+                    isEditing={isEditing}
+                  />
+                </div>
 
-              <div className="border-t pt-4">
-                <StoreAllocationSection 
-                  storeAllocations={selectedInvoice.storeAllocations || []} 
-                  setStoreAllocations={setStoreAllocationsWrapper}
-                  isEditing={isEditing}
-                  stores={stores}
-                  invoiceTotal={selectedInvoice.total}
-                />
-              </div>
+                <div className="border-t pt-4">
+                  <StoreAllocationSection 
+                    storeAllocations={selectedInvoice.storeAllocations || []} 
+                    setStoreAllocations={setStoreAllocationsWrapper}
+                    isEditing={isEditing}
+                    stores={stores}
+                    invoiceTotal={selectedInvoice.total}
+                  />
+                </div>
 
-              <div className="border-t pt-4">
-                <NotesSection 
-                  notes={selectedInvoice.notes || ""} 
-                  onNotesChange={(notes: string) => handleInvoiceChange('notes', notes)} 
-                  isEditing={isEditing}
-                />
+                <div className="border-t pt-4">
+                  <NotesSection 
+                    notes={selectedInvoice.notes || ""} 
+                    onNotesChange={(notes: string) => handleInvoiceChange('notes', notes)} 
+                    isEditing={isEditing}
+                  />
+                </div>
               </div>
             </div>
           ) : (
@@ -461,12 +463,12 @@ export default function PurchasesPage() {
         </div>
 
         {/* Right Column: Invoice Preview and Chat (1/3 width) */}
-        <div className="w-1/3 flex flex-col h-full">
+        <div className="w-1/3 flex flex-col h-full overflow-hidden">
           {selectedInvoice ? (
             <>
               {/* PDF Preview - Collapsible */}
-              <div className={`bg-white rounded-lg border shadow-sm overflow-hidden mb-4 transition-all duration-300 ease-in-out ${isPdfExpanded ? 'h-[66.6%]' : 'h-[42px]'}`}>
-                <div className="px-4 py-3 border-b font-medium text-sm flex justify-between items-center cursor-pointer" 
+              <div className={`bg-white rounded-lg border shadow-sm overflow-hidden mb-2 transition-all duration-300 ease-in-out ${isPdfExpanded ? 'h-1/2' : 'h-[42px]'}`}>
+                <div className="px-4 py-2 border-b font-medium text-sm flex justify-between items-center cursor-pointer" 
                      onClick={() => setIsPdfExpanded(!isPdfExpanded)}>
                   <span>Invoice PDF/CSV Preview</span>
                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={(e) => {
@@ -477,7 +479,7 @@ export default function PurchasesPage() {
                   </Button>
                 </div>
                 {isPdfExpanded && (
-                  <div className="h-[calc(100%-42px)]">
+                  <div className="h-[calc(100%-34px)]">
                     <InvoicePdfPreviewer 
                       pdfUrl={`/invoice-previews/${selectedInvoice.previewUrl}`} 
                       invoiceNumber={selectedInvoice.invoiceNumber} 
@@ -487,7 +489,7 @@ export default function PurchasesPage() {
               </div>
               
               {/* Invoice Bot fills remaining height */}
-              <div className={`bg-white rounded-lg border shadow-sm overflow-hidden transition-all duration-300 ease-in-out ${isPdfExpanded ? 'h-[calc(33.4%-1rem)]' : 'h-[calc(100%-46px)]'}`}>
+              <div className={`bg-white rounded-lg border shadow-sm overflow-hidden flex-1 transition-all duration-300 ease-in-out`}>
                 <InvoiceBot 
                   invoiceNumber={selectedInvoice.invoiceNumber} 
                   invoiceStatus={selectedInvoice.status} 
