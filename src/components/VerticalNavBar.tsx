@@ -14,7 +14,6 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface VerticalNavBarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -45,7 +44,7 @@ export function VerticalNavBar({
     dashboard: "/dashboard",
     insights: "/insights/FinancialReports",
     accounting: "/accounting/Purchases",
-    settings: "/settings/Suppliers",
+    settings: "/settings/StoreManagement",
     subscription: "/settings/Subscription",
   }
 

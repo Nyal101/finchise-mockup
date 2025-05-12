@@ -10,7 +10,6 @@ import {
   FileText,
   Home,
   MessageSquare,
-  PieChart,
   Settings,
   Store,
   User,
@@ -141,39 +140,19 @@ export function HorizontalNavBar({
     ],
     settings: [
       { 
-        name: "Suppliers Management", 
-        href: "/settings/Suppliers", 
-        icon: User 
+        name: "Store Management", 
+        href: "/settings/StoreManagement", 
+        icon: Store 
       },
       { 
-        name: "User Management", 
-        href: "/settings/UserManagement", 
-        icon: User 
-      },
-      { 
-        name: "Integrations", 
-        href: "/settings/Integrations", 
+        name: "Xero Integration", 
+        href: "/settings/XeroIntegration", 
         icon: Zap 
       },
       { 
-        name: "Franchise Management", 
-        href: "/settings/FranchiseManagement", 
+        name: "Franchise Settings", 
+        href: "/settings/FranchiseSettings", 
         icon: Store 
-      },
-      { 
-        name: "Account Code Mappings", 
-        href: "/settings/AccountCodeMappings", 
-        icon: BarChart2 
-      },
-      { 
-        name: "Store Mx", 
-        href: "/settings/StoreMx", 
-        icon: Store 
-      },
-      { 
-        name: "Chart of Accounts Mx", 
-        href: "/settings/COASync", 
-        icon: PieChart 
       },
     ],
     subscription: [
@@ -184,86 +163,6 @@ export function HorizontalNavBar({
       },
     ],
   };
-
-  // Keep the rest of the navigation items
-  navItems.accounting = [
-    { 
-      name: "Purchases - Bills", 
-      href: "/accounting/Purchases", 
-      icon: FileText 
-    },
-    { 
-      name: "Sales - Invoices", 
-      href: "/accounting/Sales", 
-      icon: FileText 
-    },
-    { 
-      name: "Contacts", 
-      href: "/accounting/Contacts", 
-      icon: User 
-    },
-    { 
-      name: "Manual Journals", 
-      href: "/accounting/Journals", 
-      icon: FileText 
-    },
-    { 
-      name: "Payroll", 
-      href: "/accounting/Payroll", 
-      icon: CreditCard 
-    },
-    { 
-      name: "Stock control", 
-      href: "/accounting/StockControl", 
-      icon: Store 
-    },
-  ];
-
-  navItems.settings = [
-    { 
-      name: "Suppliers Management", 
-      href: "/settings/Suppliers", 
-      icon: User 
-    },
-    { 
-      name: "User Management", 
-      href: "/settings/UserManagement", 
-      icon: User 
-    },
-    { 
-      name: "Integrations", 
-      href: "/settings/Integrations", 
-      icon: Zap 
-    },
-    { 
-      name: "Franchise Management", 
-      href: "/settings/FranchiseManagement", 
-      icon: Store 
-    },
-    { 
-      name: "Account Code Mappings", 
-      href: "/settings/AccountCodeMappings", 
-      icon: BarChart2 
-    },
-    { 
-      name: "Store Mx", 
-      href: "/settings/StoreMx", 
-      icon: Store 
-    },
-    { 
-      name: "Chart of Accounts Mx", 
-      href: "/settings/COASync", 
-      icon: PieChart 
-    },
-  ];
-
-  navItems.subscription = [
-    { 
-      name: "Subscription and Billing", 
-      href: "/settings/Subscription", 
-      icon: CreditCard 
-    },
-  ];
 
   // Get the navigation items for the active section
   const activeItems = navItems[activeSection] || [];
