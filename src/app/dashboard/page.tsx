@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DateRangePicker } from "@/components/date-range-picker"
-import { BarChart3, DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-react"
+import { DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-react"
 
 export default function DashboardPage() {
   return (
@@ -110,12 +110,4 @@ export default function DashboardPage() {
       </div>
     </main>
   )
-}
-
-const topSellingItems = [
-  { name: "Hawaiian Pizza", category: "Pizza", sales: 482, revenue: 4820 },
-  { name: "Pepperoni Pizza", category: "Pizza", sales: 356, revenue: 3560 },
-  { name: "Garlic Bread", category: "Sides", sales: 289, revenue: 1156 },
-  { name: "Chicken Wings", category: "Sides", sales: 240, revenue: 1920 },
-  { name: "Vegetarian Pizza", category: "Pizza", sales: 198, revenue: 1980 }
-] 
+} 

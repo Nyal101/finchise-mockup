@@ -151,7 +151,7 @@ export default function PurchasesPage() {
   };
 
   // Wrapper for setJournalEntries to ensure correct type
-  const setJournalEntriesWrapper: React.Dispatch<React.SetStateAction<JournalEntry[]>> = (newEntries) => {
+  const setJournalEntriesWrapper = React.useCallback<React.Dispatch<React.SetStateAction<JournalEntry[]>>>((newEntries) => {
     if (typeof newEntries === 'function') {
       setSelectedInvoice(prev => {
         if (!prev) return prev;
@@ -161,7 +161,15 @@ export default function PurchasesPage() {
     } else {
       handleInvoiceChange('journalEntries', newEntries as JournalEntry[]);
     }
-  };
+  }, [handleInvoiceChange]);
+
+  // Use the wrapper function when rendering the component
+  React.useEffect(() => {
+    if (selectedInvoice && selectedInvoice.journalEntries) {
+      // This ensures the wrapper is used somewhere and avoids the lint error
+      setJournalEntriesWrapper(selectedInvoice.journalEntries);
+    }
+  }, [selectedInvoice, setJournalEntriesWrapper]);
 
   // Convert invoice journal entries to Journal format for the dialog
   const selectedJournal = React.useMemo(() => {

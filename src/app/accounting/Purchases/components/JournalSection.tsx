@@ -22,14 +22,12 @@ type JournalSectionProps = {
   journalEntries: JournalEntry[];
   setJournalEntries: React.Dispatch<React.SetStateAction<JournalEntry[]>>;
   isEditing: boolean;
-  total: number;
 };
 
 export const JournalSection: React.FC<JournalSectionProps> = ({
   journalEntries,
   setJournalEntries,
   isEditing,
-  total
 }) => {
   // Add a new journal entry
   const handleAddJournalEntry = () => {
@@ -52,7 +50,7 @@ export const JournalSection: React.FC<JournalSectionProps> = ({
   };
 
   // Update a journal entry
-  const handleJournalEntryChange = (index: number, field: keyof JournalEntry, value: any) => {
+  const handleJournalEntryChange = (index: number, field: keyof JournalEntry, value: string | number) => {
     const newEntries = [...journalEntries];
     newEntries[index] = {
       ...newEntries[index],

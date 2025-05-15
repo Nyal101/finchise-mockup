@@ -53,7 +53,7 @@ export function JournalDialog({ open, onOpenChange, journal, isEditing, onEditTo
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01; // Allow for small rounding errors
   
   // Update line values
-  const updateLine = (index: number, field: keyof JournalLine, value: any) => {
+  const updateLine = (index: number, field: keyof JournalLine, value: string | number) => {
     const newLines = [...editedJournal.lines];
     newLines[index] = { ...newLines[index], [field]: value };
     setEditedJournal({ ...editedJournal, lines: newLines });

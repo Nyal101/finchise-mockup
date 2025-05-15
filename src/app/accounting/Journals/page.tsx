@@ -138,9 +138,6 @@ function JournalsContent() {
     console.log("Saving journal:", journal);
     
     // Update the journal in the UI (this is just for demo purposes)
-    const updatedJournals = mockJournals.map(j => 
-      j.id === journal.id ? journal : j
-    );
     // In a real app, you'd update the state or refetch data
   };
 
