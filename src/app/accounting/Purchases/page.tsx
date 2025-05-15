@@ -3,7 +3,7 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { FileUp, Mail, Search, Maximize2, Minimize2 } from "lucide-react"
-import type { InvoiceData, LineItem, StoreAllocation } from "./components/types"
+import type { InvoiceData, LineItem, StoreAllocation, JournalEntry } from "./components/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -33,7 +33,9 @@ import InvoiceSummary from "./components/InvoiceSummary";
 import NotesSection from "./components/NotesSection";
 import StoreAllocationSection from "./components/StoreAllocationSection";
 import InvoiceBot from "./components/InvoiceBot";
+import JournalButton from "./components/JournalButton";
 import { invoices } from "./invoiceData";
+import { JournalDialog, Journal, JournalLine } from "../components/JournalDialog";
 
 export default function PurchasesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -45,6 +47,8 @@ export default function PurchasesPage() {
   const [selectedInvoice, setSelectedInvoice] = React.useState<InvoiceData | null>(null)
   const [isEditing, setIsEditing] = React.useState(false)
   const [isPdfExpanded, setIsPdfExpanded] = React.useState(false)
+  const [journalDialogOpen, setJournalDialogOpen] = React.useState(false)
+  const [isJournalEditing, setIsJournalEditing] = React.useState(false)
 
   type InvoiceField = keyof InvoiceData;
   type InvoiceValue = InvoiceData[InvoiceField];
@@ -144,6 +148,66 @@ export default function PurchasesPage() {
     } else {
       handleInvoiceChange('storeAllocations', newAllocations as StoreAllocation[]);
     }
+  };
+
+  // Wrapper for setJournalEntries to ensure correct type
+  const setJournalEntriesWrapper: React.Dispatch<React.SetStateAction<JournalEntry[]>> = (newEntries) => {
+    if (typeof newEntries === 'function') {
+      setSelectedInvoice(prev => {
+        if (!prev) return prev;
+        const updated = (newEntries as (prevState: JournalEntry[]) => JournalEntry[])(prev.journalEntries ?? []);
+        return { ...prev, journalEntries: updated };
+      });
+    } else {
+      handleInvoiceChange('journalEntries', newEntries as JournalEntry[]);
+    }
+  };
+
+  // Convert invoice journal entries to Journal format for the dialog
+  const selectedJournal = React.useMemo(() => {
+    if (!selectedInvoice || !selectedInvoice.requiresJournaling) return null;
+    
+    // Convert journal entries to journal lines
+    const lines: JournalLine[] = selectedInvoice.journalEntries?.map(entry => ({
+      description: entry.description,
+      account: entry.account,
+      store: selectedInvoice.store,
+      debit: entry.debit,
+      credit: entry.credit,
+      taxRate: entry.debit > 0 && selectedInvoice.vatRate > 0 ? `VAT ${selectedInvoice.vatRate}%` : "No VAT"
+    })) || [];
+
+    return {
+      id: `invoice-${selectedInvoice.id}`,
+      status: "pending" as const,
+      type: "utility" as const,
+      narration: `${selectedInvoice.supplier} ${selectedInvoice.invoiceNumber}`,
+      date: selectedInvoice.date,
+      lines,
+      sourceInvoiceId: selectedInvoice.id
+    };
+  }, [selectedInvoice]);
+
+  // Handle journal save
+  const handleJournalSave = (journal: Journal) => {
+    if (!selectedInvoice) return;
+    
+    // Convert journal lines back to journal entries
+    const journalEntries: JournalEntry[] = journal.lines.map(line => ({
+      id: Math.random().toString(36).substring(2, 11), // Simple ID generation
+      account: line.account,
+      description: line.description,
+      debit: line.debit || 0,
+      credit: line.credit || 0
+    }));
+    
+    // Update the selected invoice
+    handleInvoiceChange('journalEntries', journalEntries);
+  };
+
+  // Toggle journal editing mode
+  const toggleJournalEditing = () => {
+    setIsJournalEditing(!isJournalEditing);
   };
 
   return (
@@ -403,9 +467,16 @@ export default function PurchasesPage() {
                       </Button>
                     </>
                   ) : (
-                    <Button size="sm" onClick={() => setIsEditing(true)}>
-                      Edit
-                    </Button>
+                    <>
+                      <Button size="sm" onClick={() => setIsEditing(true)}>
+                        Edit
+                      </Button>
+                      {selectedInvoice.requiresJournaling && (
+                        <JournalButton 
+                          onClick={() => setJournalDialogOpen(true)} 
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -443,19 +514,19 @@ export default function PurchasesPage() {
                 </div>
 
                 <div className="border-t pt-4">
+                  <LineItemsSection 
+                    lineItems={selectedInvoice.lineItems || []} 
+                    setLineItems={setLineItemsWrapper}
+                    isEditing={isEditing}
+                  />
+                </div>
+
+                <div className="border-t pt-4">
                   <InvoiceSummary 
                     subtotal={selectedInvoice.subtotal} 
                     vatRate={selectedInvoice.vatRate} 
                     vat={selectedInvoice.vat} 
                     total={selectedInvoice.total} 
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <LineItemsSection 
-                    lineItems={selectedInvoice.lineItems || []} 
-                    setLineItems={setLineItemsWrapper}
-                    isEditing={isEditing}
                   />
                 </div>
 
@@ -526,6 +597,18 @@ export default function PurchasesPage() {
           )}
         </div>
       </div>
+
+      {/* Add Journal Dialog */}
+      {selectedJournal && (
+        <JournalDialog
+          open={journalDialogOpen}
+          onOpenChange={setJournalDialogOpen}
+          journal={selectedJournal}
+          isEditing={isJournalEditing}
+          onEditToggle={toggleJournalEditing}
+          onSave={handleJournalSave}
+        />
+      )}
     </div>
   )
 }

@@ -18,6 +18,15 @@ export type StoreAllocation = {
   amount: number
 }
 
+// Type for journal entries
+export type JournalEntry = {
+  id: string
+  account: string
+  description: string
+  debit: number
+  credit: number
+}
+
 // Interface for invoice data
 export interface InvoiceData {
   id: string
@@ -37,6 +46,8 @@ export interface InvoiceData {
   notes?: string
   archived?: boolean
   deleted?: boolean
+  requiresJournaling?: boolean
+  journalEntries?: JournalEntry[]
   lineItems: LineItem[]
   storeAllocations?: StoreAllocation[]
 } 
