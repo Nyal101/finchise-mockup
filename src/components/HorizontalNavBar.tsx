@@ -277,7 +277,7 @@ export function HorizontalNavBar({
                       className={cn(
                         "flex items-center justify-center px-4",
                         isActive 
-                          ? "text-white font-bold bg-[#0081cc] hover:bg-[#0071b3]"
+                          ? "text-white font-bold bg-[#0065a3]"
                           : "text-white hover:text-white hover:bg-[#0071b3]"
                       )}
                     >

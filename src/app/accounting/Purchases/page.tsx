@@ -36,6 +36,7 @@ import InvoiceBot from "./components/InvoiceBot";
 import JournalButton from "./components/JournalButton";
 import { invoices } from "./invoiceData";
 import { JournalDialog, Journal, JournalLine } from "../components/JournalDialog";
+import { UploadInvoiceDialog } from "./components/UploadInvoiceDialog";
 
 export default function PurchasesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -49,13 +50,14 @@ export default function PurchasesPage() {
   const [isPdfExpanded, setIsPdfExpanded] = React.useState(false)
   const [journalDialogOpen, setJournalDialogOpen] = React.useState(false)
   const [isJournalEditing, setIsJournalEditing] = React.useState(false)
+  const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false)
 
   type InvoiceField = keyof InvoiceData;
   type InvoiceValue = InvoiceData[InvoiceField];
 
-  const handleInvoiceChange = (field: InvoiceField, value: InvoiceValue) => {
+  const handleInvoiceChange = React.useCallback((field: InvoiceField, value: InvoiceValue) => {
     setSelectedInvoice(prev => prev ? { ...prev, [field]: value } : prev);
-  };
+  }, []);
 
   // Always derive stores from invoices for filtering and selector
   const stores = React.useMemo(() => {
@@ -226,7 +228,7 @@ export default function PurchasesPage() {
           <span className="text-muted-foreground text-sm flex items-center gap-1">
             <Mail className="h-4 w-4" /> invoices@franchiseai.com
           </span>
-          <Button variant="default" className="ml-2 flex items-center gap-2">
+          <Button variant="default" className="ml-2 flex items-center gap-2" onClick={() => setUploadDialogOpen(true)}>
             <FileUp className="h-4 w-4" /> Upload Invoice
           </Button>
         </div>
@@ -565,7 +567,7 @@ export default function PurchasesPage() {
         </div>
 
         {/* Right Column: Invoice Preview and Chat (1/3 width) */}
-        <div className="w-1/3 flex flex-col h-full overflow-hidden">
+        <div className={`${selectedInvoice ? 'w-1/3' : 'w-0'} flex flex-col h-full overflow-hidden transition-all duration-200`}>
           {selectedInvoice ? (
             <>
               {/* PDF Preview - Collapsible */}
@@ -617,6 +619,8 @@ export default function PurchasesPage() {
           onSave={handleJournalSave}
         />
       )}
+
+      <UploadInvoiceDialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen} />
     </div>
   )
 }

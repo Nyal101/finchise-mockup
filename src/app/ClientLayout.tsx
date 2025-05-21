@@ -16,7 +16,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-12">
       <HorizontalNavBar activeSection={activeSection} />
       <VerticalNavBar 
         activeSection={activeSection}
@@ -24,9 +24,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         onCollapseChange={handleNavCollapseChange}
       />
       <div 
-        className={`transition-all duration-300 ease-in-out pt-4 ${isNavCollapsed ? 'ml-20' : 'ml-60'}`}
+        className={`transition-all duration-300 ease-in-out pt-2 ${isNavCollapsed ? 'ml-20' : 'ml-60'}`}
       >
-        <main className="p-6">
+        <main className="p-6 pt-3">
           {children}
         </main>
       </div>
