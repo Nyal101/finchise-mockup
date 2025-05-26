@@ -120,3 +120,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom AG Grid styles */
+.ag-row-selected {
+  background-color: #eff6ff !important;
+}
+
+.ag-row-selected:hover {
+  background-color: #dbeafe !important;
+}
+
+/* Ensure status badges render properly in AG Grid */
+.ag-cell .text-green-600 {
+  @apply text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.ag-cell .text-yellow-600 {
+  @apply text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.ag-cell .text-red-600 {
+  @apply text-red-600 bg-red-50 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.ag-cell .text-purple-600 {
+  @apply text-purple-600 bg-purple-50 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.ag-cell .text-gray-600 {
+  @apply text-gray-600 bg-gray-50 px-2 py-1 rounded-full text-xs font-medium;
+}

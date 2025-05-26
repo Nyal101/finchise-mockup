@@ -7,14 +7,6 @@ import type { InvoiceData, LineItem, StoreAllocation, JournalEntry } from "./com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
@@ -37,6 +29,7 @@ import JournalButton from "./components/JournalButton";
 import { invoices } from "./invoiceData";
 import { JournalDialog, Journal, JournalLine } from "../components/JournalDialog";
 import { UploadInvoiceDialog } from "./components/UploadInvoiceDialog";
+import InvoiceGrid from "./components/InvoiceGrid";
 
 export default function PurchasesPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -70,7 +63,7 @@ export default function PurchasesPage() {
 
   // Simplified and robust filtering logic
   const filteredInvoices = React.useMemo(() => {
-    return invoices.filter((invoice: InvoiceData) => {
+    const filtered = invoices.filter((invoice: InvoiceData) => {
       // Filter by tab
       if (activeTab === "archived" && !invoice.archived) return false;
       if (activeTab === "deleted" && !invoice.deleted) return false;
@@ -87,6 +80,7 @@ export default function PurchasesPage() {
       const matchesInvoiceType = invoiceTypeFilter.length ? invoiceTypeFilter.includes(invoice.invoiceType) : true;
       return matchesSearch && matchesStore && matchesSupplier && matchesStatus && matchesInvoiceType;
     });
+    return filtered;
   }, [activeTab, searchQuery, storeFilter, supplierFilter, statusFilter, invoiceTypeFilter]);
 
   // Get unique values for filters
@@ -219,6 +213,11 @@ export default function PurchasesPage() {
   const toggleJournalEditing = () => {
     setIsJournalEditing(!isJournalEditing);
   };
+
+  // Debug effect - can be removed in production
+  React.useEffect(() => {
+    // Debug logging removed for production
+  }, [filteredInvoices, activeTab]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -393,47 +392,18 @@ export default function PurchasesPage() {
           </div>
 
           {/* Invoice Table */}
-          <div className="overflow-auto flex-1">
-            <Table>
-              <TableHeader className="sticky top-0 bg-white z-10">
-                <TableRow>
-                  <TableHead className="w-[120px]">Invoice #</TableHead>
-                  <TableHead>Store</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredInvoices.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      No invoices found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredInvoices.map((invoice) => (
-                    <TableRow 
-                      key={invoice.id} 
-                      className={`${selectedInvoice?.id === invoice.id ? 'bg-blue-50' : 'hover:bg-gray-50'} cursor-pointer`}
-                      onClick={() => setSelectedInvoice(invoice)}
-                    >
-                      <TableCell>{invoice.invoiceNumber}</TableCell>
-                      <TableCell>{invoice.store}</TableCell>
-                      <TableCell>{invoice.supplier}</TableCell>
-                      <TableCell>{format(invoice.date, "dd/MM/yyyy")}</TableCell>
-                      <TableCell>
-                        <span className={getStatusClass(invoice.status)}>
-                          {invoice.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">£{invoice.total.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <div className="overflow-auto flex-1 h-full">
+            {filteredInvoices.length === 0 ? (
+              <div className="h-24 flex items-center justify-center">
+                <p className="text-muted-foreground">No invoices found.</p>
+              </div>
+            ) : (
+              <InvoiceGrid 
+                invoices={filteredInvoices} 
+                onInvoiceSelect={setSelectedInvoice} 
+                selectedInvoiceId={selectedInvoice?.id}
+              />
+            )}
           </div>
         </div>
 
