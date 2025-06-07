@@ -8,6 +8,7 @@ import {
   PieChart,
   Settings,
   Store,
+  DollarSign,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react"
@@ -35,6 +36,7 @@ export function VerticalNavBar({
     { id: "dashboard", name: "Dashboard", icon: Home },
     { id: "insights", name: "Insights", icon: PieChart },
     { id: "accounting", name: "Accounting", icon: CreditCard },
+    { id: "payroll", name: "Payroll", icon: DollarSign },
     { id: "settings", name: "Settings", icon: Settings },
     { id: "subscription", name: "Subscription", icon: Store },
   ]
@@ -44,6 +46,7 @@ export function VerticalNavBar({
     dashboard: "/dashboard",
     insights: "/insights/FinancialReports",
     accounting: "/accounting/Purchases",
+    payroll: "/payroll/Summary",
     settings: "/settings/StoreManagement",
     subscription: "/settings/Subscription",
   }

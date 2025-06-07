@@ -13,7 +13,9 @@ import {
   Settings,
   Store,
   User,
+  Users,
   Zap,
+  ClipboardList,
   LucideIcon,
   LogOut,
   UserCircle,
@@ -133,14 +135,26 @@ export function HorizontalNavBar({
         icon: FileText 
       },
       { 
-        name: "Payroll", 
-        href: "/accounting/payroll", 
-        icon: CreditCard 
-      },
-      { 
         name: "Stock control", 
         href: "/accounting/StockControl", 
         icon: Store 
+      },
+    ],
+    payroll: [
+      { 
+        name: "Summary", 
+        href: "/payroll/Summary", 
+        icon: ClipboardList 
+      },
+      { 
+        name: "Payroll Runs", 
+        href: "/payroll/PayrollRuns", 
+        icon: CreditCard 
+      },
+      { 
+        name: "Employee Management", 
+        href: "/payroll/EmployeeManagement", 
+        icon: Users 
       },
     ],
     settings: [
@@ -158,6 +172,11 @@ export function HorizontalNavBar({
         name: "Franchise Settings", 
         href: "/settings/FranchiseSettings", 
         icon: Store 
+      },
+      { 
+        name: "User Management", 
+        href: "/settings/UserManagment", 
+        icon: Users 
       },
     ],
     subscription: [
