@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, RefreshCw, Filter } from "lucide-react"
+import { Plus, Search, RefreshCw, Pencil } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -28,22 +28,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
+
+interface Contact {
+  id: string
+  name: string
+  company: string
+  lastSynced: string
+  defaultAccountCode: string
+  status: string
+  balance: number
+  type: "supplier" | "customer"
+}
 
 export default function ContactsPage() {
   const [isSyncing, setIsSyncing] = React.useState<boolean>(false)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false)
   const [newContactName, setNewContactName] = React.useState("")
-  const [selectedContactIds, setSelectedContactIds] = React.useState<string[]>([])
+  const [selectedSupplierIds, setSelectedSupplierIds] = React.useState<string[]>([])
+  const [selectedCustomerIds, setSelectedCustomerIds] = React.useState<string[]>([])
   const [contactSearch, setContactSearch] = React.useState("")
   const [selectedCompanyFilter, setSelectedCompanyFilter] = React.useState<string>("all")
   const [selectedAccountCode, setSelectedAccountCode] = React.useState<string>("")
   const [selectedCompany, setSelectedCompany] = React.useState<string>("")
+  const [selectedContactType, setSelectedContactType] = React.useState<string>("")
+  const [editingContact, setEditingContact] = React.useState<Contact | null>(null)
+  const [editContactName, setEditContactName] = React.useState("")
+  const [editSelectedAccountCode, setEditSelectedAccountCode] = React.useState<string>("")
+  const [editSelectedCompany, setEditSelectedCompany] = React.useState<string>("")
+  const [editSelectedContactType, setEditSelectedContactType] = React.useState<string>("")
 
   // Mock data - replace with actual data from your backend
   const companies = [
@@ -89,7 +103,7 @@ export default function ContactsPage() {
     { id: "6007", name: "Dominos - GPRS" }
   ]
 
-  const contacts = [
+  const contacts: Contact[] = [
     {
       id: "1",
       name: "1st Waste Management",
@@ -97,7 +111,8 @@ export default function ContactsPage() {
       lastSynced: "2024-03-20",
       defaultAccountCode: "5001",
       status: "active",
-      balance: 3226.85
+      balance: 3226.85,
+      type: "supplier"
     },
     {
       id: "2",
@@ -106,7 +121,8 @@ export default function ContactsPage() {
       lastSynced: "2024-03-19",
       defaultAccountCode: "4001",
       status: "active",
-      balance: 0
+      balance: 0,
+      type: "supplier"
     },
     {
       id: "3",
@@ -115,7 +131,8 @@ export default function ContactsPage() {
       lastSynced: "2024-03-18",
       defaultAccountCode: "6001",
       status: "active",
-      balance: -806.28
+      balance: -806.28,
+      type: "supplier"
     },
     {
       id: "4",
@@ -124,7 +141,8 @@ export default function ContactsPage() {
       lastSynced: "2024-03-17",
       defaultAccountCode: "6001",
       status: "active",
-      balance: 162.58
+      balance: 162.58,
+      type: "supplier"
     },
     {
       id: "5",
@@ -133,7 +151,8 @@ export default function ContactsPage() {
       lastSynced: "2024-03-16",
       defaultAccountCode: "6005",
       status: "active",
-      balance: 424.91
+      balance: 424.91,
+      type: "supplier"
     },
     {
       id: "6",
@@ -142,7 +161,8 @@ export default function ContactsPage() {
       lastSynced: "2024-03-15",
       defaultAccountCode: "6001",
       status: "active",
-      balance: 2601.99
+      balance: 2601.99,
+      type: "supplier"
     },
     {
       id: "7",
@@ -151,7 +171,8 @@ export default function ContactsPage() {
       lastSynced: "2024-03-14",
       defaultAccountCode: "5001",
       status: "active",
-      balance: 4280.64
+      balance: 4280.64,
+      type: "supplier"
     },
     {
       id: "8",
@@ -160,70 +181,78 @@ export default function ContactsPage() {
       lastSynced: "2024-03-13",
       defaultAccountCode: "6006",
       status: "active",
-      balance: 0
+      balance: 0,
+      type: "supplier"
     },
     {
       id: "9",
-      name: "DMS1 Limited",
-      company: "Services",
-      lastSynced: "2024-03-12",
-      defaultAccountCode: "7004",
-      status: "active",
-      balance: 36015.48
-    },
-    {
-      id: "10",
-      name: "DOJO",
-      company: "Payment Processing",
-      lastSynced: "2024-03-11",
-      defaultAccountCode: "4001",
-      status: "active",
-      balance: 77.90
-    },
-    {
-      id: "11",
       name: "DOMBARM",
       company: "Internal",
       lastSynced: "2024-03-10",
       defaultAccountCode: "4001",
       status: "active",
-      balance: 9784.22
+      balance: 9784.22,
+      type: "customer"
     },
     {
-      id: "12",
+      id: "10",
       name: "DOMKING",
       company: "Internal",
       lastSynced: "2024-03-09",
       defaultAccountCode: "4001",
       status: "active",
-      balance: 9600.38
+      balance: 9600.38,
+      type: "customer"
     },
     {
-      id: "13",
+      id: "11",
       name: "DOMLOSE",
       company: "Internal",
       lastSynced: "2024-03-08",
       defaultAccountCode: "4001",
       status: "active",
-      balance: 15700.11
+      balance: 15700.11,
+      type: "customer"
     },
     {
-      id: "14",
+      id: "12",
       name: "DOMMAID",
       company: "Internal",
       lastSynced: "2024-03-07",
       defaultAccountCode: "4001",
       status: "active",
-      balance: 10570.97
+      balance: 10570.97,
+      type: "customer"
     },
     {
-      id: "15",
+      id: "13",
       name: "DOMSNOD",
       company: "Internal",
       lastSynced: "2024-03-06",
       defaultAccountCode: "4001",
       status: "active",
-      balance: 11324.66
+      balance: 11324.66,
+      type: "customer"
+    },
+    {
+      id: "14",
+      name: "DMS1 Limited",
+      company: "Services",
+      lastSynced: "2024-03-12",
+      defaultAccountCode: "7004",
+      status: "active",
+      balance: 36015.48,
+      type: "customer"
+    },
+    {
+      id: "15",
+      name: "DOJO",
+      company: "Payment Processing",
+      lastSynced: "2024-03-11",
+      defaultAccountCode: "4001",
+      status: "active",
+      balance: 77.90,
+      type: "customer"
     }
   ]
 
@@ -239,16 +268,51 @@ export default function ContactsPage() {
     console.log("Creating contact:", {
       name: newContactName,
       company: companies.find(c => c.id === selectedCompany)?.name,
-      defaultAccountCode: selectedAccountCode
+      defaultAccountCode: selectedAccountCode,
+      type: selectedContactType
     })
     setIsDialogOpen(false)
     setNewContactName("")
     setSelectedCompany("")
     setSelectedAccountCode("")
+    setSelectedContactType("")
   }
 
-  // Filter contacts by search and company
-  const filteredContacts = contacts.filter(contact =>
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact)
+    setEditContactName(contact.name)
+    setEditSelectedCompany(companies.find(c => c.name === contact.company)?.id || "")
+    setEditSelectedAccountCode(contact.defaultAccountCode)
+    setEditSelectedContactType(contact.type)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    // Implement contact edit logic here
+    console.log("Editing contact:", {
+      id: editingContact?.id,
+      name: editContactName,
+      company: companies.find(c => c.id === editSelectedCompany)?.name,
+      defaultAccountCode: editSelectedAccountCode,
+      type: editSelectedContactType
+    })
+    setIsEditDialogOpen(false)
+    setEditingContact(null)
+    setEditContactName("")
+    setEditSelectedCompany("")
+    setEditSelectedAccountCode("")
+    setEditSelectedContactType("")
+  }
+
+  // Filter contacts by search, company, and type
+  const suppliers = contacts.filter(contact => 
+    contact.type === "supplier" &&
+    contact.name.toLowerCase().includes(contactSearch.toLowerCase()) &&
+    (selectedCompanyFilter === "all" || contact.company === companies.find(c => c.id === selectedCompanyFilter)?.name)
+  )
+
+  const customers = contacts.filter(contact => 
+    contact.type === "customer" &&
     contact.name.toLowerCase().includes(contactSearch.toLowerCase()) &&
     (selectedCompanyFilter === "all" || contact.company === companies.find(c => c.id === selectedCompanyFilter)?.name)
   )
@@ -273,26 +337,50 @@ export default function ContactsPage() {
       .slice(0, 3)
   }
 
-  // Checkbox logic
-  const allSelected =
-    filteredContacts.length > 0 &&
-    filteredContacts.every((c) => selectedContactIds.includes(c.id))
-  const someSelected =
-    filteredContacts.some((c) => selectedContactIds.includes(c.id)) && !allSelected
+  // Suppliers checkbox logic
+  const allSuppliersSelected =
+    suppliers.length > 0 &&
+    suppliers.every((c) => selectedSupplierIds.includes(c.id))
+  const someSuppliersSelected =
+    suppliers.some((c) => selectedSupplierIds.includes(c.id)) && !allSuppliersSelected
 
-  function toggleSelectAll() {
-    if (allSelected) {
-      setSelectedContactIds((ids) => ids.filter(id => !filteredContacts.some(c => c.id === id)))
+  function toggleSelectAllSuppliers() {
+    if (allSuppliersSelected) {
+      setSelectedSupplierIds((ids) => ids.filter(id => !suppliers.some(c => c.id === id)))
     } else {
-      setSelectedContactIds((ids) => [
+      setSelectedSupplierIds((ids) => [
         ...ids,
-        ...filteredContacts.map((c) => c.id).filter((id) => !ids.includes(id)),
+        ...suppliers.map((c) => c.id).filter((id) => !ids.includes(id)),
       ])
     }
   }
 
-  function toggleContact(id: string) {
-    setSelectedContactIds((ids) =>
+  function toggleSupplier(id: string) {
+    setSelectedSupplierIds((ids) =>
+      ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id]
+    )
+  }
+
+  // Customers checkbox logic
+  const allCustomersSelected =
+    customers.length > 0 &&
+    customers.every((c) => selectedCustomerIds.includes(c.id))
+  const someCustomersSelected =
+    customers.some((c) => selectedCustomerIds.includes(c.id)) && !allCustomersSelected
+
+  function toggleSelectAllCustomers() {
+    if (allCustomersSelected) {
+      setSelectedCustomerIds((ids) => ids.filter(id => !customers.some(c => c.id === id)))
+    } else {
+      setSelectedCustomerIds((ids) => [
+        ...ids,
+        ...customers.map((c) => c.id).filter((id) => !ids.includes(id)),
+      ])
+    }
+  }
+
+  function toggleCustomer(id: string) {
+    setSelectedCustomerIds((ids) =>
       ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id]
     )
   }
@@ -360,12 +448,24 @@ export default function ContactsPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="grid gap-2">
+                  <Label>Contact Type</Label>
+                  <Select value={selectedContactType} onValueChange={setSelectedContactType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select contact type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="supplier">Supplier</SelectItem>
+                      <SelectItem value="customer">Customer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateContact} disabled={!newContactName || !selectedCompany || !selectedAccountCode}>
+                <Button onClick={handleCreateContact} disabled={!newContactName || !selectedCompany || !selectedAccountCode || !selectedContactType}>
                   Create Contact
                 </Button>
               </DialogFooter>
@@ -374,119 +474,281 @@ export default function ContactsPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All contacts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Search and Filter bar */}
-          <div className="mb-4 flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Search and Filter bar - shared for both tables */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search for a contact"
+            className="pl-8"
+            value={contactSearch}
+            onChange={(e) => setContactSearch(e.target.value)}
+          />
+        </div>
+        <div className="w-64">
+          <Select value={selectedCompanyFilter} onValueChange={setSelectedCompanyFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by company" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Companies</SelectItem>
+              {companies.map((company) => (
+                <SelectItem key={company.id} value={company.id}>
+                  {company.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Selected count - combined for both tables */}
+      <div className="text-xs text-muted-foreground mb-4">
+        {selectedSupplierIds.length + selectedCustomerIds.length} contact{selectedSupplierIds.length + selectedCustomerIds.length !== 1 ? 's' : ''} selected
+        <span className="ml-2 text-muted-foreground">
+          ({selectedSupplierIds.length} suppliers, {selectedCustomerIds.length} customers)
+        </span>
+      </div>
+
+      {/* Two tables stacked vertically */}
+      <div className="space-y-6">
+        {/* Suppliers Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Suppliers ({suppliers.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Table header */}
+            <div className="flex items-center px-2 py-1 border-b bg-muted text-xs font-semibold">
+              <input
+                type="checkbox"
+                checked={allSuppliersSelected}
+                ref={el => { if (el) el.indeterminate = someSuppliersSelected; }}
+                onChange={toggleSelectAllSuppliers}
+                className="mr-4 h-4 w-4"
+              />
+              <span className="w-1/4">Contact</span>
+              <span className="w-1/4">Company</span>
+              <span className="w-1/4">Account Code</span>
+              <span className="w-1/4">Actions</span>
+            </div>
+
+            {/* Scrollable suppliers list */}
+            <ScrollArea className="h-[400px] w-full">
+              <div>
+                {suppliers.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                    No suppliers found
+                  </div>
+                ) : (
+                  suppliers.map((contact) => (
+                    <div
+                      key={contact.id}
+                      className="flex items-center px-2 py-2 border-b hover:bg-accent transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedSupplierIds.includes(contact.id)}
+                        onChange={() => toggleSupplier(contact.id)}
+                        className="mr-4 h-4 w-4"
+                      />
+                      <div className="flex items-center w-1/4">
+                        <div
+                          className="flex items-center justify-center rounded-md mr-3"
+                          style={{
+                            backgroundColor: stringToColor(contact.name),
+                            width: 32,
+                            height: 32,
+                            minWidth: 32,
+                            minHeight: 32,
+                          }}
+                        >
+                          <span className="text-xs font-bold text-gray-800">
+                            {getInitials(contact.name)}
+                          </span>
+                        </div>
+                        <span className="font-semibold text-sm truncate">{contact.name}</span>
+                      </div>
+                      <span className="w-1/4 text-sm truncate">{contact.company}</span>
+                      <div className="w-1/4">
+                        <Badge variant="secondary" className="text-xs">
+                          {accountCodes.find(code => code.id === contact.defaultAccountCode)?.name || contact.defaultAccountCode}
+                        </Badge>
+                      </div>
+                      <div className="w-1/4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditContact(contact)}
+                          className="h-8"
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Customers Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Customers ({customers.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Table header */}
+            <div className="flex items-center px-2 py-1 border-b bg-muted text-xs font-semibold">
+              <input
+                type="checkbox"
+                checked={allCustomersSelected}
+                ref={el => { if (el) el.indeterminate = someCustomersSelected; }}
+                onChange={toggleSelectAllCustomers}
+                className="mr-4 h-4 w-4"
+              />
+              <span className="w-1/4">Contact</span>
+              <span className="w-1/4">Company</span>
+              <span className="w-1/4">Account Code</span>
+              <span className="w-1/4">Actions</span>
+            </div>
+
+            {/* Scrollable customers list */}
+            <ScrollArea className="h-[400px] w-full">
+              <div>
+                {customers.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                    No customers found
+                  </div>
+                ) : (
+                  customers.map((contact) => (
+                    <div
+                      key={contact.id}
+                      className="flex items-center px-2 py-2 border-b hover:bg-accent transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCustomerIds.includes(contact.id)}
+                        onChange={() => toggleCustomer(contact.id)}
+                        className="mr-4 h-4 w-4"
+                      />
+                      <div className="flex items-center w-1/4">
+                        <div
+                          className="flex items-center justify-center rounded-md mr-3"
+                          style={{
+                            backgroundColor: stringToColor(contact.name),
+                            width: 32,
+                            height: 32,
+                            minWidth: 32,
+                            minHeight: 32,
+                          }}
+                        >
+                          <span className="text-xs font-bold text-gray-800">
+                            {getInitials(contact.name)}
+                          </span>
+                        </div>
+                        <span className="font-semibold text-sm truncate">{contact.name}</span>
+                      </div>
+                      <span className="w-1/4 text-sm truncate">{contact.company}</span>
+                      <div className="w-1/4">
+                        <Badge variant="secondary" className="text-xs">
+                          {accountCodes.find(code => code.id === contact.defaultAccountCode)?.name || contact.defaultAccountCode}
+                        </Badge>
+                      </div>
+                      <div className="w-1/4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditContact(contact)}
+                          className="h-8"
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Edit Contact Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Contact</DialogTitle>
+            <DialogDescription>
+              Update the contact information and settings.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Contact Name</Label>
               <Input
-                placeholder="Search for a contact"
-                className="pl-8"
-                value={contactSearch}
-                onChange={(e) => setContactSearch(e.target.value)}
+                id="edit-name"
+                value={editContactName}
+                onChange={(e) => setEditContactName(e.target.value)}
+                placeholder="Enter contact name"
               />
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium leading-none">Filters</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Filter contacts by company
-                    </p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Company</Label>
-                    <Select value={selectedCompanyFilter} onValueChange={setSelectedCompanyFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select company" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Companies</SelectItem>
-                        {companies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Selected count */}
-          <div className="text-xs text-muted-foreground mb-2">
-            {selectedContactIds.length} contact{selectedContactIds.length !== 1 ? 's' : ''} selected
-          </div>
-
-          {/* Table header */}
-          <div className="flex items-center px-2 py-1 border-b bg-muted text-xs font-semibold">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              ref={el => { if (el) el.indeterminate = someSelected; }}
-              onChange={toggleSelectAll}
-              className="mr-4 h-4 w-4"
-            />
-            <span className="w-1/3">Contact</span>
-            <span className="w-1/3">Company</span>
-            <span className="w-1/3">Default Account Code</span>
-          </div>
-
-          {/* Scrollable contacts list */}
-          <ScrollArea className="h-[400px] w-full">
-            <div>
-              {filteredContacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className="flex items-center px-2 py-2 border-b hover:bg-accent transition-colors"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedContactIds.includes(contact.id)}
-                    onChange={() => toggleContact(contact.id)}
-                    className="mr-4 h-4 w-4"
-                  />
-                  <div className="flex items-center w-1/3">
-                    <div
-                      className="flex items-center justify-center rounded-md mr-3"
-                      style={{
-                        backgroundColor: stringToColor(contact.name),
-                        width: 32,
-                        height: 32,
-                        minWidth: 32,
-                        minHeight: 32,
-                      }}
-                    >
-                      <span className="text-xs font-bold text-gray-800">
-                        {getInitials(contact.name)}
-                      </span>
-                    </div>
-                    <span className="font-semibold text-sm">{contact.name}</span>
-                  </div>
-                  <span className="w-1/3 text-sm">{contact.company}</span>
-                  <div className="w-1/3">
-                    <Badge variant="secondary">
-                      {accountCodes.find(code => code.id === contact.defaultAccountCode)?.name || contact.defaultAccountCode}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+            <div className="grid gap-2">
+              <Label>Company</Label>
+              <Select value={editSelectedCompany} onValueChange={setEditSelectedCompany}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+            <div className="grid gap-2">
+              <Label>Default Account Code</Label>
+              <Select value={editSelectedAccountCode} onValueChange={setEditSelectedAccountCode}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select account code" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accountCodes.map((code) => (
+                    <SelectItem key={code.id} value={code.id}>
+                      {code.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Contact Type</Label>
+              <Select value={editSelectedContactType} onValueChange={setEditSelectedContactType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select contact type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="supplier">Supplier</SelectItem>
+                  <SelectItem value="customer">Customer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={!editContactName || !editSelectedCompany || !editSelectedAccountCode || !editSelectedContactType}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

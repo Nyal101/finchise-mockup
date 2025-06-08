@@ -164,8 +164,8 @@ export function HorizontalNavBar({
         icon: Store 
       },
       { 
-        name: "Xero Integration", 
-        href: "/settings/XeroIntegration", 
+        name: "Company Management", 
+        href: "/settings/CompanyManagement", 
         icon: Zap 
       },
       { 
