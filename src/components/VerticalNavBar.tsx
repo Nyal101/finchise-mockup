@@ -7,7 +7,6 @@ import {
   Home,
   PieChart,
   Settings,
-  Store,
   DollarSign,
   ChevronRight,
   ChevronLeft,
