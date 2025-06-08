@@ -159,14 +159,16 @@ export function HorizontalNavBar({
     ],
     settings: [
       { 
-        name: "Store Management", 
-        href: "/settings/StoreManagement", 
-        icon: Store 
-      },
-      { 
+        
         name: "Company Management", 
         href: "/settings/CompanyManagement", 
         icon: Zap 
+        
+      },
+      { 
+        name: "Store Management", 
+        href: "/settings/StoreManagement", 
+        icon: Store 
       },
       { 
         name: "Franchise Settings", 

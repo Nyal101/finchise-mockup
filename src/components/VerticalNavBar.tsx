@@ -38,7 +38,6 @@ export function VerticalNavBar({
     { id: "accounting", name: "Accounting", icon: CreditCard },
     { id: "payroll", name: "Payroll", icon: DollarSign },
     { id: "settings", name: "Settings", icon: Settings },
-    { id: "subscription", name: "Subscription", icon: Store },
   ]
 
   // Define the default/first page for each section
@@ -48,7 +47,6 @@ export function VerticalNavBar({
     accounting: "/accounting/Purchases",
     payroll: "/payroll/Summary",
     settings: "/settings/StoreManagement",
-    subscription: "/settings/Subscription",
   }
 
   const toggleCollapse = () => {
