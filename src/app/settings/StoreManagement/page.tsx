@@ -688,13 +688,13 @@ export default function StoreManagementPage() {
                   </div>
                 </div>
 
-                {/* Right Column - Store Codes */}
+                {/* Right Column - Additional Info */}
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Store Codes</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Information:</h3>
                     <div className="space-y-3">
                       <div className="text-sm text-gray-600">
-                        Add provider-specific codes for this store:
+                        Add provider-specific information for this store:
                       </div>
                       
                       {/* Codes Table */}
@@ -1199,13 +1199,13 @@ export default function StoreManagementPage() {
               </div>
             </div>
 
-            {/* Right Column - Store Codes */}
+            {/* Right Column - Additional Information */}
             <div className="space-y-4">
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Store Codes</h3>
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Information</h3>
                 <div className="space-y-3">
                   <div className="text-sm text-gray-600">
-                    Provider-specific codes for this store:
+                    Provider-specific information for this store:
                   </div>
                   
                   {/* Codes Table */}

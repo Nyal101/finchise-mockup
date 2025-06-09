@@ -4,7 +4,7 @@ export interface SalesInvoiceData {
   store: string;
   source: string; // POS system
   date: Date;
-  status: string;
+  status: 'Processing' | 'Published' | 'Posted' | 'Review';
   subtotal: number;
   vatRate: number;
   vat: number;
@@ -18,6 +18,70 @@ export interface SalesInvoiceData {
   notes?: string;
   previewUrl?: string;
   storeAllocations?: StoreAllocation[];
+  // New fields for AI processing
+  uploadedFile?: UploadedFile;
+  aiExtractedData?: AIExtractedData;
+  reviewErrors?: ReviewError[];
+  supplierInfo?: SupplierInfo;
+  confidence?: number; // AI confidence score (0-100)
+  lastProcessed?: Date;
+}
+
+export interface UploadedFile {
+  id: string;
+  name: string;
+  type: 'pdf' | 'csv' | 'image';
+  url: string;
+  size: number;
+  uploadDate: Date;
+}
+
+export interface AIExtractedData {
+  invoiceNumber?: string;
+  supplier?: string;
+  supplierAddress?: string;
+  invoiceDate?: Date;
+  dueDate?: Date;
+  totalAmount?: number;
+  subtotalAmount?: number;
+  vatAmount?: number;
+  currency?: string;
+  accountCode?: string;
+  storeLocation?: string;
+  lineItems?: ExtractedLineItem[];
+  paymentTerms?: string;
+  reference?: string;
+}
+
+export interface ExtractedLineItem {
+  description: string;
+  quantity?: number;
+  unitPrice?: number;
+  totalPrice: number;
+  accountCode?: string;
+  taxRate?: number;
+}
+
+export interface ReviewError {
+  id: string;
+  type: 'new_supplier' | 'unknown_supplier' | 'unknown_store' | 'unknown_account_code' | 'incomplete_address' | 'missing_data' | 'validation_error' | 'duplicate_invoice';
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  suggestedAction?: string;
+  fieldPath?: string; // Path to the problematic field
+  confidence?: number;
+}
+
+export interface SupplierInfo {
+  id?: string;
+  name: string;
+  address?: string;
+  taxId?: string;
+  accountCode?: string;
+  paymentTerms?: string;
+  isNew?: boolean;
+  confidence?: number;
 }
 
 export interface SalesLineItem {

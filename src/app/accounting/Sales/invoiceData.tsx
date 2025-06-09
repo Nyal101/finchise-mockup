@@ -1,48 +1,7 @@
-import { addDays, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
+import { SalesInvoiceData } from './components/types';
 
-// Type for sales invoice data
-export interface SalesInvoiceData {
-  id: string;
-  invoiceNumber: string;
-  store: string;
-  source: string; // POS system
-  date: Date;
-  status: string;
-  subtotal: number;
-  vatRate: number;
-  vat: number;
-  total: number;
-  paymentMethod: string;
-  archived: boolean;
-  deleted: boolean;
-  lineItems: SalesLineItem[];
-  requiresJournaling: boolean;
-  journalEntries?: JournalEntry[];
-  notes?: string;
-  previewUrl?: string;
-}
-
-export interface SalesLineItem {
-  id: string;
-  description: string;
-  category: string;
-  quantity: number;
-  price: number;
-  subtotal: number;
-  vatRate: number;
-  vat: number;
-  total: number;
-}
-
-export interface JournalEntry {
-  id: string;
-  account: string;
-  description: string;
-  debit: number;
-  credit: number;
-}
-
-// Generate sales data
+// Generate enhanced sales data with AI processing features
 export const salesInvoices: SalesInvoiceData[] = [
   {
     id: "s001",
@@ -50,7 +9,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     store: "Dominos",
     source: "Dominos POS",
     date: subDays(new Date(), 2),
-    status: "Processed",
+    status: "Published",
     subtotal: 1250.75,
     vatRate: 20,
     vat: 250.15,
@@ -58,11 +17,43 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Mixed",
     archived: false,
     deleted: false,
+    confidence: 95,
+    lastProcessed: subDays(new Date(), 2),
+    uploadedFile: {
+      id: "file001",
+      name: "dominos_daily_sales.pdf",
+      type: "pdf",
+      url: "/uploads/dominos_daily_sales.pdf",
+      size: 524288,
+      uploadDate: subDays(new Date(), 2)
+    },
+    aiExtractedData: {
+      invoiceNumber: "DOM-POS-001",
+      supplier: "Dominos Pizza UK Ltd",
+      supplierAddress: "1 Lansdowne Gate, Croydon CR0 2BX, UK",
+      invoiceDate: subDays(new Date(), 2),
+      totalAmount: 1500.90,
+      subtotalAmount: 1250.75,
+      vatAmount: 250.15,
+      currency: "GBP",
+      accountCode: "4000",
+      storeLocation: "Dominos - Main Street"
+    },
+    supplierInfo: {
+      id: "sup001",
+      name: "Dominos Pizza UK Ltd",
+      address: "1 Lansdowne Gate, Croydon CR0 2BX, UK",
+      taxId: "GB123456789",
+      accountCode: "4000",
+      paymentTerms: "NET 30",
+      isNew: false,
+      confidence: 98
+    },
     lineItems: [
       {
         id: "item001",
         description: "Delivered Orders",
-        category: "Food",
+        category: "Food Sales",
         quantity: 35,
         price: 19.99,
         subtotal: 699.65,
@@ -73,7 +64,7 @@ export const salesInvoices: SalesInvoiceData[] = [
       {
         id: "item002",
         description: "Collection Orders",
-        category: "Food",
+        category: "Food Sales",
         quantity: 28,
         price: 18.75,
         subtotal: 525.00,
@@ -83,7 +74,7 @@ export const salesInvoices: SalesInvoiceData[] = [
       },
       {
         id: "item003",
-        description: "Drinks",
+        description: "Drinks & Sides",
         category: "Beverages",
         quantity: 17,
         price: 1.50,
@@ -124,7 +115,7 @@ export const salesInvoices: SalesInvoiceData[] = [
         credit: 0,
       },
     ],
-    notes: "Daily sales report from Domino's POS system",
+    notes: "Daily sales report from Domino's POS system - AI processed successfully",
     previewUrl: "sales-receipt-1.pdf",
   },
   {
@@ -133,7 +124,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     store: "Dominos",
     source: "UberEats",
     date: subDays(new Date(), 1),
-    status: "Pending Review",
+    status: "Review",
     subtotal: 742.50,
     vatRate: 20,
     vat: 148.50,
@@ -141,11 +132,60 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Online Payment",
     archived: false,
     deleted: false,
+    confidence: 67,
+    lastProcessed: subDays(new Date(), 1),
+    uploadedFile: {
+      id: "file002",
+      name: "uber_eats_settlement.csv",
+      type: "csv",
+      url: "/uploads/uber_eats_settlement.csv",
+      size: 15360,
+      uploadDate: subDays(new Date(), 1)
+    },
+    aiExtractedData: {
+      invoiceNumber: "UBER-123456", 
+      supplier: "Uber Technologies Inc",
+      supplierAddress: "Incomplete address data",
+      invoiceDate: subDays(new Date(), 1),
+      totalAmount: 891.00,
+      subtotalAmount: 742.50,
+      vatAmount: 148.50,
+      currency: "GBP",
+      storeLocation: "Unknown store location"
+    },
+    supplierInfo: {
+      name: "Uber Technologies Inc",
+      address: "Incomplete - requires verification",
+      isNew: false,
+      confidence: 45
+    },
+    reviewErrors: [
+      {
+        id: "err001",
+        type: "incomplete_address",
+        title: "Incomplete Supplier Address",
+        description: "The supplier address is missing postal code and full street details",
+        severity: "medium",
+        suggestedAction: "Verify and complete the supplier address in settings",
+        fieldPath: "supplierInfo.address",
+        confidence: 65
+      },
+      {
+        id: "err002",
+        type: "unknown_store",
+        title: "Store Location Not Identified",
+        description: "AI couldn't determine which store this settlement applies to",
+        severity: "high",
+        suggestedAction: "Assign this invoice to the correct store location",
+        fieldPath: "store",
+        confidence: 35
+      }
+    ],
     lineItems: [
       {
         id: "item001",
         description: "Food Orders",
-        category: "Food",
+        category: "Food Sales",
         quantity: 23,
         price: 25.50,
         subtotal: 586.50,
@@ -156,7 +196,7 @@ export const salesInvoices: SalesInvoiceData[] = [
       {
         id: "item002",
         description: "Delivery Fees",
-        category: "Service",
+        category: "Service Revenue",
         quantity: 23,
         price: 3.49,
         subtotal: 80.27,
@@ -166,8 +206,8 @@ export const salesInvoices: SalesInvoiceData[] = [
       },
       {
         id: "item003",
-        description: "Uber Service Fee",
-        category: "Commission",
+        description: "Uber Commission",
+        category: "Commission Expense",
         quantity: 1,
         price: -148.50,
         subtotal: -148.50,
@@ -177,343 +217,315 @@ export const salesInvoices: SalesInvoiceData[] = [
       },
     ],
     requiresJournaling: true,
-    notes: "Weekly settlement from UberEats",
+    notes: "Weekly settlement from UberEats - requires review",
     previewUrl: "sales-receipt-2.pdf",
   },
   {
     id: "s003",
-    invoiceNumber: "JE-123-456-789",
-    store: "Dominos",
+    invoiceNumber: "JE-789-123",
+    store: "Unknown",
     source: "JustEat",
-    date: subDays(new Date(), 3),
-    status: "Processed",
-    subtotal: 865.25,
+    date: new Date(),
+    status: "Processing",
+    subtotal: 0,
     vatRate: 20,
-    vat: 173.05,
-    total: 1038.30,
-    paymentMethod: "Bank Transfer",
+    vat: 0,
+    total: 0,
+    paymentMethod: "Unknown",
     archived: false,
     deleted: false,
-    lineItems: [
-      {
-        id: "item001",
-        description: "JustEat Orders",
-        category: "Food",
-        quantity: 27,
-        price: 32.05,
-        subtotal: 865.25,
-        vatRate: 20,
-        vat: 173.05,
-        total: 1038.30,
-      },
-      {
-        id: "item002",
-        description: "JustEat Commission",
-        category: "Commission",
-        quantity: 1,
-        price: -129.79,
-        subtotal: -129.79,
-        vatRate: 20,
-        vat: -25.96,
-        total: -155.75,
-      },
-    ],
-    requiresJournaling: true,
-    notes: "Weekly settlement from JustEat platform",
-    previewUrl: "sales-receipt-3.pdf",
+    confidence: 15,
+    lastProcessed: new Date(),
+    uploadedFile: {
+      id: "file003",
+      name: "justeat_invoice_blurry.pdf",
+      type: "pdf",
+      url: "/uploads/justeat_invoice_blurry.pdf",
+      size: 1048576,
+      uploadDate: new Date()
+    },
+    aiExtractedData: {
+      invoiceNumber: "JE-789-123",
+      supplier: "Just Eat Holdings Ltd",
+      invoiceDate: new Date(),
+      currency: "GBP"
+    },
+    supplierInfo: {
+      name: "Just Eat Holdings Ltd",
+      isNew: false,
+      confidence: 78
+    },
+    lineItems: [],
+    requiresJournaling: false,
+    notes: "Currently being processed by AI - low quality scan detected",
   },
   {
     id: "s004",
-    invoiceNumber: "DOM-POS-002",
-    store: "GDK",
-    source: "GDK POS",
+    invoiceNumber: "SAV-001-2025",
+    store: "Savills",
+    source: "Manual Upload",
     date: subDays(new Date(), 5),
-    status: "Processed",
-    subtotal: 1850.30,
+    status: "Review",
+    subtotal: 9000.00,
     vatRate: 20,
-    vat: 370.06,
-    total: 2220.36,
-    paymentMethod: "Mixed",
-    archived: false,
-    deleted: false,
-    lineItems: [
-      {
-        id: "item001",
-        description: "In-store Sales",
-        category: "Food",
-        quantity: 1,
-        price: 1420.50,
-        subtotal: 1420.50,
-        vatRate: 20,
-        vat: 284.10,
-        total: 1704.60,
-      },
-      {
-        id: "item002",
-        description: "Takeaway Orders",
-        category: "Food",
-        quantity: 1,
-        price: 429.80,
-        subtotal: 429.80,
-        vatRate: 20,
-        vat: 85.96,
-        total: 515.76,
-      },
-    ],
-    requiresJournaling: true,
-    notes: "Daily sales report from German Doner Kebab POS",
-    previewUrl: "sales-receipt-4.pdf",
-  },
-  {
-    id: "s005",
-    invoiceNumber: "DELIVEROO-98765",
-    store: "GDK",
-    source: "Deliveroo",
-    date: subDays(new Date(), 6),
-    status: "AI Processed",
-    subtotal: 562.10,
-    vatRate: 20,
-    vat: 112.42,
-    total: 674.52,
-    paymentMethod: "Online Payment",
-    archived: false,
-    deleted: false,
-    lineItems: [
-      {
-        id: "item001",
-        description: "Deliveroo Orders",
-        category: "Food",
-        quantity: 19,
-        price: 29.58,
-        subtotal: 562.10,
-        vatRate: 20,
-        vat: 112.42,
-        total: 674.52,
-      },
-      {
-        id: "item002",
-        description: "Deliveroo Commission",
-        category: "Commission",
-        quantity: 1,
-        price: -112.42,
-        subtotal: -112.42,
-        vatRate: 20,
-        vat: -22.48,
-        total: -134.90,
-      },
-    ],
-    requiresJournaling: true,
-    notes: "Weekly settlement from Deliveroo",
-    previewUrl: "sales-receipt-5.pdf",
-  },
-  {
-    id: "s006",
-    invoiceNumber: "COSTA-POS-001",
-    store: "Costa",
-    source: "Costa POS",
-    date: subDays(new Date(), 4),
-    status: "Processed",
-    subtotal: 1475.85,
-    vatRate: 20,
-    vat: 295.17,
-    total: 1771.02,
-    paymentMethod: "Mixed",
-    archived: false,
-    deleted: false,
-    lineItems: [
-      {
-        id: "item001",
-        description: "Hot Drinks",
-        category: "Beverages",
-        quantity: 187,
-        price: 3.25,
-        subtotal: 607.75,
-        vatRate: 20,
-        vat: 121.55,
-        total: 729.30,
-      },
-      {
-        id: "item002",
-        description: "Cold Drinks",
-        category: "Beverages",
-        quantity: 95,
-        price: 3.75,
-        subtotal: 356.25,
-        vatRate: 20,
-        vat: 71.25,
-        total: 427.50,
-      },
-      {
-        id: "item003",
-        description: "Food Items",
-        category: "Food",
-        quantity: 92,
-        price: 5.56,
-        subtotal: 511.85,
-        vatRate: 20,
-        vat: 102.37,
-        total: 614.22,
-      },
-    ],
-    requiresJournaling: true,
-    notes: "Daily sales report from Costa Coffee POS",
-    previewUrl: "sales-receipt-6.pdf",
-  },
-  {
-    id: "s007",
-    invoiceNumber: "JE-234-567-890",
-    store: "Costa",
-    source: "JustEat",
-    date: subDays(new Date(), 7),
-    status: "Needs Attention",
-    subtotal: 342.75,
-    vatRate: 20,
-    vat: 68.55,
-    total: 411.30,
+    vat: 1800.00,
+    total: 10800.00,
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
+    confidence: 42,
+    lastProcessed: subDays(new Date(), 5),
+    uploadedFile: {
+      id: "file004",
+      name: "savills_property_services.pdf",
+      type: "pdf",
+      url: "/uploads/savills_property_services.pdf",
+      size: 782000,
+      uploadDate: subDays(new Date(), 5)
+    },
+    aiExtractedData: {
+      invoiceNumber: "SAV-001-2025",
+      supplier: "Savills Property Management Ltd",
+      supplierAddress: "33 Margaret Street, London W1G 0JD",
+      invoiceDate: subDays(new Date(), 5),
+      totalAmount: 10800.00,
+      subtotalAmount: 9000.00,
+      vatAmount: 1800.00,
+      currency: "GBP",
+      reference: "Property maintenance services"
+    },
+    supplierInfo: {
+      name: "Savills Property Management Ltd",
+      address: "33 Margaret Street, London W1G 0JD",
+      taxId: "GB987654321",
+      isNew: true,
+      confidence: 85
+    },
+    reviewErrors: [
+      {
+        id: "err003",
+        type: "new_supplier",
+        title: "New Supplier Detected",
+        description: "This supplier is not in your system. AI suggests adding 'Savills Property Management Ltd' as a new supplier.",
+        severity: "medium",
+        suggestedAction: "Review supplier details and confirm addition to your supplier database",
+        fieldPath: "supplierInfo",
+        confidence: 85
+      },
+      {
+        id: "err004", 
+        type: "unknown_account_code",
+        title: "Account Code Assignment Required",
+        description: "AI couldn't determine the appropriate account code for property services",
+        severity: "high",
+        suggestedAction: "Assign appropriate account code (suggested: 7200 - Property Expenses)",
+        fieldPath: "accountCode",
+        confidence: 20
+      }
+    ],
     lineItems: [
       {
         id: "item001",
-        description: "JustEat Orders",
-        category: "Mixed",
-        quantity: 18,
-        price: 19.04,
-        subtotal: 342.75,
-        vatRate: 20,
-        vat: 68.55,
-        total: 411.30,
-      },
-      {
-        id: "item002",
-        description: "JustEat Commission",
-        category: "Commission",
+        description: "Property Management Services",
+        category: "Professional Services",
         quantity: 1,
-        price: -58.26,
-        subtotal: -58.26,
+        price: 9000.00,
+        subtotal: 9000.00,
         vatRate: 20,
-        vat: -11.65,
-        total: -69.91,
-      },
+        vat: 1800.00,
+        total: 10800.00,
+      }
     ],
     requiresJournaling: true,
-    notes: "Weekly settlement from JustEat platform - discrepancy found",
-    previewUrl: "sales-receipt-7.pdf",
+    notes: "New supplier - requires approval before processing",
   },
   {
-    id: "s008",
-    invoiceNumber: "DOM-POS-003",
-    store: "Dominos",
-    source: "Dominos POS",
-    date: addDays(new Date(), 1),
-    status: "Draft",
-    subtotal: 1320.45,
+    id: "s005",
+    invoiceNumber: "COSTA-DUP-2025",
+    store: "Costa Coffee",
+    source: "Email Upload",
+    date: subDays(new Date(), 1),
+    status: "Review",
+    subtotal: 2500.00,
     vatRate: 20,
-    vat: 264.09,
-    total: 1584.54,
-    paymentMethod: "Mixed",
+    vat: 500.00,
+    total: 3000.00,
+    paymentMethod: "Direct Debit",
     archived: false,
     deleted: false,
-    lineItems: [
+    confidence: 25,
+    lastProcessed: subDays(new Date(), 1),
+    uploadedFile: {
+      id: "file005",
+      name: "costa_supplies_duplicate.pdf",
+      type: "pdf",
+      url: "/uploads/costa_supplies_duplicate.pdf",
+      size: 445000,
+      uploadDate: subDays(new Date(), 1)
+    },
+    aiExtractedData: {
+      invoiceNumber: "COSTA-DUP-2025",
+      supplier: "Costa Coffee Limited",
+      supplierAddress: "Whitbread Court, Houghton Hall Business Park, Dunstable LU5 5XE",
+      invoiceDate: subDays(new Date(), 1),
+      totalAmount: 3000.00,
+      subtotalAmount: 2500.00,
+      vatAmount: 500.00,
+      currency: "GBP"
+    },
+    supplierInfo: {
+      id: "sup002",
+      name: "Costa Coffee Limited",
+      address: "Whitbread Court, Houghton Hall Business Park, Dunstable LU5 5XE",
+      taxId: "GB555666777",
+      accountCode: "5000",
+      isNew: false,
+      confidence: 95
+    },
+    reviewErrors: [
       {
-        id: "item001",
-        description: "Delivered Orders",
-        category: "Food",
-        quantity: 37,
-        price: 20.55,
-        subtotal: 760.35,
-        vatRate: 20,
-        vat: 152.07,
-        total: 912.42,
+        id: "err005",
+        type: "duplicate_invoice",
+        title: "Potential Duplicate Invoice",
+        description: "This invoice may be a duplicate of invoice COSTA-001-2025 processed last week",
+        severity: "critical",
+        suggestedAction: "Review for duplicate payment - compare with existing records",
+        confidence: 78
       },
       {
-        id: "item002",
-        description: "Collection Orders",
-        category: "Food",
-        quantity: 30,
-        price: 18.67,
-        subtotal: 560.10,
-        vatRate: 20,
-        vat: 112.02,
-        total: 672.12,
-      },
+        id: "err006",
+        type: "validation_error",
+        title: "Amount Validation Issue",
+        description: "The invoice total doesn't match the sum of line items",
+        severity: "high",
+        suggestedAction: "Verify invoice calculations and correct any discrepancies",
+        fieldPath: "total",
+        confidence: 92
+      }
     ],
-    requiresJournaling: false,
-    notes: "Draft sales report - pending end of day confirmation",
-    previewUrl: "sales-receipt-8.pdf",
-  },
-  {
-    id: "s009",
-    invoiceNumber: "UBER-234567",
-    store: "GDK",
-    source: "UberEats",
-    date: subDays(new Date(), 10),
-    status: "Processed",
-    subtotal: 682.35,
-    vatRate: 20,
-    vat: 136.47,
-    total: 818.82,
-    paymentMethod: "Online Payment",
-    archived: true,
-    deleted: false,
     lineItems: [
       {
         id: "item001",
-        description: "Food Orders",
-        category: "Food",
-        quantity: 21,
-        price: 32.49,
-        subtotal: 682.35,
+        description: "Coffee Supplies",
+        category: "Inventory",
+        quantity: 50,
+        price: 45.00,
+        subtotal: 2250.00,
         vatRate: 20,
-        vat: 136.47,
-        total: 818.82,
+        vat: 450.00,
+        total: 2700.00,
       },
       {
         id: "item002",
-        description: "Uber Service Fee",
-        category: "Commission",
+        description: "Equipment Rental",
+        category: "Equipment",
         quantity: 1,
-        price: -136.47,
-        subtotal: -136.47,
+        price: 250.00,
+        subtotal: 250.00,
         vatRate: 20,
-        vat: -27.29,
-        total: -163.76,
-      },
+        vat: 50.00,
+        total: 300.00,
+      }
     ],
     requiresJournaling: true,
-    notes: "Weekly settlement from UberEats - archived after processing",
-    previewUrl: "sales-receipt-9.pdf",
+    notes: "Flagged as potential duplicate - requires manual verification",
   },
   {
-    id: "s010",
-    invoiceNumber: "DEL-ERR-123",
-    store: "Costa",
-    source: "Deliveroo",
-    date: subDays(new Date(), 12),
-    status: "Error",
-    subtotal: 425.30,
+    id: "s006",
+    invoiceNumber: "POST-001-2025",
+    store: "All Locations",
+    source: "Xero Integration",
+    date: subDays(new Date(), 7),
+    status: "Posted",
+    subtotal: 5000.00,
     vatRate: 20,
-    vat: 85.06,
-    total: 510.36,
-    paymentMethod: "Unknown",
+    vat: 1000.00,
+    total: 6000.00,
+    paymentMethod: "Bank Transfer",
     archived: false,
-    deleted: true,
+    deleted: false,
+    confidence: 98,
+    lastProcessed: subDays(new Date(), 7),
+    uploadedFile: {
+      id: "file006",
+      name: "marketing_services_final.pdf",
+      type: "pdf",
+      url: "/uploads/marketing_services_final.pdf",
+      size: 892000,
+      uploadDate: subDays(new Date(), 7)
+    },
+    aiExtractedData: {
+      invoiceNumber: "POST-001-2025",
+      supplier: "Digital Marketing Solutions Ltd",
+      supplierAddress: "Tower Bridge Business Centre, 46-48 East Smithfield, London E1W 1AW",
+      invoiceDate: subDays(new Date(), 7),
+      totalAmount: 6000.00,
+      subtotalAmount: 5000.00,
+      vatAmount: 1000.00,
+      currency: "GBP",
+      accountCode: "6200",
+      reference: "Monthly marketing campaign"
+    },
+    supplierInfo: {
+      id: "sup003",
+      name: "Digital Marketing Solutions Ltd",
+      address: "Tower Bridge Business Centre, 46-48 East Smithfield, London E1W 1AW",
+      taxId: "GB444555666",
+      accountCode: "6200",
+      paymentTerms: "NET 15",
+      isNew: false,
+      confidence: 98
+    },
     lineItems: [
       {
         id: "item001",
-        description: "Error Report",
-        category: "Unknown",
+        description: "Digital Marketing Campaign",
+        category: "Marketing",
         quantity: 1,
-        price: 425.30,
-        subtotal: 425.30,
+        price: 4000.00,
+        subtotal: 4000.00,
         vatRate: 20,
-        vat: 85.06,
-        total: 510.36,
+        vat: 800.00,
+        total: 4800.00,
+      },
+      {
+        id: "item002",
+        description: "Social Media Management",
+        category: "Marketing",
+        quantity: 1,
+        price: 1000.00,
+        subtotal: 1000.00,
+        vatRate: 20,
+        vat: 200.00,
+        total: 1200.00,
+      }
+    ],
+    requiresJournaling: true,
+    journalEntries: [
+      {
+        id: "je010",
+        account: "6200",
+        description: "Marketing Expenses",
+        debit: 5000.00,
+        credit: 0,
+      },
+      {
+        id: "je011",
+        account: "1210",
+        description: "VAT Reclaimable",
+        debit: 1000.00,
+        credit: 0,
+      },
+      {
+        id: "je012",
+        account: "2100",
+        description: "Accounts Payable",
+        debit: 0,
+        credit: 6000.00,
       },
     ],
-    requiresJournaling: false,
-    notes: "Erroneous report - deleted after verification",
-    previewUrl: "sales-receipt-10.pdf",
+    notes: "Successfully processed and posted to Xero",
   }
-]; 
+];
+
+export default salesInvoices; 
