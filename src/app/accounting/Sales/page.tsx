@@ -7,19 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Plus, Search, Filter, Upload, FileText, AlertTriangle, CheckCircle, Clock, Eye } from "lucide-react";
 import { SalesInvoiceData } from "./components/types";
-import salesInvoices from "./invoiceData";
-import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-material.css';
+import sampleSalesData from "./data/salesData";
 import { ColDef, CellClickedEvent } from 'ag-grid-community';
 import InvoiceDetails from './invoiceDetails';
+import AGGridWrapper from './components/AGGridWrapper';
 
 // Status color mapping
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Processing':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'Published':
+    case 'Processed':
       return 'bg-green-100 text-green-800 border-green-200';
     case 'Posted':
       return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -35,7 +33,7 @@ const getStatusIcon = (status: string) => {
   switch (status) {
     case 'Processing':
       return <Clock className="h-3 w-3" />;
-    case 'Published':
+    case 'Processed':
       return <CheckCircle className="h-3 w-3" />;
     case 'Posted':
       return <CheckCircle className="h-3 w-3" />;
@@ -47,7 +45,7 @@ const getStatusIcon = (status: string) => {
 };
 
 export default function SalesPage() {
-  const [salesData] = React.useState<SalesInvoiceData[]>(salesInvoices);
+  const [salesData] = React.useState<SalesInvoiceData[]>(sampleSalesData);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [selectedInvoiceId, setSelectedInvoiceId] = React.useState<string | null>(null);
@@ -107,6 +105,22 @@ export default function SalesPage() {
         </div>
         <span className="text-xs text-gray-600">{confidence}%</span>
       </div>
+    );
+  }, []);
+
+  const DocumentTypeCellRenderer = React.useCallback((params: { value?: string }) => {
+    const docType = params.value || "Invoice";
+    return (
+      <Badge 
+        variant="outline" 
+        className={`text-xs ${
+          docType === "Bill" 
+            ? "border-orange-300 text-orange-700 bg-orange-50" 
+            : "border-blue-300 text-blue-700 bg-blue-50"
+        }`}
+      >
+        {docType}
+      </Badge>
     );
   }, []);
 
@@ -209,6 +223,15 @@ export default function SalesPage() {
       filter: false,
     },
     {
+      headerName: "Document Type",
+      field: "documentType",
+      cellRenderer: DocumentTypeCellRenderer,
+      width: 120,
+      sortable: true,
+      filter: true,
+      floatingFilter: true,
+    },
+    {
       headerName: "Actions",
       field: "actions",
       cellRenderer: ActionsCellRenderer,
@@ -216,7 +239,7 @@ export default function SalesPage() {
       sortable: false,
       filter: false,
     },
-  ], [StatusCellRenderer, ReviewErrorsCellRenderer, ConfidenceCellRenderer, AmountCellRenderer, ActionsCellRenderer]);
+  ], [StatusCellRenderer, ReviewErrorsCellRenderer, ConfidenceCellRenderer, AmountCellRenderer, ActionsCellRenderer, DocumentTypeCellRenderer]);
 
   // Filter data based on search and status
   const filteredData = React.useMemo(() => {
@@ -241,7 +264,7 @@ export default function SalesPage() {
 
   // Quick status filter buttons
   const statusCounts = React.useMemo(() => {
-    const counts = { all: 0, Review: 0, Processing: 0, Published: 0, Posted: 0 };
+    const counts = { all: 0, Review: 0, Processing: 0, Processed: 0, Posted: 0 };
     salesData.forEach(invoice => {
       if (!invoice.deleted) {
         counts.all++;
@@ -316,73 +339,58 @@ export default function SalesPage() {
         </Button>
       </div>
 
-      {/* AG Grid */}
-      <div className="bg-white rounded-lg border shadow-sm">
-        <div className="ag-theme-material" style={{ height: '600px', width: '100%' }}>
-          <AgGridReact
-            columnDefs={columnDefs}
-            rowData={filteredData}
-            onCellClicked={onCellClicked}
-            rowSelection="single"
-            suppressRowClickSelection={false}
-            domLayout="normal"
-            defaultColDef={{
-              resizable: true,
-              sortable: false,
-              filter: false,
-            }}
-            rowHeight={60}
-            headerHeight={50}
-            floatingFiltersHeight={35}
-            suppressMenuHide={true}
-            rowClass="cursor-pointer hover:bg-gray-50"
-            getRowStyle={(params) => {
-              if (params.data.status === 'Review') {
-                return { backgroundColor: '#fef2f2' };
-              }
-              return undefined;
-            }}
-          />
+      {/* Compact Status Summary */}
+      <div className="bg-white rounded-lg border shadow-sm p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-600">{statusCounts.Review}</p>
+              <p className="text-sm text-gray-600">Needs Review</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100">
+              <Clock className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-yellow-600">{statusCounts.Processing}</p>
+              <p className="text-sm text-gray-600">Processing</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-green-600">{statusCounts.Processed}</p>
+              <p className="text-sm text-gray-600">Processed</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
+              <CheckCircle className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-600">{statusCounts.Posted}</p>
+              <p className="text-sm text-gray-600">Posted</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-            <h3 className="font-semibold text-red-900">Needs Review</h3>
-          </div>
-          <p className="text-2xl font-bold text-red-600 mt-1">{statusCounts.Review}</p>
-          <p className="text-sm text-red-600 mt-1">Invoices requiring attention</p>
-        </div>
-        
-        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-yellow-600" />
-            <h3 className="font-semibold text-yellow-900">Processing</h3>
-          </div>
-          <p className="text-2xl font-bold text-yellow-600 mt-1">{statusCounts.Processing}</p>
-          <p className="text-sm text-yellow-600 mt-1">Being processed by AI</p>
-        </div>
-        
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <h3 className="font-semibold text-green-900">Published</h3>
-          </div>
-          <p className="text-2xl font-bold text-green-600 mt-1">{statusCounts.Published}</p>
-          <p className="text-sm text-green-600 mt-1">Ready for review</p>
-        </div>
-        
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900">Posted</h3>
-          </div>
-          <p className="text-2xl font-bold text-blue-600 mt-1">{statusCounts.Posted}</p>
-          <p className="text-sm text-blue-600 mt-1">Completed invoices</p>
-        </div>
+      {/* AG Grid */}
+      <div className="bg-white rounded-lg border shadow-sm">
+        <AGGridWrapper
+          columnDefs={columnDefs}
+          rowData={filteredData}
+          onCellClicked={onCellClicked}
+        />
       </div>
     </div>
   );

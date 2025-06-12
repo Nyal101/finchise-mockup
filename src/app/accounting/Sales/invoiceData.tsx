@@ -9,7 +9,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     store: "Dominos",
     source: "Dominos POS",
     date: subDays(new Date(), 2),
-    status: "Published",
+    status: "Processed",
     subtotal: 1250.75,
     vatRate: 20,
     vat: 250.15,

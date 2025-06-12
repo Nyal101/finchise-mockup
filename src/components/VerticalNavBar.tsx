@@ -43,7 +43,7 @@ export function VerticalNavBar({
   const sectionDefaultPages = {
     dashboard: "/dashboard",
     insights: "/insights/FinancialReports",
-    accounting: "/accounting/Purchases",
+    accounting: "/accounting/Sales",
     payroll: "/payroll/Summary",
     settings: "/settings/StoreManagement",
   }

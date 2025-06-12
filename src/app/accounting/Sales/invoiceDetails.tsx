@@ -26,7 +26,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { SalesInvoiceData, ReviewError } from "./components/types";
-import salesInvoices from "./invoiceData";
+import sampleSalesData from "./data/salesData";
 import { HotTable } from '@handsontable/react';
 import 'handsontable/dist/handsontable.full.min.css';
 
@@ -68,7 +68,7 @@ const getErrorSeverityStyle = (severity: string) => {
 };
 
 const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) => {
-  const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);
+  const [invoices] = React.useState<SalesInvoiceData[]>(sampleSalesData);
   const [currentInvoiceId, setCurrentInvoiceId] = React.useState(invoiceId || invoices[0]?.id);
   const [statusFilter, setStatusFilter] = React.useState<string>('Review');
   const [editMode, setEditMode] = React.useState(false);

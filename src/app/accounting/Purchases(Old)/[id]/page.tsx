@@ -11,19 +11,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator"
 
 // Import types from the components/types.ts file
-import { LineItem, StoreAllocation, InvoiceData } from "./../components/types"
+import { LineItem, StoreAllocation, InvoiceData } from "../components/types"
 
 // Import utilities
-import { getStatusClass } from "@/app/accounting/Purchases/components/utils"
+import { getStatusClass } from "@/app/accounting/Purchases(Old)/components/utils"
 
 // Import extracted components
-import StoreAllocationSection from "./../components/StoreAllocationSection"
-import LineItemsSection from "./../components/LineItemsSection"
-import InvoiceDetailsSection from "./../components/InvoiceDetailsSection"
-import NotesSection from "./../components/NotesSection"
-import InvoiceSummary from "./../components/InvoiceSummary"
-import InvoicePreview from "./../components/InvoicePreview"
-import InvoiceActions from "./../components/InvoiceActions"
+import StoreAllocationSection from "../components/StoreAllocationSection"
+import LineItemsSection from "../components/LineItemsSection"
+import InvoiceDetailsSection from "../components/InvoiceDetailsSection"
+import NotesSection from "../components/NotesSection"
+import InvoiceSummary from "../components/InvoiceSummary"
+import InvoicePreview from "../components/InvoicePreview"
+import InvoiceActions from "../components/InvoiceActions"
 
 // Create a client component that will use the params properly
 export default function InvoiceDetailPage() {

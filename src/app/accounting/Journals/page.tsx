@@ -11,7 +11,7 @@ import { DateAndStoreFilter } from "@/components/date-range-picker";
 import { DateRange } from "react-day-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { invoices } from "../Purchases/invoiceData";
+import { invoices } from "../Purchases(Old)/invoiceData";
 import { JournalDialog, Journal, JournalLine } from "../components/JournalDialog";
 
 // Types

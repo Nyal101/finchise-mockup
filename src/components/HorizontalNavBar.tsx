@@ -110,12 +110,7 @@ export function HorizontalNavBar({
     ],
     accounting: [
       { 
-        name: "Purchases - Bills", 
-        href: "/accounting/Purchases", 
-        icon: FileText 
-      },
-      { 
-        name: "Sales - Invoices", 
+        name: "Bills and Invoices", 
         href: "/accounting/Sales", 
         icon: FileText 
       },
