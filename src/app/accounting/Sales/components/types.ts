@@ -4,7 +4,7 @@ export interface SalesInvoiceData {
   store: string;
   source: string; // POS system
   date: Date;
-  status: "Processing" | "Processed" | "Posted" | "Review";
+  status: InvoiceStatus;
   subtotal: number;
   vatRate: number;
   vat: number;
@@ -112,4 +112,4 @@ export interface StoreAllocation {
   amount: number;
 }
 
-export type InvoiceStatus = "Processing" | "Processed" | "Posted" | "Review"; 
+export type InvoiceStatus = "Processing" | "Processed" | "Published" | "Review"; 

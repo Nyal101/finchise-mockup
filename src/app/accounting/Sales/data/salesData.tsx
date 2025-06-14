@@ -7,7 +7,7 @@ export const sampleSalesData: SalesInvoiceData[] = [
     store: "Birmingham",
     source: "Domino's POS",
     date: new Date("2023-04-15"),
-    status: "Posted",
+    status: "Published",
     subtotal: 5423.75,
     vatRate: 20,
     vat: 1084.75,

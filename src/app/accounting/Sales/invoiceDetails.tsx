@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,16 +24,18 @@ import {
   ExternalLink,
   Check,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from "lucide-react";
 import { SalesInvoiceData, ReviewError } from "./components/types";
-import sampleSalesData from "./data/salesData";
+import salesInvoices from "./invoiceData";
 import { HotTable } from '@handsontable/react';
 import 'handsontable/dist/handsontable.full.min.css';
 
 interface InvoiceDetailsProps {
   invoiceId?: string;
   onClose?: () => void;
+  onDelete?: (invoiceId: string) => void;
 }
 
 // Status styling helper
@@ -40,9 +43,9 @@ const getStatusStyle = (status: string) => {
   switch (status) {
     case 'Processing':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'Published':
+    case 'Processed':
       return 'bg-green-100 text-green-800 border-green-200';
-    case 'Posted':
+    case 'Published':
       return 'bg-blue-100 text-blue-800 border-blue-200';
     case 'Review':
       return 'bg-red-100 text-red-800 border-red-200';
@@ -67,13 +70,14 @@ const getErrorSeverityStyle = (severity: string) => {
   }
 };
 
-const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) => {
-  const [invoices] = React.useState<SalesInvoiceData[]>(sampleSalesData);
+const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete }) => {
+  const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);
   const [currentInvoiceId, setCurrentInvoiceId] = React.useState(invoiceId || invoices[0]?.id);
   const [statusFilter, setStatusFilter] = React.useState<string>('Review');
   const [editMode, setEditMode] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<SalesInvoiceData>>({});
   const [lineItemsOpen, setLineItemsOpen] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   // Get current invoice
   const currentInvoice = React.useMemo(() => {
@@ -105,11 +109,29 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
     }
   };
 
+  // Delete functionality
+  const handleDelete = () => {
+    if (currentInvoice && onDelete) {
+      onDelete(currentInvoice.id);
+      setShowDeleteConfirm(false);
+      
+      // Navigate to next invoice or close if none available
+      if (canNavigateNext) {
+        navigateNext();
+      } else if (canNavigatePrev) {
+        navigatePrev();
+      } else {
+        onClose?.();
+      }
+    }
+  };
+
   // Initialize form data when invoice changes
   React.useEffect(() => {
     if (currentInvoice) {
       setFormData(currentInvoice);
       setLineItemsOpen(false); // Reset to collapsed when switching invoices
+      setShowDeleteConfirm(false); // Reset delete confirmation
     }
   }, [currentInvoice]);
 
@@ -221,7 +243,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
           
           {/* Status Filter Tabs */}
           <div className="flex gap-1 p-1 bg-gray-100 rounded-md">
-            {['Review', 'Processing', 'Published', 'Posted'].map((status) => (
+            {['Review', 'Processing', 'Processed', 'Published'].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -305,11 +327,9 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
                   <Badge className={`${getStatusStyle(currentInvoice.status)} text-xs`}>
                     {currentInvoice.status}
                   </Badge>
-                  {currentInvoice.confidence && (
-                    <span className="text-xs text-gray-500">
-                      AI Confidence: {currentInvoice.confidence}%
-                    </span>
-                  )}
+                  <Badge variant="outline" className="text-xs">
+                    {currentInvoice.documentType}
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -331,12 +351,55 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
               <Button variant="outline" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Invoice</h3>
+                  <p className="text-sm text-gray-600">This action cannot be undone.</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 mb-6">
+                Are you sure you want to delete invoice <strong>{currentInvoice.invoiceNumber}</strong>? 
+                This will permanently remove the invoice and all associated data.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleDelete}
+                >
+                  Delete Invoice
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 flex">
@@ -350,7 +413,11 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
                     <Download className="h-4 w-4 mr-2" />
                     Download
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open(currentInvoice.uploadedFile?.url, '_blank')}
+                  >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Open
                   </Button>
@@ -358,7 +425,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
               </div>
             </div>
             
-            <div className="p-4">
+            <div className="p-4 h-full">
               {currentInvoice.uploadedFile?.type === 'csv' ? (
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
@@ -399,16 +466,54 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
                     />
                   </div>
                 </div>
+              ) : currentInvoice.uploadedFile?.type === 'pdf' ? (
+                <div className="h-full border rounded-lg overflow-hidden bg-white shadow-sm">
+                  <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      {currentInvoice.uploadedFile.name}
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      PDF Document
+                    </Badge>
+                  </div>
+                  <div className="h-full">
+                    <iframe
+                      src={currentInvoice.uploadedFile.url}
+                      className="w-full h-full border-0"
+                      title="Invoice PDF"
+                    />
+                  </div>
+                </div>
+              ) : currentInvoice.uploadedFile?.type === 'image' ? (
+                <div className="h-full border rounded-lg overflow-hidden bg-white shadow-sm">
+                  <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      {currentInvoice.uploadedFile.name}
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      Image
+                    </Badge>
+                  </div>
+                  <div className="p-4 h-full flex items-center justify-center">
+                    <Image
+                      src={currentInvoice.uploadedFile.url}
+                      alt="Invoice"
+                      width={300}
+                      height={300}
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                </div>
               ) : (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-sm text-gray-600 mb-2">PDF Document</p>
+                  <p className="text-sm text-gray-600 mb-2">Document</p>
                   <p className="text-xs text-gray-500">
                     {currentInvoice.uploadedFile?.name || 'Document preview not available'}
                   </p>
                   <Button variant="outline" size="sm" className="mt-4">
                     <Eye className="h-4 w-4 mr-2" />
-                    View PDF
+                    View Document
                   </Button>
                 </div>
               )}
@@ -501,10 +606,11 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose }) =
                         <SelectValue placeholder="Select store" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Dominos">Dominos</SelectItem>
-                        <SelectItem value="Costa Coffee">Costa Coffee</SelectItem>
-                        <SelectItem value="Savills">Savills</SelectItem>
-                        <SelectItem value="All Locations">All Locations</SelectItem>
+                        <SelectItem value="Lancaster">Lancaster</SelectItem>
+                        <SelectItem value="Birmingham">Birmingham</SelectItem>
+                        <SelectItem value="Manchester">Manchester</SelectItem>
+                        <SelectItem value="Liverpool">Liverpool</SelectItem>
+                        <SelectItem value="London East">London East</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

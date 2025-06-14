@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Plus, Search, Filter, Upload, FileText, AlertTriangle, CheckCircle, Clock, Eye } from "lucide-react";
 import { SalesInvoiceData } from "./components/types";
-import sampleSalesData from "./data/salesData";
+import salesInvoices from "./invoiceData";
 import { ColDef, CellClickedEvent } from 'ag-grid-community';
 import InvoiceDetails from './invoiceDetails';
 import AGGridWrapper from './components/AGGridWrapper';
@@ -19,7 +19,7 @@ const getStatusColor = (status: string) => {
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case 'Processed':
       return 'bg-green-100 text-green-800 border-green-200';
-    case 'Posted':
+    case 'Published':
       return 'bg-blue-100 text-blue-800 border-blue-200';
     case 'Review':
       return 'bg-red-100 text-red-800 border-red-200';
@@ -35,7 +35,7 @@ const getStatusIcon = (status: string) => {
       return <Clock className="h-3 w-3" />;
     case 'Processed':
       return <CheckCircle className="h-3 w-3" />;
-    case 'Posted':
+    case 'Published':
       return <CheckCircle className="h-3 w-3" />;
     case 'Review':
       return <AlertTriangle className="h-3 w-3" />;
@@ -45,10 +45,21 @@ const getStatusIcon = (status: string) => {
 };
 
 export default function SalesPage() {
-  const [salesData] = React.useState<SalesInvoiceData[]>(sampleSalesData);
+  const [salesData, setSalesData] = React.useState<SalesInvoiceData[]>(salesInvoices);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [selectedInvoiceId, setSelectedInvoiceId] = React.useState<string | null>(null);
+
+  // Handle invoice deletion
+  const handleDeleteInvoice = React.useCallback((invoiceId: string) => {
+    setSalesData(prevData => 
+      prevData.map(invoice => 
+        invoice.id === invoiceId 
+          ? { ...invoice, deleted: true }
+          : invoice
+      )
+    );
+  }, []);
 
   // Custom cell renderers - now inside component scope
   const StatusCellRenderer = React.useCallback((params: { value: string }) => {
@@ -81,29 +92,6 @@ export default function SalesPage() {
         {errors.length > 2 && (
           <div className="text-xs text-gray-500">+{errors.length - 2} more</div>
         )}
-      </div>
-    );
-  }, []);
-
-  const ConfidenceCellRenderer = React.useCallback((params: { value?: number }) => {
-    const confidence = params.value;
-    if (!confidence) return null;
-    
-    const getConfidenceColor = (conf: number) => {
-      if (conf >= 90) return 'bg-green-500';
-      if (conf >= 70) return 'bg-yellow-500';
-      return 'bg-red-500';
-    };
-    
-    return (
-      <div className="flex items-center gap-2">
-        <div className="w-16 bg-gray-200 rounded-full h-2">
-          <div 
-            className={`${getConfidenceColor(confidence)} h-2 rounded-full`}
-            style={{ width: `${confidence}%` }}
-          ></div>
-        </div>
-        <span className="text-xs text-gray-600">{confidence}%</span>
       </div>
     );
   }, []);
@@ -207,14 +195,6 @@ export default function SalesPage() {
       filter: 'agNumberColumnFilter',
     },
     {
-      headerName: "AI Confidence",
-      field: "confidence",
-      cellRenderer: ConfidenceCellRenderer,
-      width: 130,
-      sortable: true,
-      filter: 'agNumberColumnFilter',
-    },
-    {
       headerName: "Review Issues",
       field: "reviewErrors",
       cellRenderer: ReviewErrorsCellRenderer,
@@ -239,7 +219,7 @@ export default function SalesPage() {
       sortable: false,
       filter: false,
     },
-  ], [StatusCellRenderer, ReviewErrorsCellRenderer, ConfidenceCellRenderer, AmountCellRenderer, ActionsCellRenderer, DocumentTypeCellRenderer]);
+  ], [StatusCellRenderer, ReviewErrorsCellRenderer, AmountCellRenderer, ActionsCellRenderer, DocumentTypeCellRenderer]);
 
   // Filter data based on search and status
   const filteredData = React.useMemo(() => {
@@ -264,7 +244,7 @@ export default function SalesPage() {
 
   // Quick status filter buttons
   const statusCounts = React.useMemo(() => {
-    const counts = { all: 0, Review: 0, Processing: 0, Processed: 0, Posted: 0 };
+    const counts = { all: 0, Review: 0, Processing: 0, Processed: 0, Published: 0 };
     salesData.forEach(invoice => {
       if (!invoice.deleted) {
         counts.all++;
@@ -279,7 +259,8 @@ export default function SalesPage() {
     return (
       <InvoiceDetails 
         invoiceId={selectedInvoiceId} 
-        onClose={() => setSelectedInvoiceId(null)} 
+        onClose={() => setSelectedInvoiceId(null)}
+        onDelete={handleDeleteInvoice}
       />
     );
   }
@@ -304,39 +285,40 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
-        {Object.entries(statusCounts).map(([status, count]) => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              statusFilter === status
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {status === 'all' ? 'All Invoices' : status} ({count})
-          </button>
-        ))}
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex gap-4 items-center">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="search"
-            placeholder="Search invoices..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Status Filter Tabs with Search and Filters */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+          {Object.entries(statusCounts).map(([status, count]) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                statusFilter === status
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {status === 'all' ? 'All Invoices' : status} ({count})
+            </button>
+          ))}
         </div>
-        <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4 mr-2" />
-          Advanced Filters
-        </Button>
+        
+        <div className="flex gap-4 items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="search"
+              placeholder="Search invoices..."
+              className="pl-10 w-64"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button variant="outline" size="sm">
+            <Filter className="h-4 w-4 mr-2" />
+            Advanced Filters
+          </Button>
+        </div>
       </div>
 
       {/* Compact Status Summary */}
@@ -377,8 +359,8 @@ export default function SalesPage() {
               <CheckCircle className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-blue-600">{statusCounts.Posted}</p>
-              <p className="text-sm text-gray-600">Posted</p>
+              <p className="text-2xl font-bold text-blue-600">{statusCounts.Published}</p>
+              <p className="text-sm text-gray-600">Published</p>
             </div>
           </div>
         </div>
