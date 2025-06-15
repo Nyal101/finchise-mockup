@@ -1208,7 +1208,7 @@ export default function StoreManagementPage() {
                     Provider-specific information for this store:
                   </div>
                   
-                  {/* Codes Table */}
+                  {/* Additional Information Table */}
                   <div className="border rounded-lg">
                     <div className="grid grid-cols-2 gap-0 bg-gray-50 border-b text-xs font-medium text-gray-700">
                       <div className="p-2 border-r">Provider</div>
