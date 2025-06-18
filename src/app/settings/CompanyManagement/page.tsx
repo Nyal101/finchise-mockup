@@ -68,6 +68,17 @@ interface Company {
   financialYearStart: string
   booksCloseDate: string
   storeCount: number
+  linkedTenantId?: string
+}
+
+interface Tenant {
+  id: string
+  name: string
+  type: 'xero' | 'quickbooks' | 'sage'
+  connectedAt: string
+  isLinkedToCompany: boolean
+  linkedCompanyId?: string
+  organizationId: string
 }
 
 interface CompanyGroup {
@@ -79,7 +90,81 @@ interface CompanyGroup {
   createdAt: Date
 }
 
-// Company data
+// Add sample tenants data
+const initialTenants: Tenant[] = [
+  {
+    id: "tenant-1",
+    name: "Fans (UK) Limited - Xero",
+    type: "xero",
+    connectedAt: "2023-09-15T10:30:00Z",
+    isLinkedToCompany: true,
+    linkedCompanyId: "1",
+    organizationId: "XR-12345-UK"
+  },
+  {
+    id: "tenant-2", 
+    name: "J & R Corporation Limited - Xero",
+    type: "xero",
+    connectedAt: "2023-10-02T14:45:00Z",
+    isLinkedToCompany: true,
+    linkedCompanyId: "2",
+    organizationId: "XR-67890-JR"
+  },
+  {
+    id: "tenant-3",
+    name: "Popat Leisure Limited - Xero", 
+    type: "xero",
+    connectedAt: "2023-07-10T11:20:00Z",
+    isLinkedToCompany: true,
+    linkedCompanyId: "4",
+    organizationId: "XR-98765-PL"
+  },
+  {
+    id: "tenant-4",
+    name: "R & D 2 Pizza Limited - Xero",
+    type: "xero", 
+    connectedAt: "2023-08-05T13:40:00Z",
+    isLinkedToCompany: true,
+    linkedCompanyId: "5",
+    organizationId: "XR-45678-RD"
+  },
+  {
+    id: "tenant-5",
+    name: "DMS1 Limited - Xero",
+    type: "xero",
+    connectedAt: "2023-09-22T08:30:00Z",
+    isLinkedToCompany: true,
+    linkedCompanyId: "6", 
+    organizationId: "XR-23456-DMS"
+  },
+  {
+    id: "tenant-6",
+    name: "KDG Holdings - Xero",
+    type: "xero",
+    connectedAt: "2023-06-15T15:20:00Z",
+    isLinkedToCompany: true,
+    linkedCompanyId: "7",
+    organizationId: "XR-34567-KDB"
+  },
+  {
+    id: "tenant-7",
+    name: "Alpha Business Solutions - Xero",
+    type: "xero",
+    connectedAt: "2023-11-01T09:15:00Z",
+    isLinkedToCompany: false,
+    organizationId: "XR-11111-ABS"
+  },
+  {
+    id: "tenant-8", 
+    name: "Metro Franchise System - QuickBooks",
+    type: "quickbooks",
+    connectedAt: "2023-10-15T14:20:00Z",
+    isLinkedToCompany: false,
+    organizationId: "QB-22222-MFS"
+  }
+]
+
+// Company data - update to include linkedTenantId
 const companies: Company[] = [
   {
     id: "1",
@@ -93,7 +178,8 @@ const companies: Company[] = [
     xeroCompanyName: "Fans (UK) Limited",
     financialYearStart: "April",
     booksCloseDate: "31/03/2024",
-    storeCount: 3
+    storeCount: 3,
+    linkedTenantId: "tenant-1"
   },
   {
     id: "2",
@@ -107,7 +193,8 @@ const companies: Company[] = [
     xeroCompanyName: "J & R Corporation Limited",
     financialYearStart: "January",
     booksCloseDate: "31/12/2023",
-    storeCount: 4
+    storeCount: 4,
+    linkedTenantId: "tenant-2"
   },
   {
     id: "3",
@@ -135,7 +222,8 @@ const companies: Company[] = [
     xeroCompanyName: "Popat Leisure Limited",
     financialYearStart: "April",
     booksCloseDate: "31/03/2024",
-    storeCount: 2
+    storeCount: 2,
+    linkedTenantId: "tenant-3"
   },
   {
     id: "5",
@@ -149,7 +237,8 @@ const companies: Company[] = [
     xeroCompanyName: "R & D 2 Pizza Limited",
     financialYearStart: "January",
     booksCloseDate: "31/12/2023",
-    storeCount: 1
+    storeCount: 1,
+    linkedTenantId: "tenant-4"
   },
   {
     id: "6",
@@ -163,7 +252,8 @@ const companies: Company[] = [
     xeroCompanyName: "DMS1 Limited",
     financialYearStart: "April",
     booksCloseDate: "31/03/2024",
-    storeCount: 5
+    storeCount: 5,
+    linkedTenantId: "tenant-5"
   },
   {
     id: "7",
@@ -177,7 +267,8 @@ const companies: Company[] = [
     xeroCompanyName: "KDG Holdings Limited",
     financialYearStart: "April", 
     booksCloseDate: "31/03/2024",
-    storeCount: 8
+    storeCount: 8,
+    linkedTenantId: "tenant-6"
   },
   {
     id: "8",
@@ -278,12 +369,15 @@ export default function CompanyManagementPage() {
   const [isEditCompanyDialogOpen, setIsEditCompanyDialogOpen] = React.useState(false)
   const [isGroupDialogOpen, setIsGroupDialogOpen] = React.useState(false)
   const [isEditGroupDialogOpen, setIsEditGroupDialogOpen] = React.useState(false)
+  const [isManageConnectionsDialogOpen, setIsManageConnectionsDialogOpen] = React.useState(false)
+  const [isAddConnectionDialogOpen, setIsAddConnectionDialogOpen] = React.useState(false)
   const [companySearch, setCompanySearch] = React.useState("")
   const [selectedStatusFilter, setSelectedStatusFilter] = React.useState<string>("all")
   const [selectedGroupFilter, setSelectedGroupFilter] = React.useState<string>("all")
   const [selectedCompanyIds, setSelectedCompanyIds] = React.useState<string[]>([])
   const [selectedGroupIds, setSelectedGroupIds] = React.useState<string[]>([])
   const [companyGroups, setCompanyGroups] = React.useState<CompanyGroup[]>(initialCompanyGroups)
+  const [tenants, setTenants] = React.useState<Tenant[]>(initialTenants)
   
   // Companies House search states
   const [companySearchQuery, setCompanySearchQuery] = React.useState("")
@@ -301,10 +395,8 @@ export default function CompanyManagementPage() {
   const [editingCompany, setEditingCompany] = React.useState<Company | null>(null)
   const [editCompanyForm, setEditCompanyForm] = React.useState({
     name: "",
-    organization: "",
     color: "",
-    downloadYears: "1",
-    startMonth: "January"
+    selectedTenantId: ""
   })
   
   const [groupFormData, setGroupFormData] = React.useState({
@@ -323,10 +415,7 @@ export default function CompanyManagementPage() {
     "#64748b", "#059669", "#dc2626", "#7c3aed", "#0891b2"
   ]
   
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ]
+
   
   // Utility functions
   function getInitials(name: string) {
@@ -342,8 +431,8 @@ export default function CompanyManagementPage() {
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(companySearch.toLowerCase())
     const matchesStatus = selectedStatusFilter === "all" || 
-      (selectedStatusFilter === "connected" && company.isConnectedToXero) ||
-      (selectedStatusFilter === "not-connected" && !company.isConnectedToXero)
+      (selectedStatusFilter === "connected" && company.linkedTenantId) ||
+      (selectedStatusFilter === "not-connected" && !company.linkedTenantId)
     const matchesGroup = selectedGroupFilter === "all" || 
       companyGroups.find(group => group.id === selectedGroupFilter)?.companyIds.includes(company.id)
     
@@ -464,10 +553,8 @@ export default function CompanyManagementPage() {
     setEditingCompany(company)
     setEditCompanyForm({
       name: company.name,
-      organization: company.organization,
       color: company.color,
-      downloadYears: "1",
-      startMonth: company.financialYearStart
+      selectedTenantId: company.linkedTenantId || ""
     })
     setIsEditCompanyDialogOpen(true)
   }
@@ -476,14 +563,6 @@ export default function CompanyManagementPage() {
     console.log("Saving company edit:", editCompanyForm)
     setIsEditCompanyDialogOpen(false)
     setEditingCompany(null)
-  }
-  
-  const handleConnectXero = (companyId: string) => {
-    console.log("Connecting to Xero:", companyId)
-  }
-  
-  const handleDisconnectXero = (companyId: string) => {
-    console.log("Disconnecting from Xero:", companyId)
   }
   
   const handleSyncCompany = (companyId: string) => {
@@ -606,6 +685,47 @@ export default function CompanyManagementPage() {
     return availableColors[Math.floor(Math.random() * availableColors.length)]
   }
 
+  // Add tenant management functions
+  const handleConnectNewXeroTenant = () => {
+    console.log("Connecting new Xero tenant...")
+    // In a real app, this would initiate the OAuth flow
+    const newTenant: Tenant = {
+      id: `tenant-${Date.now()}`,
+      name: "New Xero Organization",
+      type: "xero",
+      connectedAt: new Date().toISOString(),
+      isLinkedToCompany: false,
+      organizationId: `XR-${Math.random().toString(36).substr(2, 9)}`
+    }
+    setTenants(prev => [...prev, newTenant])
+    setIsAddConnectionDialogOpen(false)
+  }
+
+
+
+  const handleDeleteTenant = (tenantId: string) => {
+    const tenant = tenants.find(t => t.id === tenantId)
+    if (tenant?.isLinkedToCompany) {
+      alert("Cannot delete tenant that is linked to a company. Please unlink it first.")
+      return
+    }
+    setTenants(prev => prev.filter(t => t.id !== tenantId))
+  }
+
+  const handleDisconnectTenant = (tenantId: string) => {
+    console.log("Disconnecting company from tenant:", tenantId)
+    // In a real app, you would update both the company and tenant records
+    // This would unlink the company from the tenant
+    alert("Company will be disconnected from the accounting system. Data sync will stop but historical data will be preserved.")
+  }
+
+
+
+  // Get available tenants for company linking (not already linked)
+  const getAvailableTenants = () => {
+    return tenants.filter(tenant => !tenant.isLinkedToCompany)
+  }
+
   return (
     <div className="flex-1 space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -615,6 +735,194 @@ export default function CompanyManagementPage() {
             <RefreshCw className="mr-2 h-4 w-4" />
             Sync All
           </Button>
+
+          <Dialog open={isManageConnectionsDialogOpen} onOpenChange={setIsManageConnectionsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Manage Connections
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Manage Accounting System Connections</DialogTitle>
+                <DialogDescription className="text-base">
+                  Manage your connected accounting system tenants and add new connections.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-6">
+                <div className="space-y-6">
+                  {/* Connected Tenants List */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Connected Accounting Systems ({tenants.length})</h3>
+                      <Button 
+                        onClick={() => setIsAddConnectionDialogOpen(true)} 
+                        className="px-4 py-2"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Connection
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {tenants.map((tenant) => (
+                        <div key={tenant.id} className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gray-50 rounded-lg border flex items-center justify-center p-2">
+                              {tenant.type === 'xero' && (
+                                <Image
+                                  src="/accounting-logos/xero.png"
+                                  alt="Xero"
+                                  width={40}
+                                  height={40}
+                                  className="w-10 h-10 object-contain"
+                                />
+                              )}
+                              {tenant.type === 'quickbooks' && (
+                                <Image
+                                  src="/accounting-logos/quickbooks.png"
+                                  alt="QuickBooks"
+                                  width={40}
+                                  height={40}
+                                  className="w-10 h-10 object-contain"
+                                />
+                              )}
+                              {tenant.type === 'sage' && (
+                                <Image
+                                  src="/accounting-logos/sage.png"
+                                  alt="Sage"
+                                  width={40}
+                                  height={40}
+                                  className="w-10 h-10 object-contain"
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-base text-gray-900">{tenant.name}</div>
+                              <div className="text-sm text-gray-500 mt-1">
+                                Connected: {new Date(tenant.connectedAt).toLocaleDateString('en-GB')}
+                                {tenant.isLinkedToCompany && (
+                                  <span className="ml-2 text-green-600 font-medium">
+                                    • Linked to {companies.find(c => c.id === tenant.linkedCompanyId)?.name}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteTenant(tenant.id)}
+                              disabled={tenant.isLinkedToCompany}
+                              className="h-9 w-9 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50 border-gray-200"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter className="pt-6">
+                <Button variant="outline" onClick={() => setIsManageConnectionsDialogOpen(false)} className="px-6">
+                  Close
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Add Connection Dialog */}
+          <Dialog open={isAddConnectionDialogOpen} onOpenChange={setIsAddConnectionDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-xl">Add New Connection</DialogTitle>
+                <DialogDescription className="text-base">
+                  Choose an accounting system to connect to your franchise management platform.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-6">
+                <div className="space-y-4">
+                  {/* Xero Option - Available */}
+                  <div 
+                    className="flex items-center p-4 border rounded-lg bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={handleConnectNewXeroTenant}
+                  >
+                    <div className="w-12 h-12 bg-gray-50 rounded-lg border flex items-center justify-center p-2 mr-4">
+                      <Image
+                        src="/accounting-logos/xero.png"
+                        alt="Xero"
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 object-contain"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-base text-gray-900">Connect to Xero</div>
+                      <div className="text-sm text-gray-500">Connect your Xero accounting system</div>
+                    </div>
+                    <div className="text-gray-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* QuickBooks Option - Coming Soon */}
+                  <div className="flex items-center p-4 border rounded-lg bg-gray-50 opacity-60 cursor-not-allowed">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg border flex items-center justify-center p-2 mr-4">
+                      <Image
+                        src="/accounting-logos/quickbooks.png"
+                        alt="QuickBooks"
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 object-contain opacity-50"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-base text-gray-500">Connect to QuickBooks</div>
+                      <div className="text-sm text-gray-400">Connect your QuickBooks accounting system</div>
+                    </div>
+                    <div className="text-gray-400">
+                      <span className="text-xs font-medium px-2 py-1 bg-gray-200 rounded-full">Coming Soon</span>
+                    </div>
+                  </div>
+
+                  {/* Sage Option - Coming Soon */}
+                  <div className="flex items-center p-4 border rounded-lg bg-gray-50 opacity-60 cursor-not-allowed">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg border flex items-center justify-center p-2 mr-4">
+                      <Image
+                        src="/accounting-logos/sage.png"
+                        alt="Sage"
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 object-contain opacity-50"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-base text-gray-500">Connect to Sage</div>
+                      <div className="text-sm text-gray-400">Connect your Sage accounting system</div>
+                    </div>
+                    <div className="text-gray-400">
+                      <span className="text-xs font-medium px-2 py-1 bg-gray-200 rounded-full">Coming Soon</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter className="pt-6">
+                <Button variant="outline" onClick={() => setIsAddConnectionDialogOpen(false)} className="px-6">
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           
           <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
             <DialogTrigger asChild>
@@ -832,8 +1140,8 @@ export default function CompanyManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Companies</SelectItem>
-                  <SelectItem value="connected">Connected to Xero</SelectItem>
-                  <SelectItem value="not-connected">Not connected to Xero</SelectItem>
+                  <SelectItem value="connected">Connected to Accounting System</SelectItem>
+                  <SelectItem value="not-connected">Not Connected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -870,7 +1178,7 @@ export default function CompanyManagementPage() {
               className="mr-4 h-4 w-4"
             />
             <span className="w-1/2">Company</span>
-            <span className="w-1/6">Xero Connection</span>
+            <span className="w-1/6">Connection Status</span>
             <span className="w-1/6">Stores</span>
             <span className="w-1/6">Actions</span>
           </div>
@@ -910,7 +1218,7 @@ export default function CompanyManagementPage() {
                       <span className="font-semibold text-sm truncate">{company.name}</span>
                     </div>
                     <div className="w-1/6">
-                      {company.isConnectedToXero ? (
+                      {company.linkedTenantId ? (
                         <div className="text-xs">
                           <div className="text-muted-foreground">Last sync:</div>
                           <div className="font-medium">
@@ -920,10 +1228,23 @@ export default function CompanyManagementPage() {
                               year: 'numeric'
                             })}
                           </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {(() => {
+                              const tenant = tenants.find(t => t.id === company.linkedTenantId)
+                              return tenant ? (
+                                <span className={`px-1 py-0.5 rounded text-xs ${
+                                  tenant.type === 'xero' ? 'bg-blue-100 text-blue-700' :
+                                  tenant.type === 'quickbooks' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
+                                }`}>
+                                  {tenant.type.charAt(0).toUpperCase() + tenant.type.slice(1)}
+                                </span>
+                              ) : null
+                            })()}
+                          </div>
                         </div>
                       ) : (
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Not connected to Xero
+                          Not connected
                         </span>
                       )}
                     </div>
@@ -1102,14 +1423,7 @@ export default function CompanyManagementPage() {
                       className="h-9"
                     />
                   </div>
-                  <div className="grid gap-1">
-                    <Label className="text-sm font-medium text-gray-700">Organization</Label>
-                    <Input
-                      value={editCompanyForm.organization}
-                      onChange={(e) => setEditCompanyForm(prev => ({ ...prev, organization: e.target.value }))}
-                      className="h-9"
-                    />
-                  </div>
+
                   <div className="grid gap-1">
                     <Label className="text-sm font-medium text-gray-700">Company Color</Label>
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
@@ -1125,141 +1439,169 @@ export default function CompanyManagementPage() {
                 </div>
               </div>
 
-              {/* Xero Details (Read-Only) */}
-              <div className="space-y-3">
-                <h3 className="text-base font-semibold text-gray-900 border-b pb-2">Xero Details</h3>
-                <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
-                  {editingCompany?.isConnectedToXero ? (
-                    <>
-                      <div className="grid gap-1">
-                        <Label className="text-sm font-medium text-gray-700">Xero Company Name</Label>
-                        <div className="p-2 bg-white border rounded text-sm text-gray-600">
-                          {editingCompany?.xeroCompanyName || "Not available"}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-1">
-                          <Label className="text-sm font-medium text-gray-700">Financial Year</Label>
-                          <div className="p-2 bg-white border rounded text-sm text-gray-600">
-                            {editingCompany?.financialYearStart || "Not set"}
-                          </div>
-                        </div>
-                        <div className="grid gap-1">
-                          <Label className="text-sm font-medium text-gray-700">Books Close</Label>
-                          <div className="p-2 bg-white border rounded text-sm text-gray-600">
-                            {editingCompany?.booksCloseDate || "Not set"}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-4">
-                      <div className="text-gray-500 text-sm">
-                        Company is not connected to Xero
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+
             </div>
 
             {/* Right Column - Xero Integration & Data Sync */}
             <div className="space-y-3">
-              {/* Xero Connection */}
+                            {/* Tenant Connection */}
               <div className="space-y-3">
-                <h3 className="text-base font-semibold text-gray-900 border-b pb-2">Xero Integration</h3>
+                <h3 className="text-base font-semibold text-gray-900 border-b pb-2">Accounting System Connection</h3>
                 <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="flex flex-col items-center space-y-3">
+                  <div className="space-y-3">
                     <div className="text-center">
                       <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        editingCompany?.isConnectedToXero 
+                        editingCompany?.linkedTenantId 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-red-100 text-red-800'
                       }`}>
                         <div className={`w-2 h-2 rounded-full mr-2 ${
-                          editingCompany?.isConnectedToXero ? 'bg-green-500' : 'bg-red-500'
+                          editingCompany?.linkedTenantId ? 'bg-green-500' : 'bg-red-500'
                         }`} />
-                        {editingCompany?.isConnectedToXero ? 'Connected' : 'Not connected'}
+                        {editingCompany?.linkedTenantId ? 'Connected' : 'Not connected'}
                       </div>
                     </div>
                     
-                    <div className="flex justify-center">
-                      {editingCompany?.isConnectedToXero ? (
-                        <Button
-                          variant="outline"
-                          onClick={() => handleDisconnectXero(editingCompany.id)}
-                          className="p-2 h-auto border-0 bg-transparent hover:bg-gray-50"
+                    {editingCompany?.linkedTenantId ? (
+                      /* Connected State - Show tenant info and disconnect option */
+                      <div className="space-y-3">
+                        <div className="p-3 bg-white border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gray-50 rounded-lg border flex items-center justify-center p-1">
+                              {(() => {
+                                const linkedTenant = tenants.find(t => t.id === editingCompany.linkedTenantId)
+                                if (linkedTenant?.type === 'xero') {
+                                  return (
+                                    <Image
+                                      src="/accounting-logos/xero.png"
+                                      alt="Xero"
+                                      width={24}
+                                      height={24}
+                                      className="w-6 h-6 object-contain"
+                                    />
+                                  )
+                                } else if (linkedTenant?.type === 'quickbooks') {
+                                  return (
+                                    <Image
+                                      src="/accounting-logos/quickbooks.png"
+                                      alt="QuickBooks"
+                                      width={24}
+                                      height={24}
+                                      className="w-6 h-6 object-contain"
+                                    />
+                                  )
+                                } else if (linkedTenant?.type === 'sage') {
+                                  return (
+                                    <Image
+                                      src="/accounting-logos/sage.png"
+                                      alt="Sage"
+                                      width={24}
+                                      height={24}
+                                      className="w-6 h-6 object-contain"
+                                    />
+                                  )
+                                }
+                                return null
+                              })()}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-medium text-sm text-gray-900">
+                                {tenants.find(t => t.id === editingCompany.linkedTenantId)?.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Connected on {tenants.find(t => t.id === editingCompany.linkedTenantId)?.connectedAt && 
+                                new Date(tenants.find(t => t.id === editingCompany.linkedTenantId)!.connectedAt).toLocaleDateString('en-GB')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <div className="text-amber-600 mt-0.5">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.732 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-amber-800">Disconnect Warning</div>
+                              <div className="text-xs text-amber-700 mt-1">
+                                Disconnecting from this tenant will stop data synchronization and may affect financial reporting. Historical data will be preserved.
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDisconnectTenant(editingCompany.linkedTenantId!)}
+                              className="text-xs px-3 py-1.5"
+                            >
+                              Disconnect from Tenant
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Not Connected State - Show tenant selection */
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Select Tenant</Label>
+                        <Select
+                          value={editCompanyForm.selectedTenantId || undefined}
+                          onValueChange={(value) => setEditCompanyForm(prev => ({ ...prev, selectedTenantId: value || "" }))}
                         >
-                          <Image
-                            src="/Xero-Connect-Buttons/disconnect-white.svg"
-                            alt="Disconnect from Xero"
-                            width={120}
-                            height={30}
-                            className="rounded"
-                          />
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handleConnectXero(editingCompany?.id || "")}
-                          className="p-2 h-auto border-0 bg-transparent hover:bg-gray-50"
-                        >
-                          <Image
-                            src="/Xero-Connect-Buttons/connect-white.svg"
-                            alt="Connect to Xero"
-                            width={120}
-                            height={30}
-                            className="rounded"
-                          />
-                        </Button>
-                      )}
-                    </div>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Select an available tenant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getAvailableTenants().map((tenant) => (
+                              <SelectItem key={tenant.id} value={tenant.id}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 flex items-center justify-center">
+                                    {tenant.type === 'xero' && (
+                                      <Image
+                                        src="/accounting-logos/xero.png"
+                                        alt="Xero"
+                                        width={20}
+                                        height={20}
+                                        className="w-5 h-5 object-contain"
+                                      />
+                                    )}
+                                    {tenant.type === 'quickbooks' && (
+                                      <Image
+                                        src="/accounting-logos/quickbooks.png"
+                                        alt="QuickBooks"
+                                        width={20}
+                                        height={20}
+                                        className="w-5 h-5 object-contain"
+                                      />
+                                    )}
+                                    {tenant.type === 'sage' && (
+                                      <Image
+                                        src="/accounting-logos/sage.png"
+                                        alt="Sage"
+                                        width={20}
+                                        height={20}
+                                        className="w-5 h-5 object-contain"
+                                      />
+                                    )}
+                                  </div>
+                                  {tenant.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500">
+                          Only unlinked tenants are available for selection. Use &quot;Manage Connections&quot; to add new tenants.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Data Sync Preferences */}
-              <div className="space-y-3">
-                <h3 className="text-base font-semibold text-gray-900 border-b pb-2">Data Sync</h3>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="grid gap-1">
-                      <Label className="text-sm font-medium text-gray-700">Download data</Label>
-                      <Select
-                        value={editCompanyForm.downloadYears}
-                        onValueChange={(value) => setEditCompanyForm(prev => ({ ...prev, downloadYears: value }))}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 year</SelectItem>
-                          <SelectItem value="2">2 years</SelectItem>
-                          <SelectItem value="3">3 years</SelectItem>
-                          <SelectItem value="5">5 years</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-1">
-                      <Label className="text-sm font-medium text-gray-700">Starting in</Label>
-                      <Select
-                        value={editCompanyForm.startMonth}
-                        onValueChange={(value) => setEditCompanyForm(prev => ({ ...prev, startMonth: value }))}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month) => (
-                            <SelectItem key={month} value={month}>
-                              {month}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
 
               {/* Company Statistics */}
               <div className="space-y-3">
