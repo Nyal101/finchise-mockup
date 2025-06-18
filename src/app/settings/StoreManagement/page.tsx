@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, Pencil, Trash2, Building2 } from "lucide-react"
+import { Plus, Search, Pencil, Trash2, Building2, ChevronDown, ChevronUp } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -59,6 +59,7 @@ const companyColors: Record<string, string> = {
   "Fans (UK) Limited": "#3b82f6",
   "J & R Corporation Limited": "#10b981", 
   "MDJ Investments Limited": "#f59e0b",
+  "New Ventures Limited": "#6b7280",
   "Popat Leisure Limited": "#ef4444",
   "R & D 2 Pizza Limited": "#8b5cf6",
   "DMS1 Limited": "#06b6d4",
@@ -170,71 +171,87 @@ const stores: Store[] = [
     trackingCategory: "Store",
     trackingOption: "ST PAULS CRAY",
     additionalInfo: ""
+  },
+  {
+    id: "29200",
+    name: "DARTFORD",
+    address: "15 High Street, Dartford",
+    postCode: "DA11EY",
+    companyName: "New Ventures Limited",
+    trackingCategory: "Store",
+    trackingOption: "",
+    additionalInfo: "New store - accounting software setup pending"
   }
 ]
 
-// Store codes data - this could be stored with each store or separately
-const storeCodesData: Record<string, {provider: string, code: string}[]> = {
+
+
+// Store additional information data - updated format
+const storeAdditionalInfoData: Record<string, {infoType: string, information: string}[]> = {
   "28684": [
-    { provider: "Dominoes", code: "AN684M" },
-    { provider: "WorldPay", code: "WP28684" },
-    { provider: "Till System", code: "TSSHE84" },
-    { provider: "Delivery App", code: "DA-SHE123" }
+    { infoType: "WorldPay Reference Number", information: "WP28684" },
+    { infoType: "Dominoes Store Code", information: "AN684M" },
+    { infoType: "Till System ID", information: "TSSHE84" },
+    { infoType: "British Gas Account Number", information: "BG-SHE-001234" }
   ],
   "28260": [
-    { provider: "Dominoes", code: "AN260M" },
-    { provider: "WorldPay", code: "WP28260" },
-    { provider: "Till System", code: "TSSIT60" },
-    { provider: "Uber Eats", code: "UE-SIT456" }
+    { infoType: "WorldPay Reference Number", information: "WP28260" },
+    { infoType: "Dominoes Store Code", information: "AN260M" },
+    { infoType: "Till System ID", information: "TSSIT60" },
+    { infoType: "Uber Eats Partner ID", information: "UE-SIT456" }
   ],
   "28862": [
-    { provider: "Dominoes", code: "AN862M" },
-    { provider: "WorldPay", code: "WP28862" },
-    { provider: "Till System", code: "TSHER62" },
-    { provider: "Just Eat", code: "JE-HER789" }
+    { infoType: "WorldPay Reference Number", information: "WP28862" },
+    { infoType: "Dominoes Store Code", information: "AN862M" },
+    { infoType: "Till System ID", information: "TSHER62" },
+    { infoType: "Just Eat Restaurant ID", information: "JE-HER789" }
   ],
   "28921": [
-    { provider: "Dominoes", code: "AN921M" },
-    { provider: "WorldPay", code: "WP28921" },
-    { provider: "Till System", code: "TSHEA21" },
-    { provider: "Deliveroo", code: "DR-HEA321" }
+    { infoType: "WorldPay Reference Number", information: "WP28921" },
+    { infoType: "Dominoes Store Code", information: "AN921M" },
+    { infoType: "Till System ID", information: "TSHEA21" },
+    { infoType: "Deliveroo Partner Code", information: "DR-HEA321" }
   ],
   "28868": [
-    { provider: "Dominoes", code: "AN868M" },
-    { provider: "WorldPay", code: "WP28868" },
-    { provider: "Till System", code: "TSPAD68" },
-    { provider: "Uber Eats", code: "UE-PAD654" }
+    { infoType: "WorldPay Reference Number", information: "WP28868" },
+    { infoType: "Dominoes Store Code", information: "AN868M" },
+    { infoType: "Till System ID", information: "TSPAD68" },
+    { infoType: "EDF Energy Customer Number", information: "EDF-PAD-567890" }
   ],
   "29130": [
-    { provider: "Dominoes", code: "AN130M" },
-    { provider: "WorldPay", code: "WP29130" },
-    { provider: "Till System", code: "TSSOU30" },
-    { provider: "Just Eat", code: "JE-SOU987" }
+    { infoType: "WorldPay Reference Number", information: "WP29130" },
+    { infoType: "Dominoes Store Code", information: "AN130M" },
+    { infoType: "Till System ID", information: "TSSOU30" },
+    { infoType: "Thames Water Account Reference", information: "TW-SOU-987654" }
   ],
   "28115": [
-    { provider: "Dominoes", code: "AN115M" },
-    { provider: "WorldPay", code: "WP28115" },
-    { provider: "Till System", code: "TSTUN15" },
-    { provider: "Deliveroo", code: "DR-TUN147" },
-    { provider: "Card Reader", code: "CR-TUN258" }
+    { infoType: "WorldPay Reference Number", information: "WP28115" },
+    { infoType: "Dominoes Store Code", information: "AN115M" },
+    { infoType: "Till System ID", information: "TSTUN15" },
+    { infoType: "British Gas Unique Billing Code", information: "BG-TUN-147258" },
+    { infoType: "Deliveroo Partner Code", information: "DR-TUN147" }
   ],
   "29123": [
-    { provider: "Dominoes", code: "AN123M" },
-    { provider: "WorldPay", code: "WP29123" },
-    { provider: "Till System", code: "TSHON23" },
-    { provider: "Uber Eats", code: "UE-HON369" }
+    { infoType: "WorldPay Reference Number", information: "WP29123" },
+    { infoType: "Dominoes Store Code", information: "AN123M" },
+    { infoType: "Till System ID", information: "TSHON23" },
+    { infoType: "Uber Eats Partner ID", information: "UE-HON369" }
   ],
   "28109": [
-    { provider: "Dominoes", code: "AN109M" },
-    { provider: "WorldPay", code: "WP28109" },
-    { provider: "Till System", code: "TSORP09" },
-    { provider: "Just Eat", code: "JE-ORP741" }
+    { infoType: "WorldPay Reference Number", information: "WP28109" },
+    { infoType: "Dominoes Store Code", information: "AN109M" },
+    { infoType: "Till System ID", information: "TSORP09" },
+    { infoType: "Just Eat Restaurant ID", information: "JE-ORP741" }
   ],
   "28621": [
-    { provider: "Dominoes", code: "AN621M" },
-    { provider: "WorldPay", code: "WP28621" },
-    { provider: "Till System", code: "TSSTP21" },
-    { provider: "Deliveroo", code: "DR-STP852" }
+    { infoType: "WorldPay Reference Number", information: "WP28621" },
+    { infoType: "Dominoes Store Code", information: "AN621M" },
+    { infoType: "Till System ID", information: "TSSTP21" },
+    { infoType: "Deliveroo Partner Code", information: "DR-STP852" }
+  ],
+  "29200": [
+    { infoType: "British Gas Account Number", information: "BG-DAR-NEW001" },
+    { infoType: "Landlord Reference", information: "LL-DARTFORD-15" }
   ]
 }
 
@@ -290,15 +307,22 @@ export default function StoreManagementPage() {
   
   const [editingGroupId, setEditingGroupId] = React.useState<string | null>(null)
   
-  const [storeCodes, setStoreCodes] = React.useState<{provider: string, code: string}[]>([])
-  const [newCodeProvider, setNewCodeProvider] = React.useState("")
-  const [newCodeValue, setNewCodeValue] = React.useState("")
+
+  
+  const [storeAdditionalInfo, setStoreAdditionalInfo] = React.useState<{infoType: string, information: string}[]>([])
+  const [newInfoType, setNewInfoType] = React.useState("")
+  const [newInformation, setNewInformation] = React.useState("")
+  const [editingInfoIndex, setEditingInfoIndex] = React.useState<number | null>(null)
+  const [editingInfoType, setEditingInfoType] = React.useState("")
+  const [editingInformation, setEditingInformation] = React.useState("")
+  const [isAdditionalInfoExpanded, setIsAdditionalInfoExpanded] = React.useState(true)
   
   // Available companies for filtering
   const companies = [
     { id: "1", name: "Fans (UK) Limited" },
     { id: "2", name: "J & R Corporation Limited" },
-    { id: "3", name: "MDJ Investments Limited" }
+    { id: "3", name: "MDJ Investments Limited" },
+    { id: "4", name: "New Ventures Limited" }
   ]
   
   // Available tracking options for dropdown
@@ -308,6 +332,18 @@ export default function StoreManagementPage() {
     "HONOR OAK", "ORPINGTON", "ST PAULS CRAY", "BASILDON", "CHELMSFORD",
     "ROMFORD", "BRENTWOOD", "GRAYS", "WICKFORD", "SOUTHEND"
   ]
+
+  // Available accounting software options
+  const accountingSoftwareOptions = [
+    "Xero",
+    "QuickBooks", 
+    "Sage",
+    "FreeAgent",
+    "Wave",
+    "Kashflow"
+  ]
+
+
   
   // Available colors for groups
   const groupColors = [
@@ -323,10 +359,10 @@ export default function StoreManagementPage() {
   const handleCreateStore = () => {
     // Implement store creation logic here
     setIsDialogOpen(false)
-    // Reset codes when creating new store
-    setStoreCodes([])
-    setNewCodeProvider("")
-    setNewCodeValue("")
+    // Reset additional info when creating new store
+    setStoreAdditionalInfo([])
+    setNewInfoType("")
+    setNewInformation("")
   }
   
   const handleEditStore = (store: Store) => {
@@ -341,9 +377,9 @@ export default function StoreManagementPage() {
       additionalInfo: store.additionalInfo
     })
     
-    // Initialize codes based on store (sample data)
-    const sampleCodes = storeCodesData[store.id] || []
-    setStoreCodes(sampleCodes)
+    // Initialize additional info based on store (sample data)
+    const sampleInfo = storeAdditionalInfoData[store.id] || []
+    setStoreAdditionalInfo(sampleInfo)
     
     setIsEditDialogOpen(true)
   }
@@ -509,16 +545,45 @@ export default function StoreManagementPage() {
     )
   }
 
-  const addStoreCode = () => {
-    if (newCodeProvider.trim() && newCodeValue.trim()) {
-      setStoreCodes([...storeCodes, { provider: newCodeProvider.trim(), code: newCodeValue.trim() }])
-      setNewCodeProvider("")
-      setNewCodeValue("")
+
+
+  const addStoreAdditionalInfo = () => {
+    if (newInfoType.trim() && newInformation.trim()) {
+      setStoreAdditionalInfo([...storeAdditionalInfo, { infoType: newInfoType.trim(), information: newInformation.trim() }])
+      setNewInfoType("")
+      setNewInformation("")
     }
   }
   
-  const removeStoreCode = (index: number) => {
-    setStoreCodes(storeCodes.filter((_, i) => i !== index))
+  const removeStoreAdditionalInfo = (index: number) => {
+    setStoreAdditionalInfo(storeAdditionalInfo.filter((_, i) => i !== index))
+  }
+
+  const startEditingInfo = (index: number) => {
+    const info = storeAdditionalInfo[index]
+    setEditingInfoIndex(index)
+    setEditingInfoType(info.infoType)
+    setEditingInformation(info.information)
+  }
+
+  const saveEditingInfo = () => {
+    if (editingInfoIndex !== null && editingInfoType.trim() && editingInformation.trim()) {
+      const updatedInfo = [...storeAdditionalInfo]
+      updatedInfo[editingInfoIndex] = { 
+        infoType: editingInfoType.trim(), 
+        information: editingInformation.trim() 
+      }
+      setStoreAdditionalInfo(updatedInfo)
+      setEditingInfoIndex(null)
+      setEditingInfoType("")
+      setEditingInformation("")
+    }
+  }
+
+  const cancelEditingInfo = () => {
+    setEditingInfoIndex(null)
+    setEditingInfoType("")
+    setEditingInformation("")
   }
 
   return (
@@ -646,7 +711,7 @@ export default function StoreManagementPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Company & Tracking</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Company & Accounting</h3>
                     <div className="space-y-3">
                       <div className="grid gap-1">
                         <Label className="text-sm font-medium text-gray-700">Company</Label>
@@ -670,6 +735,21 @@ export default function StoreManagementPage() {
                         </Select>
                       </div>
                       <div className="grid gap-1">
+                        <Label className="text-sm font-medium text-gray-700">Accounting Software</Label>
+                        <Select>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Select accounting software" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accountingSoftwareOptions.map((software) => (
+                              <SelectItem key={software} value={software}>
+                                {software}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-1">
                         <Label className="text-sm font-medium text-gray-700">Tracking Option</Label>
                         <Select>
                           <SelectTrigger className="h-9">
@@ -683,6 +763,9 @@ export default function StoreManagementPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <div className="p-2 bg-blue-50 rounded text-xs text-blue-600">
+                          Note: If no options appear, please ensure the company is connected to external accounting software.
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -691,31 +774,31 @@ export default function StoreManagementPage() {
                 {/* Right Column - Additional Info */}
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Information:</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Information</h3>
                     <div className="space-y-3">
                       <div className="text-sm text-gray-600">
-                        Add provider-specific information for this store:
+                        This additional information is used by the invoice agent to assign invoices to the correct store.
                       </div>
                       
-                      {/* Codes Table */}
+                      {/* Additional Information Table */}
                       <div className="border rounded-lg">
                         <div className="grid grid-cols-2 gap-0 bg-gray-50 border-b text-xs font-medium text-gray-700">
-                          <div className="p-2 border-r">Provider</div>
-                          <div className="p-2">Code</div>
+                          <div className="p-2 border-r">Information Type</div>
+                          <div className="p-2">Information</div>
                         </div>
                         <div className="max-h-40 overflow-y-auto">
-                          {storeCodes.length === 0 ? (
+                          {storeAdditionalInfo.length === 0 ? (
                             <div className="p-4 text-center text-sm text-gray-500">
-                              No codes added yet
+                              No additional information added yet
                             </div>
                           ) : (
-                            storeCodes.map((code, index) => (
+                            storeAdditionalInfo.map((info, index) => (
                               <div key={index} className="grid grid-cols-2 gap-0 border-b last:border-b-0 text-sm">
-                                <div className="p-2 border-r font-medium">{code.provider}</div>
+                                <div className="p-2 border-r font-medium">{info.infoType}</div>
                                 <div className="p-2 flex justify-between items-center">
-                                  <span className="font-mono text-blue-600">{code.code}</span>
+                                  <span className="font-mono text-blue-600">{info.information}</span>
                                   <button
-                                    onClick={() => removeStoreCode(index)}
+                                    onClick={() => removeStoreAdditionalInfo(index)}
                                     className="text-red-500 hover:text-red-700 text-xs"
                                   >
                                     ×
@@ -727,27 +810,27 @@ export default function StoreManagementPage() {
                         </div>
                       </div>
 
-                      {/* Add New Code */}
+                      {/* Add New Information */}
                       <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-700">Add Code:</div>
+                        <div className="text-sm font-medium text-gray-700">Add Information:</div>
                         <div className="flex gap-2">
                           <Input
-                            placeholder="Provider"
-                            value={newCodeProvider}
-                            onChange={(e) => setNewCodeProvider(e.target.value)}
+                            placeholder="Information Type"
+                            value={newInfoType}
+                            onChange={(e) => setNewInfoType(e.target.value)}
                             className="h-8 text-sm"
                           />
                           <Input
-                            placeholder="Code"
-                            value={newCodeValue}
-                            onChange={(e) => setNewCodeValue(e.target.value)}
+                            placeholder="Information"
+                            value={newInformation}
+                            onChange={(e) => setNewInformation(e.target.value)}
                             className="h-8 text-sm"
                           />
                           <Button
-                            onClick={addStoreCode}
+                            onClick={addStoreAdditionalInfo}
                             size="sm"
                             className="h-8 px-3 text-xs"
-                            disabled={!newCodeProvider.trim() || !newCodeValue.trim()}
+                            disabled={!newInfoType.trim() || !newInformation.trim()}
                           >
                             Add
                           </Button>
@@ -755,7 +838,7 @@ export default function StoreManagementPage() {
                       </div>
 
                       <div className="p-2 bg-gray-50 rounded text-xs text-gray-600">
-                        Examples: Dominoes (AN345M), WorldPay (WP12345), Till System (TS001)
+                        Examples: WorldPay Reference Number, British Gas Unique Billing Code, Insurance Policy Number, etc.
                       </div>
                     </div>
                   </div>
@@ -765,9 +848,9 @@ export default function StoreManagementPage() {
               <DialogFooter className="border-t pt-3">
                 <Button variant="outline" onClick={() => {
                   setIsDialogOpen(false)
-                  setStoreCodes([])
-                  setNewCodeProvider("")
-                  setNewCodeValue("")
+                  setStoreAdditionalInfo([])
+                  setNewInfoType("")
+                  setNewInformation("")
                 }}>
                   Cancel
                 </Button>
@@ -975,7 +1058,7 @@ export default function StoreManagementPage() {
                           minHeight: 32,
                         }}
                       >
-                        <span className="text-xs font-bold text-white">
+                        <span className="text-white text-xs font-bold">
                           {getInitials(group.name)}
                         </span>
                       </div>
@@ -1033,7 +1116,7 @@ export default function StoreManagementPage() {
 
       {/* Edit Store Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[1100px] max-h-[90vh]">
+        <DialogContent className="sm:max-w-[1200px] max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div
@@ -1047,224 +1130,318 @@ export default function StoreManagementPage() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid grid-cols-3 gap-6 py-4">
-            {/* Left Column - Store Preview */}
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Store Preview</h3>
-                <div className="p-4 bg-white border rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="w-8 h-8 rounded-md flex items-center justify-center"
-                      style={{ backgroundColor: getStoreColor(editFormData.companyName) }}
-                    >
-                      <Building2 className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {editFormData.name || "Store Name"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {editFormData.companyName || "Company Name"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <div><span className="font-medium">ID:</span> {editFormData.id}</div>
-                    <div><span className="font-medium">Address:</span> {editFormData.address}</div>
-                    <div><span className="font-medium">Post Code:</span> {editFormData.postCode}</div>
-                    <div><span className="font-medium">Tracking:</span> {editFormData.trackingOption}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Company Assignment</h3>
+          <div className="space-y-6 py-4">
+            {/* Top Section - 2 Column Layout */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Left Column - Store Preview & Company Assignment */}
+              <div className="space-y-6">
                 <div className="space-y-3">
-                  <div className="grid gap-2">
-                    <Label className="text-sm font-medium text-gray-700">Parent Company</Label>
-                    <Select 
-                      value={companies.find(t => t.name === editFormData.companyName)?.id || ""} 
-                      onValueChange={(value) => {
-                        const company = companies.find(t => t.id === value);
-                        if (company) {
-                          handleEditFormChange('companyName', company.name);
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select company" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {companies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-md"
-                                style={{ backgroundColor: getStoreColor(company.name) }}
-                              />
-                              {company.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <div className="text-xs text-blue-800">
-                      <strong>Color:</strong> Auto-inherited from company
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Store Preview</h3>
+                  <div className="p-4 bg-white border rounded-lg">
+                    <div className="flex items-center gap-3 mb-3">
                       <div
-                        className="w-4 h-4 rounded-md border border-blue-200"
+                        className="w-8 h-8 rounded-md flex items-center justify-center"
                         style={{ backgroundColor: getStoreColor(editFormData.companyName) }}
+                      >
+                        <Building2 className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {editFormData.name || "Store Name"}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {editFormData.companyName || "Company Name"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <div><span className="font-medium">ID:</span> {editFormData.id}</div>
+                      <div><span className="font-medium">Address:</span> {editFormData.address}</div>
+                      <div><span className="font-medium">Post Code:</span> {editFormData.postCode}</div>
+                      <div><span className="font-medium">Tracking:</span> {editFormData.trackingOption}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Company Assignment</h3>
+                  <div className="space-y-3">
+                    <div className="grid gap-2">
+                      <Label className="text-sm font-medium text-gray-700">Parent Company</Label>
+                      <Select 
+                        value={companies.find(t => t.name === editFormData.companyName)?.id || ""} 
+                        onValueChange={(value) => {
+                          const company = companies.find(t => t.id === value);
+                          if (company) {
+                            handleEditFormChange('companyName', company.name);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Select company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-md"
+                                  style={{ backgroundColor: getStoreColor(company.name) }}
+                                />
+                                {company.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <div className="text-xs text-blue-800">
+                        <strong>Color:</strong> Auto-inherited from company
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div
+                          className="w-4 h-4 rounded-md border border-blue-200"
+                          style={{ backgroundColor: getStoreColor(editFormData.companyName) }}
+                        />
+                        <span className="text-xs text-blue-700">
+                          {getStoreColor(editFormData.companyName)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Store Information & Accounting */}
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Store Information</h3>
+                  <div className="space-y-3">
+                    <div className="grid gap-1">
+                      <Label className="text-sm font-medium text-gray-700">Store Name</Label>
+                      <Input
+                        value={editFormData.name}
+                        onChange={(e) => handleEditFormChange('name', e.target.value)}
+                        className="h-9"
                       />
-                      <span className="text-xs text-blue-700">
-                        {getStoreColor(editFormData.companyName)}
-                      </span>
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-sm font-medium text-gray-700">Store ID</Label>
+                      <Input
+                        value={editFormData.id}
+                        onChange={(e) => handleEditFormChange('id', e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-sm font-medium text-gray-700">Store Address</Label>
+                      <Textarea
+                        value={editFormData.address}
+                        onChange={(e) => handleEditFormChange('address', e.target.value)}
+                        className="min-h-[60px] resize-none"
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-sm font-medium text-gray-700">Post Code</Label>
+                      <Input
+                        value={editFormData.postCode}
+                        onChange={(e) => handleEditFormChange('postCode', e.target.value)}
+                        className="h-9"
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Middle Column - Store Information */}
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Store Information</h3>
                 <div className="space-y-3">
-                  <div className="grid gap-1">
-                    <Label className="text-sm font-medium text-gray-700">Store Name</Label>
-                    <Input
-                      value={editFormData.name}
-                      onChange={(e) => handleEditFormChange('name', e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label className="text-sm font-medium text-gray-700">Store ID</Label>
-                    <Input
-                      value={editFormData.id}
-                      onChange={(e) => handleEditFormChange('id', e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label className="text-sm font-medium text-gray-700">Store Address</Label>
-                    <Textarea
-                      value={editFormData.address}
-                      onChange={(e) => handleEditFormChange('address', e.target.value)}
-                      className="min-h-[60px] resize-none"
-                    />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label className="text-sm font-medium text-gray-700">Post Code</Label>
-                    <Input
-                      value={editFormData.postCode}
-                      onChange={(e) => handleEditFormChange('postCode', e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Xero Tracking</h3>
-                <div className="space-y-3">
-                  <div className="grid gap-1">
-                    <Label className="text-sm font-medium text-gray-700">Category</Label>
-                    <div className="p-2 bg-gray-50 border rounded text-sm text-gray-600 h-9 flex items-center">
-                      Store (Default)
-                    </div>
-                  </div>
-                  <div className="grid gap-1">
-                    <Label className="text-sm font-medium text-gray-700">Tracking Option</Label>
-                    <Select 
-                      value={editFormData.trackingOption}
-                      onValueChange={(value) => handleEditFormChange('trackingOption', value)}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {trackingOptions.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Additional Information */}
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Information</h3>
-                <div className="space-y-3">
-                  <div className="text-sm text-gray-600">
-                    Provider-specific information for this store:
-                  </div>
-                  
-                  {/* Additional Information Table */}
-                  <div className="border rounded-lg">
-                    <div className="grid grid-cols-2 gap-0 bg-gray-50 border-b text-xs font-medium text-gray-700">
-                      <div className="p-2 border-r">Provider</div>
-                      <div className="p-2">Code</div>
-                    </div>
-                    <div className="max-h-32 overflow-y-auto">
-                      {storeCodes.map((code, index) => (
-                        <div key={index} className="grid grid-cols-2 gap-0 border-b last:border-b-0 text-sm">
-                          <div className="p-2 border-r font-medium">{code.provider}</div>
-                          <div className="p-2 flex justify-between items-center">
-                            <span className="font-mono text-blue-600">{code.code}</span>
-                            <button
-                              onClick={() => removeStoreCode(index)}
-                              className="text-red-500 hover:text-red-700 text-xs"
-                            >
-                              ×
-                            </button>
+                  <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Accounting Tracking</h3>
+                  <div className="space-y-3">
+                    <div className="grid gap-1">
+                      <Label className="text-sm font-medium text-gray-700">Tracking Option</Label>
+                      {editFormData.companyName === "New Ventures Limited" ? (
+                        <div className="space-y-2">
+                          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <div className="text-sm text-orange-800">
+                              <strong>No tracking options available</strong>
+                            </div>
+                            <div className="text-xs text-orange-600 mt-1">
+                              Please connect to external accounting software and sync, then assign option.
+                            </div>
                           </div>
                         </div>
-                      ))}
+                      ) : (
+                        <Select 
+                          value={editFormData.trackingOption}
+                          onValueChange={(value) => handleEditFormChange('trackingOption', value)}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Select option" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {trackingOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
-                  </div>
-
-                  {/* Add New Code */}
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-700">Add New Code:</div>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Provider"
-                        value={newCodeProvider}
-                        onChange={(e) => setNewCodeProvider(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                      <Input
-                        placeholder="Code"
-                        value={newCodeValue}
-                        onChange={(e) => setNewCodeValue(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                      <Button
-                        onClick={addStoreCode}
-                        size="sm"
-                        className="h-8 px-3 text-xs"
-                        disabled={!newCodeProvider.trim() || !newCodeValue.trim()}
-                      >
-                        Add
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="p-2 bg-gray-50 rounded text-xs text-gray-600">
-                    Examples: Dominoes (AN345M), WorldPay (WP12345), Till System (TS001)
                   </div>
                 </div>
               </div>
             </div>
+
+                        {/* Bottom Section - Full Width Additional Information */}
+            <div className="border-t pt-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold text-gray-900">Additional Information</h3>
+                    <button
+                      onClick={() => setIsAdditionalInfoExpanded(!isAdditionalInfoExpanded)}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                    >
+                      {isAdditionalInfoExpanded ? (
+                        <>
+                          <ChevronUp className="h-3 w-3" />
+                          Collapse
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-3 w-3" />
+                          Expand
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Used by the invoice agent to assign invoices to the correct store
+                  </div>
+                </div>
+                
+                {isAdditionalInfoExpanded && (
+                  <>
+                    {/* Additional Information Table - Full Width */}
+                    <div className="border rounded-lg bg-white">
+                      <div className="grid grid-cols-4 gap-0 bg-gray-50 border-b">
+                        <div className="p-3 border-r text-sm font-medium text-gray-700">Information Type</div>
+                        <div className="p-3 border-r text-sm font-medium text-gray-700 col-span-2">Information</div>
+                        <div className="p-3 text-sm font-medium text-gray-700 text-center">Actions</div>
+                      </div>
+                      <div className="max-h-32 overflow-y-auto">
+                        {storeAdditionalInfo.length === 0 ? (
+                          <div className="p-4 text-center text-gray-500">
+                            <div className="text-sm">No additional information added yet</div>
+                            <div className="text-xs text-gray-400 mt-1">Add information below to help with invoice processing</div>
+                          </div>
+                        ) : (
+                          storeAdditionalInfo.map((info, index) => (
+                            <div key={index} className="grid grid-cols-4 gap-0 border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+                              {editingInfoIndex === index ? (
+                                <>
+                                  <div className="p-3 border-r">
+                                    <Input
+                                      value={editingInfoType}
+                                      onChange={(e) => setEditingInfoType(e.target.value)}
+                                      className="h-8 text-sm"
+                                      placeholder="Information Type"
+                                    />
+                                  </div>
+                                  <div className="p-3 border-r col-span-2">
+                                    <Input
+                                      value={editingInformation}
+                                      onChange={(e) => setEditingInformation(e.target.value)}
+                                      className="h-8 text-sm"
+                                      placeholder="Information"
+                                    />
+                                  </div>
+                                  <div className="p-3 flex justify-center gap-2">
+                                    <button
+                                      onClick={saveEditingInfo}
+                                      className="px-2 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={cancelEditingInfo}
+                                      className="px-2 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="p-3 border-r">
+                                    <span className="text-sm font-medium text-gray-900">{info.infoType}</span>
+                                  </div>
+                                  <div className="p-3 border-r col-span-2">
+                                    <span className="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                      {info.information}
+                                    </span>
+                                  </div>
+                                  <div className="p-3 flex justify-center gap-2">
+                                    <button
+                                      onClick={() => startEditingInfo(index)}
+                                      className="px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() => removeStoreAdditionalInfo(index)}
+                                      className="px-2 py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Add New Information - Full Width */}
+                    <div className="bg-gray-50 border rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <Label className="text-sm font-medium text-gray-700 block mb-2">Information Type</Label>
+                          <Input
+                            placeholder="e.g., WorldPay Reference Number, British Gas Account, etc."
+                            value={newInfoType}
+                            onChange={(e) => setNewInfoType(e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-sm font-medium text-gray-700 block mb-2">Information</Label>
+                          <Input
+                            placeholder="e.g., WP12345, BG-123456, etc."
+                            value={newInformation}
+                            onChange={(e) => setNewInformation(e.target.value)}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="pt-6">
+                          <Button
+                            onClick={addStoreAdditionalInfo}
+                            disabled={!newInfoType.trim() || !newInformation.trim()}
+                            className="h-9 px-6"
+                          >
+                            Add Information
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-xs text-gray-500">
+                        Examples: WorldPay Reference Number, British Gas Unique Billing Code, Insurance Policy Number, Landlord Reference, etc.
+                      </div>
+                    </div>
+                  </>
+                )}
+                </div>
+              </div>
           </div>
           
           <DialogFooter className="border-t pt-3">
