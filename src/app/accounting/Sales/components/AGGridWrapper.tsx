@@ -21,11 +21,25 @@ interface AGGridWrapperProps {
 
 export default function AGGridWrapper({ columnDefs, rowData, onCellClicked }: AGGridWrapperProps) {
   const [isClient, setIsClient] = React.useState(false);
+  const gridRef = React.useRef<AgGridReact>(null);
 
   React.useEffect(() => {
     setIsClient(true);
     // Ensure modules are registered
     ModuleRegistry.registerModules([AllCommunityModule]);
+  }, []);
+
+  // Auto-size columns on grid ready and data change
+  const onGridReady = React.useCallback(() => {
+    if (gridRef.current && gridRef.current.api) {
+      gridRef.current.api.sizeColumnsToFit();
+    }
+  }, []);
+
+  const onFirstDataRendered = React.useCallback(() => {
+    if (gridRef.current && gridRef.current.api) {
+      gridRef.current.api.sizeColumnsToFit();
+    }
   }, []);
 
   if (!isClient) {
@@ -42,9 +56,12 @@ export default function AGGridWrapper({ columnDefs, rowData, onCellClicked }: AG
   return (
     <div className="ag-theme-material" style={{ height: '600px', width: '100%' }}>
       <AgGridReact
+        ref={gridRef}
         columnDefs={columnDefs}
         rowData={rowData}
         onCellClicked={onCellClicked}
+        onGridReady={onGridReady}
+        onFirstDataRendered={onFirstDataRendered}
         theme="legacy"
         rowSelection="single"
         suppressRowClickSelection={false}
@@ -54,6 +71,8 @@ export default function AGGridWrapper({ columnDefs, rowData, onCellClicked }: AG
           sortable: false,
           filter: false,
         }}
+        suppressColumnVirtualisation={true}
+        suppressHorizontalScroll={false}
         rowHeight={60}
         headerHeight={50}
         floatingFiltersHeight={35}

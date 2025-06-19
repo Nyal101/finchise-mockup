@@ -141,6 +141,7 @@ export default function SalesInvoiceView({
             Sales Report: {editedInvoice.invoiceNumber}
           </h2>
           <div className="flex items-center gap-2 mt-1">
+            {editedInvoice.company && <Badge variant="outline">{editedInvoice.company}</Badge>}
             <Badge variant="outline">{editedInvoice.source}</Badge>
             <Badge variant="outline">{editedInvoice.store}</Badge>
             <div className="flex items-center gap-1">
@@ -205,16 +206,22 @@ export default function SalesInvoiceView({
       </div>
 
       <div className="p-4 border-b">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Company</p>
+            <p>{editedInvoice.company || "-"}</p>
+          </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Date</p>
             <p>{format(editedInvoice.date, "PPP")}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">
-              Payment Method
-            </p>
-            <p>{editedInvoice.paymentMethod}</p>
+            <p className="text-sm font-medium text-muted-foreground">Due Date</p>
+            <p>{editedInvoice.dueDate ? format(editedInvoice.dueDate, "PPP") : "-"}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Account Code</p>
+            <p>{editedInvoice.accountCode || "-"}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total</p>

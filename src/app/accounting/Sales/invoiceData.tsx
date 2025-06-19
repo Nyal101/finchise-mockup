@@ -10,9 +10,12 @@ export const salesInvoices: SalesInvoiceData[] = [
   {
     id: "inv-001",
     invoiceNumber: "9106602792",
+    company: "Franchise Holdings Ltd",
     store: "Lancaster",
     source: "Email Upload",
     date: new Date("2025-04-08"),
+    dueDate: new Date("2025-05-24"),
+    accountCode: "5000",
     status: "Review",
     subtotal: 463.91,
     vatRate: 20,
@@ -21,14 +24,15 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Bill",
+    documentType: "Invoice",
     uploadedFile: {
       id: "file001",
       name: "Coca-Cola_Europacific_Partners_2025-04-08_556.69.pdf",
       type: "pdf",
       url: "/invoice-previews/InvoiceExamples/Coca-Cola_Europacific_Partners_2025-04-08_556.69.pdf",
       size: 81920,
-      uploadDate: new Date("2025-04-08")
+      uploadDate: new Date("2025-04-08"),
+      uploadSource: "Email"
     },
     aiExtractedData: {
       invoiceNumber: "9106602792",
@@ -76,6 +80,7 @@ export const salesInvoices: SalesInvoiceData[] = [
         vatRate: 20,
         vat: 14.02,
         total: 84.10,
+        trackingCategory: "Lancaster",
       },
       {
         id: "item002",
@@ -87,6 +92,7 @@ export const salesInvoices: SalesInvoiceData[] = [
         vatRate: 20,
         vat: 16.24,
         total: 97.42,
+        trackingCategory: "Lancaster",
       },
       {
         id: "item003",
@@ -98,6 +104,7 @@ export const salesInvoices: SalesInvoiceData[] = [
         vatRate: 20,
         vat: 62.53,
         total: 375.18,
+        trackingCategory: "Lancaster",
       }
     ],
     requiresJournaling: true,
@@ -107,9 +114,12 @@ export const salesInvoices: SalesInvoiceData[] = [
   {
     id: "inv-002",
     invoiceNumber: "2414",
+    company: "Regional Operations Ltd",
     store: "Birmingham",
     source: "Email Upload",
     date: new Date("2025-03-24"),
+    dueDate: new Date("2025-04-23"),
+    accountCode: "6300",
     status: "Review",
     subtotal: 114.60,
     vatRate: 20,
@@ -125,7 +135,8 @@ export const salesInvoices: SalesInvoiceData[] = [
       type: "pdf",
       url: "/invoice-previews/InvoiceExamples/Combat_Fire_Limited_2025-03-24_137.52.pdf",
       size: 215040,
-      uploadDate: new Date("2025-03-24")
+      uploadDate: new Date("2025-03-24"),
+      uploadSource: "WhatsApp"
     },
     aiExtractedData: {
       invoiceNumber: "2414",
@@ -176,9 +187,10 @@ export const salesInvoices: SalesInvoiceData[] = [
         quantity: 1,
         price: 114.60,
         subtotal: 114.60,
-        vatRate: 20,
-        vat: 22.92,
-        total: 137.52,
+        vatRate: 5,
+        vat: 5.73,
+        total: 120.33,
+        trackingCategory: "Birmingham",
       }
     ],
     requiresJournaling: true,
@@ -459,7 +471,8 @@ export const salesInvoices: SalesInvoiceData[] = [
       type: "image",
       url: "/invoice-previews/InvoiceExamples/Just_Eat_2025-04-20_183.30.png",
       size: 38912,
-      uploadDate: new Date("2025-04-20")
+      uploadDate: new Date("2025-04-20"),
+      uploadSource: "Manual Upload"
     },
     aiExtractedData: {
       invoiceNumber: "JE-183.30",

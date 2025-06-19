@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Plus, Search, Filter, Upload, FileText, AlertTriangle, CheckCircle, Clock, Eye } from "lucide-react";
+import { Plus, Search, Filter, Upload, FileText, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { SalesInvoiceData } from "./components/types";
 import salesInvoices from "./invoiceData";
 import { ColDef, CellClickedEvent } from 'ag-grid-community';
@@ -62,10 +62,20 @@ export default function SalesPage() {
   }, []);
 
   // Custom cell renderers - now inside component scope
-  const StatusCellRenderer = React.useCallback((params: { value: string }) => {
+  const StatusCellRenderer = React.useCallback((params: { value: string; data: SalesInvoiceData }) => {
     const status = params.value;
+    const reviewErrors = params.data.reviewErrors;
+    
+    // Create tooltip content for review issues
+    const tooltipContent = reviewErrors && reviewErrors.length > 0 
+      ? reviewErrors.map(error => `${error.title}: ${error.description}`).join('\n')
+      : null;
+    
     return (
-      <div className="flex items-center gap-1">
+      <div 
+        className="flex items-center gap-1 cursor-help" 
+        title={tooltipContent || undefined}
+      >
         {getStatusIcon(status)}
         <Badge className={`${getStatusColor(status)} font-medium`}>
           {status}
@@ -74,27 +84,7 @@ export default function SalesPage() {
     );
   }, []);
 
-  const ReviewErrorsCellRenderer = React.useCallback((params: { data: SalesInvoiceData }) => {
-    const errors = params.data.reviewErrors || [];
-    if (errors.length === 0) return null;
-    
-    return (
-      <div className="flex flex-col gap-1 py-1">
-        {errors.slice(0, 2).map((error, index: number) => (
-          <div key={index} className="text-xs">
-            <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
-              error.severity === 'critical' ? 'bg-red-500' : 
-              error.severity === 'high' ? 'bg-orange-500' : 'bg-yellow-500'
-            }`}></span>
-            <span className="text-gray-700">{error.title}</span>
-          </div>
-        ))}
-        {errors.length > 2 && (
-          <div className="text-xs text-gray-500">+{errors.length - 2} more</div>
-        )}
-      </div>
-    );
-  }, []);
+
 
   const DocumentTypeCellRenderer = React.useCallback((params: { value?: string }) => {
     const docType = params.value || "Invoice";
@@ -121,33 +111,64 @@ export default function SalesPage() {
     );
   }, []);
 
-  const ActionsCellRenderer = React.useCallback((params: { data: SalesInvoiceData }) => {
-    const handleViewInvoice = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setSelectedInvoiceId(params.data.id);
-    };
+
+
+  // VAT Rate cell renderer - displays multiple VAT rates from line items
+  const VATRateCellRenderer = React.useCallback((params: { data: SalesInvoiceData }) => {
+    const invoice = params.data;
+    if (!invoice.lineItems || invoice.lineItems.length === 0) {
+      return <span className="text-gray-400">-</span>;
+    }
+
+    // Get unique VAT rates from line items
+    const vatRates = [...new Set(invoice.lineItems.map(item => item.vatRate))];
+    const vatLabels = vatRates.map(rate => {
+      if (rate === -1) return "Zero Rated";
+      if (rate === 0) return "No VAT";
+      return `${rate}%`;
+    });
+
+    const displayText = vatLabels.length === 1 ? vatLabels[0] : vatLabels.join(', ');
+    return <span className="text-sm">{displayText}</span>;
+  }, []);
+
+  // Source cell renderer - formats as rounded badge
+  const SourceCellRenderer = React.useCallback((params: { data: SalesInvoiceData }) => {
+    const source = params.data.uploadedFile?.uploadSource;
+    if (!source) {
+      return <span className="text-gray-400">-</span>;
+    }
+    
+    const colorClass = source === 'Email' ? 'bg-blue-100 text-blue-800' :
+                      source === 'WhatsApp' ? 'bg-green-100 text-green-800' :
+                      source === 'Manual Upload' ? 'bg-purple-100 text-purple-800' :
+                      'bg-gray-100 text-gray-800';
     
     return (
-      <div className="flex items-center gap-1">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleViewInvoice}
-          className="h-6 px-2"
-        >
-          <Eye className="h-3 w-3" />
-        </Button>
-      </div>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+        {source}
+      </span>
     );
-  }, [setSelectedInvoiceId]);
+  }, []);
 
-  // Column definitions for AG Grid
+  // Account Code cell renderer
+  const AccountCodeCellRenderer = React.useCallback((params: { data: SalesInvoiceData }) => {
+    const code = params.data.accountCode;
+    if (!code) {
+      return <span className="text-gray-400">-</span>;
+    }
+    return <span className="font-mono text-sm">{code}</span>;
+  }, []);
+
+  // Column definitions for AG Grid with optimized widths
   const columnDefs: ColDef[] = React.useMemo(() => [
     {
       headerName: "Status",
       field: "status",
       cellRenderer: StatusCellRenderer,
-      width: 120,
+      width: 110,
+      minWidth: 100,
+      maxWidth: 130,
       sortable: true,
       filter: true,
       floatingFilter: true,
@@ -155,7 +176,9 @@ export default function SalesPage() {
     {
       headerName: "Invoice #",
       field: "invoiceNumber",
-      width: 150,
+      width: 140,
+      minWidth: 120,
+      maxWidth: 160,
       sortable: true,
       filter: true,
       floatingFilter: true,
@@ -165,24 +188,40 @@ export default function SalesPage() {
       headerName: "Supplier",
       field: "supplierInfo.name",
       valueGetter: (params) => params.data.supplierInfo?.name || params.data.source,
-      width: 200,
+      flex: 2, // This column will take more space
+      minWidth: 150,
       sortable: true,
       filter: true,
       floatingFilter: true,
     },
     {
-      headerName: "Store",
-      field: "store",
-      width: 130,
+      headerName: "Account Code",
+      field: "accountCode",
+      cellRenderer: AccountCodeCellRenderer,
+      width: 120,
+      minWidth: 100,
+      maxWidth: 140,
       sortable: true,
       filter: true,
       floatingFilter: true,
+    },
+    {
+      headerName: "VAT Rate",
+      field: "vatRate",
+      cellRenderer: VATRateCellRenderer,
+      width: 100,
+      minWidth: 80,
+      maxWidth: 120,
+      sortable: false,
+      filter: false,
     },
     {
       headerName: "Date",
       field: "date",
       valueFormatter: (params) => format(new Date(params.value), 'dd MMM yyyy'),
-      width: 120,
+      width: 110,
+      minWidth: 100,
+      maxWidth: 130,
       sortable: true,
       filter: 'agDateColumnFilter',
     },
@@ -191,35 +230,32 @@ export default function SalesPage() {
       field: "total",
       cellRenderer: AmountCellRenderer,
       width: 120,
+      minWidth: 100,
+      maxWidth: 140,
       sortable: true,
       filter: 'agNumberColumnFilter',
-    },
-    {
-      headerName: "Review Issues",
-      field: "reviewErrors",
-      cellRenderer: ReviewErrorsCellRenderer,
-      width: 250,
-      sortable: false,
-      filter: false,
     },
     {
       headerName: "Document Type",
       field: "documentType",
       cellRenderer: DocumentTypeCellRenderer,
-      width: 120,
+      flex: 1,
+      minWidth: 110,
       sortable: true,
       filter: true,
       floatingFilter: true,
     },
     {
-      headerName: "Actions",
-      field: "actions",
-      cellRenderer: ActionsCellRenderer,
-      width: 80,
-      sortable: false,
-      filter: false,
+      headerName: "Source",
+      field: "uploadedFile.uploadSource",
+      cellRenderer: SourceCellRenderer,
+      flex: 1,
+      minWidth: 110,
+      sortable: true,
+      filter: true,
+      floatingFilter: true,
     },
-  ], [StatusCellRenderer, ReviewErrorsCellRenderer, AmountCellRenderer, ActionsCellRenderer, DocumentTypeCellRenderer]);
+  ], [StatusCellRenderer, AmountCellRenderer, DocumentTypeCellRenderer, VATRateCellRenderer, SourceCellRenderer, AccountCodeCellRenderer]);
 
   // Filter data based on search and status
   const filteredData = React.useMemo(() => {

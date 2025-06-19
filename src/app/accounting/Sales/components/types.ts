@@ -1,9 +1,12 @@
 export interface SalesInvoiceData {
   id: string;
   invoiceNumber: string;
+  company?: string;
   store: string;
   source: string; // POS system
   date: Date;
+  dueDate?: Date;
+  accountCode?: string;
   status: InvoiceStatus;
   subtotal: number;
   vatRate: number;
@@ -12,7 +15,7 @@ export interface SalesInvoiceData {
   paymentMethod: string;
   archived: boolean;
   deleted: boolean;
-  documentType?: "Bill" | "Invoice";
+  documentType?: "Invoice" | "Credit Note" | "Receipt" | "Bill";
   lineItems: SalesLineItem[];
   requiresJournaling: boolean;
   journalEntries?: JournalEntry[];
@@ -35,6 +38,7 @@ export interface UploadedFile {
   url: string;
   size: number;
   uploadDate: Date;
+  uploadSource?: 'Email' | 'WhatsApp' | 'Manual Upload';
 }
 
 export interface AIExtractedData {
@@ -95,6 +99,7 @@ export interface SalesLineItem {
   vatRate: number;
   vat: number;
   total: number;
+  trackingCategory?: string;
 }
 
 export interface JournalEntry {

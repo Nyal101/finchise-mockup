@@ -2,6 +2,7 @@ import * as React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 import { SalesLineItem } from "./types";
 
@@ -10,6 +11,23 @@ interface LineItemsSectionProps {
   setLineItems: React.Dispatch<React.SetStateAction<SalesLineItem[]>>;
   isEditing: boolean;
 }
+
+// Tax rate options as requested
+const taxRateOptions = [
+  { value: 20, label: "20%" },
+  { value: 5, label: "5%" },
+  { value: 0, label: "No VAT" },
+  { value: -1, label: "Zero Rated Expenses" }
+];
+
+// Store options for tracking category
+const storeOptions = [
+  "Lancaster",
+  "Birmingham", 
+  "Manchester",
+  "Liverpool",
+  "London East"
+];
 
 export default function LineItemsSection({ lineItems, setLineItems, isEditing }: LineItemsSectionProps) {
   const handleAddLineItem = () => {
@@ -23,6 +41,7 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
       vatRate: 20,
       vat: 0,
       total: 0,
+      trackingCategory: "",
     };
     setLineItems([...lineItems, newItem]);
   };
@@ -36,12 +55,19 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
       if (item.id === id) {
         let updatedItem = { ...item, [field]: value };
         
-        // Recalculate if quantity or price changes
-        if (field === 'quantity' || field === 'price') {
+        // Recalculate if quantity, price, or vatRate changes
+        if (field === 'quantity' || field === 'price' || field === 'vatRate') {
           const quantity = field === 'quantity' ? Number(value) : item.quantity;
           const price = field === 'price' ? Number(value) : item.price;
+          const vatRate = field === 'vatRate' ? Number(value) : item.vatRate;
           const subtotal = quantity * price;
-          const vat = subtotal * (item.vatRate / 100);
+          
+          // Handle special VAT cases
+          let vat = 0;
+          if (vatRate >= 0) {
+            vat = subtotal * (vatRate / 100);
+          } // Zero rated expenses and no VAT both result in 0 VAT
+          
           updatedItem = {
             ...updatedItem,
             subtotal,
@@ -64,11 +90,10 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
           <TableHeader className="sticky top-0 bg-white">
             <TableRow>
               <TableHead className="w-[30%]">Description</TableHead>
-              <TableHead className="w-[15%]">Category</TableHead>
               <TableHead className="text-right">Quantity</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-              <TableHead className="text-right">Subtotal</TableHead>
-              <TableHead className="text-right">VAT</TableHead>
+              <TableHead className="text-right">Unit Price</TableHead>
+              <TableHead className="w-[15%]">Tax Rate</TableHead>
+              <TableHead className="w-[15%]">Store</TableHead>
               <TableHead className="text-right">Total</TableHead>
               {isEditing && <TableHead className="w-[50px]"></TableHead>}
             </TableRow>
@@ -76,7 +101,7 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
           <TableBody>
             {lineItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isEditing ? 8 : 7} className="text-center text-muted-foreground">
+                <TableCell colSpan={isEditing ? 7 : 6} className="text-center text-muted-foreground">
                   No line items found
                 </TableCell>
               </TableRow>
@@ -92,17 +117,6 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                       />
                     ) : (
                       item.description
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isEditing ? (
-                      <Input
-                        value={item.category}
-                        onChange={(e) => handleLineItemChange(item.id, "category", e.target.value)}
-                        className="w-full"
-                      />
-                    ) : (
-                      item.category
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -129,12 +143,50 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                       `£${item.price.toFixed(2)}`
                     )}
                   </TableCell>
-                  <TableCell className="text-right">{`£${item.subtotal.toFixed(2)}`}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex flex-col items-end">
-                      <span>{`${item.vatRate}%`}</span>
-                      <span>{`£${item.vat.toFixed(2)}`}</span>
-                    </div>
+                  <TableCell>
+                    {isEditing ? (
+                      <Select
+                        value={item.vatRate.toString()}
+                        onValueChange={(value) => handleLineItemChange(item.id, "vatRate", parseFloat(value))}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {taxRateOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value.toString()}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="text-center">
+                        {item.vatRate === -1 ? "Zero Rated" : 
+                         item.vatRate === 0 ? "No VAT" : `${item.vatRate}%`}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {isEditing ? (
+                      <Select
+                        value={item.trackingCategory || ""}
+                        onValueChange={(value) => handleLineItemChange(item.id, "trackingCategory", value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select store" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {storeOptions.map((store) => (
+                            <SelectItem key={store} value={store}>
+                              {store}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      item.trackingCategory || "-"
+                    )}
                   </TableCell>
                   <TableCell className="text-right font-medium">{`£${item.total.toFixed(2)}`}</TableCell>
                   {isEditing && (

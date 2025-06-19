@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
 import { 
@@ -27,8 +26,9 @@ import {
   ChevronRight,
   Trash2
 } from "lucide-react";
-import { SalesInvoiceData, ReviewError } from "./components/types";
+import { SalesInvoiceData, ReviewError, SalesLineItem } from "./components/types";
 import salesInvoices from "./invoiceData";
+import LineItemsSection from "./components/LineItemsSection";
 import { HotTable } from '@handsontable/react';
 import 'handsontable/dist/handsontable.full.min.css';
 
@@ -69,6 +69,41 @@ const getErrorSeverityStyle = (severity: string) => {
       return 'border-gray-200 bg-gray-50';
   }
 };
+
+// Dropdown options
+const companyOptions = [
+  "Franchise Holdings Ltd",
+  "Regional Operations Ltd", 
+  "Central Management Ltd",
+  "Local Store Co Ltd"
+];
+
+const accountCodeOptions = [
+  { value: "4000", label: "4000 - Sales Revenue" },
+  { value: "5000", label: "5000 - Cost of Sales" },
+  { value: "6100", label: "6100 - Professional Services" },
+  { value: "6200", label: "6200 - Property Maintenance" },
+  { value: "6300", label: "6300 - Equipment Maintenance" },
+  { value: "6400", label: "6400 - Utilities & Rates" },
+  { value: "6500", label: "6500 - Marketing" },
+  { value: "6600", label: "6600 - Communications" }
+];
+
+const supplierOptions = [
+  "Coca-Cola Europacific Partners",
+  "Combat Fire Limited", 
+  "Comfort Cooling Services",
+  "Imperial Green",
+  "J C McCollom",
+  "Just Eat Holdings Ltd",
+  "LUSU General Account",
+  "Lancaster City Council",
+  "Paragon Customer Communications",
+  "Prudent Plumbing",
+  "Wynsdale Waste Management",
+  "Xpress Refrigeration",
+  "Customer Account Services"
+];
 
 const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete }) => {
   const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);
@@ -134,6 +169,29 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
       setShowDeleteConfirm(false); // Reset delete confirmation
     }
   }, [currentInvoice]);
+
+  // Auto-open line items when entering edit mode
+  React.useEffect(() => {
+    if (editMode) {
+      setLineItemsOpen(true);
+    }
+  }, [editMode]);
+
+  // Recalculate totals when line items change
+  React.useEffect(() => {
+    if (formData.lineItems && formData.lineItems.length > 0) {
+      const subtotal = formData.lineItems.reduce((sum, item) => sum + item.subtotal, 0);
+      const vat = formData.lineItems.reduce((sum, item) => sum + item.vat, 0);
+      const total = subtotal + vat;
+      
+      setFormData(prev => ({
+        ...prev,
+        subtotal,
+        vat,
+        total
+      }));
+    }
+  }, [formData.lineItems]);
 
   if (!currentInvoice) {
     return (
@@ -429,10 +487,20 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
               {currentInvoice.uploadedFile?.type === 'csv' ? (
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      {currentInvoice.uploadedFile.name}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <span className="text-sm font-medium text-gray-700 truncate">
+                        {currentInvoice.uploadedFile.name}
+                      </span>
+                      {currentInvoice.uploadedFile.uploadSource && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-gray-500">Source:</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {currentInvoice.uploadedFile.uploadSource}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="text-xs shrink-0">
                       CSV Data
                     </Badge>
                   </div>
@@ -469,10 +537,20 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
               ) : currentInvoice.uploadedFile?.type === 'pdf' ? (
                 <div className="h-full border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      {currentInvoice.uploadedFile.name}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <span className="text-sm font-medium text-gray-700 truncate">
+                        {currentInvoice.uploadedFile.name}
+                      </span>
+                      {currentInvoice.uploadedFile.uploadSource && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-gray-500">Source:</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {currentInvoice.uploadedFile.uploadSource}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="text-xs shrink-0">
                       PDF Document
                     </Badge>
                   </div>
@@ -487,10 +565,20 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
               ) : currentInvoice.uploadedFile?.type === 'image' ? (
                 <div className="h-full border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      {currentInvoice.uploadedFile.name}
-                    </span>
-                    <Badge variant="outline" className="text-xs">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <span className="text-sm font-medium text-gray-700 truncate">
+                        {currentInvoice.uploadedFile.name}
+                      </span>
+                      {currentInvoice.uploadedFile.uploadSource && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-gray-500">Source:</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {currentInvoice.uploadedFile.uploadSource}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="text-xs shrink-0">
                       Image
                     </Badge>
                   </div>
@@ -557,101 +645,237 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
               {/* Transaction Details */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Transaction Details</CardTitle>
+                  <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Transaction Details
+                    </div>
+                    {/* Completion Status */}
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const requiredFields = [
+                          formData.company,
+                          formData.supplierInfo?.name,
+                          formData.documentType,
+                          formData.invoiceNumber,
+                          formData.accountCode,
+                          formData.date
+                        ];
+                        const completed = requiredFields.filter(Boolean).length;
+                        const total = requiredFields.length;
+                        const percentage = Math.round((completed / total) * 100);
+                        
+                        return (
+                          <>
+                            <div className="text-xs text-gray-500">
+                              {completed}/{total} fields
+                            </div>
+                            <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-300 ${
+                                  percentage === 100 ? 'bg-green-500' : 
+                                  percentage >= 60 ? 'bg-blue-500' : 
+                                  percentage >= 20 ? 'bg-amber-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs text-gray-600">Invoice Number</Label>
-                      <Input 
-                        value={formData.invoiceNumber || ''} 
-                        className="mt-1 text-sm"
-                        readOnly={!editMode}
-                        onChange={(e) => setFormData({...formData, invoiceNumber: e.target.value})}
-                      />
+                <CardContent className="space-y-6">
+                  {/* Organization Section */}
+                  <div className="space-y-4">
+                    <div className="text-xs font-medium text-gray-700 uppercase tracking-wide pb-1 border-b border-gray-200">
+                      Organization
                     </div>
+                    
                     <div>
-                      <Label className="text-xs text-gray-600">Date</Label>
-                      <Input 
-                        value={formData.date ? format(new Date(formData.date), 'yyyy-MM-dd') : ''} 
-                        type="date"
-                        className="mt-1 text-sm"
-                        readOnly={!editMode}
-                        onChange={(e) => setFormData({...formData, date: new Date(e.target.value)})}
-                      />
+                      <Label className="text-xs font-medium text-gray-600">Company *</Label>
+                      {editMode ? (
+                        <Select 
+                          value={formData.company || ''} 
+                          onValueChange={(value) => setFormData({...formData, company: value})}
+                        >
+                          <SelectTrigger className={`mt-1 text-sm ${!formData.company ? 'border-amber-300 bg-amber-50' : ''}`}>
+                            <SelectValue placeholder="Select company" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {companyOptions.map((company) => (
+                              <SelectItem key={company} value={company}>
+                                {company}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className={`mt-1 text-sm p-2 border rounded ${formData.company ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
+                          {formData.company || "⚠️ No company selected"}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-xs text-gray-600">Supplier</Label>
-                    <Input 
-                      value={formData.supplierInfo?.name || ''} 
-                      className="mt-1 text-sm"
-                      readOnly={!editMode}
-                      onChange={(e) => setFormData({
-                        ...formData, 
-                        supplierInfo: {...formData.supplierInfo, name: e.target.value}
-                      })}
-                    />
+
+                    <div>
+                      <Label className="text-xs font-medium text-gray-600">Supplier *</Label>
+                      {editMode ? (
+                        <Select 
+                          value={formData.supplierInfo?.name || ''} 
+                          onValueChange={(value) => setFormData({
+                            ...formData, 
+                            supplierInfo: {...formData.supplierInfo, name: value}
+                          })}
+                        >
+                          <SelectTrigger className={`mt-1 text-sm ${!formData.supplierInfo?.name ? 'border-amber-300 bg-amber-50' : ''}`}>
+                            <SelectValue placeholder="Select supplier" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {supplierOptions.map((supplier) => (
+                              <SelectItem key={supplier} value={supplier}>
+                                {supplier}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className={`mt-1 text-sm p-2 border rounded ${formData.supplierInfo?.name ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
+                          {formData.supplierInfo?.name || "⚠️ No supplier selected"}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <Label className="text-xs text-gray-600">Store/Location</Label>
-                    <Select 
-                      value={formData.store || ''} 
-                      disabled={!editMode}
-                      onValueChange={(value) => setFormData({...formData, store: value})}
-                    >
-                      <SelectTrigger className="mt-1 text-sm">
-                        <SelectValue placeholder="Select store" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Lancaster">Lancaster</SelectItem>
-                        <SelectItem value="Birmingham">Birmingham</SelectItem>
-                        <SelectItem value="Manchester">Manchester</SelectItem>
-                        <SelectItem value="Liverpool">Liverpool</SelectItem>
-                        <SelectItem value="London East">London East</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  {/* Invoice Details Section */}
+                  <div className="space-y-4">
+                    <div className="text-xs font-medium text-gray-700 uppercase tracking-wide pb-1 border-b border-gray-200">
+                      Invoice Details
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Document Type *</Label>
+                        {editMode ? (
+                          <Select 
+                            value={formData.documentType || ''} 
+                            onValueChange={(value) => setFormData({...formData, documentType: value as "Invoice" | "Credit Note" | "Receipt" | "Bill"})}
+                          >
+                            <SelectTrigger className={`mt-1 text-sm ${!formData.documentType ? 'border-amber-300 bg-amber-50' : ''}`}>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Invoice">Invoice</SelectItem>
+                              <SelectItem value="Credit Note">Credit Note</SelectItem>
+                              <SelectItem value="Receipt">Receipt</SelectItem>
+                              <SelectItem value="Bill">Bill</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className={`mt-1 text-sm p-2 border rounded ${formData.documentType ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
+                            {formData.documentType || "⚠️ No type selected"}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Invoice Number *</Label>
+                        <Input 
+                          value={formData.invoiceNumber || ''} 
+                          className="mt-1 text-sm"
+                          readOnly={!editMode}
+                          placeholder="Enter invoice number"
+                          onChange={(e) => setFormData({...formData, invoiceNumber: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Account Code *</Label>
+                        {editMode ? (
+                          <Select 
+                            value={formData.accountCode || ''} 
+                            onValueChange={(value) => setFormData({...formData, accountCode: value})}
+                          >
+                            <SelectTrigger className={`mt-1 text-sm ${!formData.accountCode ? 'border-amber-300 bg-amber-50' : ''}`}>
+                              <SelectValue placeholder="Select account code" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {accountCodeOptions.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className={`mt-1 text-sm p-2 border rounded ${formData.accountCode ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
+                            {formData.accountCode ? 
+                              accountCodeOptions.find(opt => opt.value === formData.accountCode)?.label || formData.accountCode 
+                              : "⚠️ No account code selected"
+                            }
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Line Items - Collapsible */}
-                  {currentInvoice.lineItems && currentInvoice.lineItems.length > 0 && (
+                  {/* Date Information Section */}
+                  <div className="space-y-4">
+                    <div className="text-xs font-medium text-gray-700 uppercase tracking-wide pb-1 border-b border-gray-200">
+                      Date Information
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Invoice Date *</Label>
+                        <Input 
+                          value={formData.date ? format(new Date(formData.date), 'yyyy-MM-dd') : ''} 
+                          type="date"
+                          className="mt-1 text-sm"
+                          readOnly={!editMode}
+                          onChange={(e) => setFormData({...formData, date: new Date(e.target.value)})}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Due Date</Label>
+                        <Input 
+                          value={formData.dueDate ? format(new Date(formData.dueDate), 'yyyy-MM-dd') : ''} 
+                          type="date"
+                          className="mt-1 text-sm"
+                          readOnly={!editMode}
+                          placeholder="Optional"
+                          onChange={(e) => setFormData({...formData, dueDate: new Date(e.target.value)})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Line Items Section */}
+                  <div>
                     <Collapsible open={lineItemsOpen} onOpenChange={setLineItemsOpen}>
                       <CollapsibleTrigger className="w-full justify-between p-0 h-auto text-xs text-gray-600 font-normal bg-transparent border-none hover:bg-gray-50">
-                        <span>Line Items ({currentInvoice.lineItems.length})</span>
+                        <span>Line Items ({formData.lineItems?.length || 0})</span>
                         {lineItemsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-2">
-                        <div className="border rounded-lg overflow-hidden">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="bg-gray-50">
-                                <TableHead className="text-xs">Description</TableHead>
-                                <TableHead className="text-xs text-right">Qty</TableHead>
-                                <TableHead className="text-xs text-right">Unit Price</TableHead>
-                                <TableHead className="text-xs text-right">Total</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {currentInvoice.lineItems.map((item) => (
-                                <TableRow key={item.id} className="text-xs">
-                                  <TableCell className="font-medium py-2">{item.description}</TableCell>
-                                  <TableCell className="text-right py-2">{item.quantity}</TableCell>
-                                  <TableCell className="text-right py-2">
-                                    £{item.price.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                                  </TableCell>
-                                  <TableCell className="text-right py-2">
-                                    £{item.total.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
+                        <LineItemsSection
+                          lineItems={formData.lineItems || []}
+                          setLineItems={(lineItems: SalesLineItem[] | ((prev: SalesLineItem[]) => SalesLineItem[])) => {
+                            if (typeof lineItems === 'function') {
+                              setFormData(prev => ({
+                                ...prev,
+                                lineItems: lineItems(prev.lineItems || [])
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                lineItems: lineItems
+                              }));
+                            }
+                          }}
+                          isEditing={editMode}
+                        />
                       </CollapsibleContent>
                     </Collapsible>
-                  )}
+                  </div>
 
                   {/* Totals Section */}
                   <div className="border-t pt-4 space-y-2">
