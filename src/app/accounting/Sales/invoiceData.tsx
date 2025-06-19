@@ -367,19 +367,19 @@ export const salesInvoices: SalesInvoiceData[] = [
   },
   {
     id: "inv-006",
-    invoiceNumber: "1234",
+    invoiceNumber: "CN-1234",
     store: "Birmingham",
     source: "Email Upload",
     date: new Date("2025-04-06"),
     status: "Processed",
-    subtotal: 275.00,
+    subtotal: -275.00,
     vatRate: 20,
-    vat: 55.00,
-    total: 330.00,
+    vat: -55.00,
+    total: -330.00,
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Credit Note",
     uploadedFile: {
       id: "file006",
       name: "J_C_McCollom_2025-04-06_330.00.pdf",
@@ -389,13 +389,13 @@ export const salesInvoices: SalesInvoiceData[] = [
       uploadDate: new Date("2025-04-06")
     },
     aiExtractedData: {
-      invoiceNumber: "1234",
+      invoiceNumber: "CN-1234",
       supplier: "J C McCollom",
       supplierAddress: "45 Industrial Estate, Birmingham B12 0XQ",
       invoiceDate: new Date("2025-04-06"),
-      totalAmount: 330.00,
-      subtotalAmount: 275.00,
-      vatAmount: 55.00,
+      totalAmount: -330.00,
+      subtotalAmount: -275.00,
+      vatAmount: -55.00,
       currency: "GBP",
       accountCode: "6100",
       storeLocation: "Birmingham"
@@ -413,14 +413,14 @@ export const salesInvoices: SalesInvoiceData[] = [
     lineItems: [
       {
         id: "item006",
-        description: "Professional Services",
+        description: "Professional Services Refund",
         category: "Consulting",
         quantity: 1,
-        price: 275.00,
-        subtotal: 275.00,
+        price: -275.00,
+        subtotal: -275.00,
         vatRate: 20,
-        vat: 55.00,
-        total: 330.00,
+        vat: -55.00,
+        total: -330.00,
       }
     ],
     requiresJournaling: true,
@@ -447,12 +447,12 @@ export const salesInvoices: SalesInvoiceData[] = [
         credit: 330.00,
       },
     ],
-    notes: "Professional services invoice - successfully processed",
+    notes: "Professional services credit note - refund issued for cancelled services",
     previewUrl: "/invoice-previews/InvoiceExamples/J_C_McCollom_2025-04-06_330.00.pdf",
   },
   {
     id: "inv-007",
-    invoiceNumber: "JE-183.30",
+    invoiceNumber: "RCP-183.30",
     store: "Manchester",
     source: "JustEat Platform",
     date: new Date("2025-04-20"),
@@ -461,10 +461,10 @@ export const salesInvoices: SalesInvoiceData[] = [
     vatRate: 20,
     vat: 30.55,
     total: 183.30,
-    paymentMethod: "Platform Settlement",
+    paymentMethod: "Cash",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Receipt",
     uploadedFile: {
       id: "file007",
       name: "Just_Eat_2025-04-20_183.30.png",
@@ -475,8 +475,8 @@ export const salesInvoices: SalesInvoiceData[] = [
       uploadSource: "Manual Upload"
     },
     aiExtractedData: {
-      invoiceNumber: "JE-183.30",
-      supplier: "Just Eat Holdings Ltd",
+      invoiceNumber: "RCP-183.30",
+      supplier: "Cash Sale",
       invoiceDate: new Date("2025-04-20"),
       totalAmount: 183.30,
       subtotalAmount: 152.75,
@@ -487,18 +487,18 @@ export const salesInvoices: SalesInvoiceData[] = [
     },
     supplierInfo: {
       id: "sup007",
-      name: "Just Eat Holdings Ltd",
-      address: "Fleet Place House, 2 Fleet Pl, London EC4M 7RF",
-      taxId: "GB333444555",
+      name: "Cash Sale",
+      address: "Manchester Store",
+      taxId: "N/A",
       accountCode: "4000",
-      paymentTerms: "Weekly Settlement",
+      paymentTerms: "Immediate",
       isNew: false,
-      confidence: 95
+      confidence: 100
     },
     lineItems: [
       {
         id: "item007",
-        description: "Platform Sales Revenue",
+        description: "Food & Beverage Sales",
         category: "Sales",
         quantity: 1,
         price: 152.75,
@@ -509,7 +509,7 @@ export const salesInvoices: SalesInvoiceData[] = [
       }
     ],
     requiresJournaling: true,
-    notes: "JustEat platform sales - successfully processed",
+    notes: "Cash sale receipt - food and beverage transaction",
     previewUrl: "/invoice-previews/InvoiceExamples/Just_Eat_2025-04-20_183.30.png",
   },
 

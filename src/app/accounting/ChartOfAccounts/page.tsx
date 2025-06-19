@@ -455,57 +455,61 @@ export default function ChartOfAccountsPage() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="code">Account Code</Label>
-                  <Input id="code" placeholder="e.g. 0010" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Account Name</Label>
-                  <Input id="name" placeholder="Account name" />
-                </div>
-                <div className="grid gap-2">
                   <Label>Account Type</Label>
                   <Select>
                     <SelectTrigger>
                       <SelectValue placeholder="Select account type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="fixed-asset">Fixed Asset</SelectItem>
-                      <SelectItem value="current-asset">Current Asset</SelectItem>
-                      <SelectItem value="current-liability">Current Liability</SelectItem>
-                      <SelectItem value="equity">Equity</SelectItem>
-                      <SelectItem value="revenue">Revenue</SelectItem>
-                      <SelectItem value="direct-costs">Direct Costs</SelectItem>
-                      <SelectItem value="overhead">Overhead</SelectItem>
+                      <SelectItem value="BANK">Bank account</SelectItem>
+                      <SelectItem value="CURRENT">Current Asset account</SelectItem>
+                      <SelectItem value="CURRLIAB">Current Liability account</SelectItem>
+                      <SelectItem value="DEPRECIATN">Depreciation account</SelectItem>
+                      <SelectItem value="DIRECTCOSTS">Direct Costs account</SelectItem>
+                      <SelectItem value="EQUITY">Equity account</SelectItem>
+                      <SelectItem value="EXPENSE">Expense account</SelectItem>
+                      <SelectItem value="FIXED">Fixed Asset account</SelectItem>
+                      <SelectItem value="INVENTORY">Inventory Asset account</SelectItem>
+                      <SelectItem value="LIABILITY">Liability account</SelectItem>
+                      <SelectItem value="NONCURRENT">Non-current Asset account</SelectItem>
+                      <SelectItem value="OTHERINCOME">Other Income account</SelectItem>
+                      <SelectItem value="OVERHEADS">Overhead account</SelectItem>
+                      <SelectItem value="PREPAYMENT">Prepayment account</SelectItem>
+                      <SelectItem value="REVENUE">Revenue account</SelectItem>
+                      <SelectItem value="SALES">Sale account</SelectItem>
+                      <SelectItem value="TERMLIAB">Non-current Liability account</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label>Tax Rate</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tax rate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no-vat">No VAT</SelectItem>
-                      <SelectItem value="standard">20% (VAT on Expenses)</SelectItem>
-                      <SelectItem value="income">20% (VAT on Income)</SelectItem>
-                      <SelectItem value="reduced">5% (Reduced Rate)</SelectItem>
-                      <SelectItem value="zero">0% (Zero Rate)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="code">Code</Label>
+                  <Input id="code" placeholder="e.g. 0010" />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Report Code</Label>
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" placeholder="Account name" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Input id="description" placeholder="Account description" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Tax</Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select report code" />
+                      <SelectValue placeholder="Select tax type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ass-assets">ASS Assets</SelectItem>
-                      <SelectItem value="liab-liabilities">LIA Liabilities</SelectItem>
-                      <SelectItem value="equ-equity">EQU Capital and reserves</SelectItem>
-                      <SelectItem value="rev-revenue">REV Revenue</SelectItem>
-                      <SelectItem value="exp-expenses">EXP Expense</SelectItem>
+                      <SelectItem value="INPUT2">20% (VAT on Expenses)</SelectItem>
+                      <SelectItem value="NONE">No VAT</SelectItem>
+                      <SelectItem value="OUTPUT2">20% (VAT on Income)</SelectItem>
+                      <SelectItem value="REVERSECHARGES">Reverse Charge Expenses (20%)</SelectItem>
+                      <SelectItem value="RRINPUT">5% (VAT on Expenses)</SelectItem>
+                      <SelectItem value="RROUTPUT">5% (VAT on Income)</SelectItem>
+                      <SelectItem value="SRINPUT">15% (VAT on Expenses)</SelectItem>
+                      <SelectItem value="SROUTPUT">15% (VAT on Income)</SelectItem>
+                      <SelectItem value="ZERORATEDINPUT">Zero Rated Expenses</SelectItem>
+                      <SelectItem value="ZERORATEDOUTPUT">Zero Rated Income</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

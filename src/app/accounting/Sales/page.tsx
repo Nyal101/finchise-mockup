@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Plus, Search, Filter, Upload, FileText, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Plus, Search, Filter, Upload, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { SalesInvoiceData } from "./components/types";
 import salesInvoices from "./invoiceData";
 import { ColDef, CellClickedEvent } from 'ag-grid-community';
@@ -28,21 +28,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Status icon mapping
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'Processing':
-      return <Clock className="h-3 w-3" />;
-    case 'Processed':
-      return <CheckCircle className="h-3 w-3" />;
-    case 'Published':
-      return <CheckCircle className="h-3 w-3" />;
-    case 'Review':
-      return <AlertTriangle className="h-3 w-3" />;
-    default:
-      return <FileText className="h-3 w-3" />;
-  }
-};
+
 
 export default function SalesPage() {
   const [salesData, setSalesData] = React.useState<SalesInvoiceData[]>(salesInvoices);
@@ -73,10 +59,9 @@ export default function SalesPage() {
     
     return (
       <div 
-        className="flex items-center gap-1 cursor-help" 
+        className="flex items-center justify-center cursor-help" 
         title={tooltipContent || undefined}
       >
-        {getStatusIcon(status)}
         <Badge className={`${getStatusColor(status)} font-medium`}>
           {status}
         </Badge>
@@ -88,11 +73,15 @@ export default function SalesPage() {
 
   const DocumentTypeCellRenderer = React.useCallback((params: { value?: string }) => {
     const docType = params.value || "Invoice";
+    
+    // Orange for Bill, Receipt, and Credit Note; Blue for Invoice
+    const isOrangeType = docType === "Bill" || docType === "Receipt" || docType === "Credit Note";
+    
     return (
       <Badge 
         variant="outline" 
         className={`text-xs ${
-          docType === "Bill" 
+          isOrangeType
             ? "border-orange-300 text-orange-700 bg-orange-50" 
             : "border-blue-300 text-blue-700 bg-blue-50"
         }`}
@@ -139,13 +128,20 @@ export default function SalesPage() {
       return <span className="text-gray-400">-</span>;
     }
     
-    const colorClass = source === 'Email' ? 'bg-blue-100 text-blue-800' :
-                      source === 'WhatsApp' ? 'bg-green-100 text-green-800' :
-                      source === 'Manual Upload' ? 'bg-purple-100 text-purple-800' :
-                      'bg-gray-100 text-gray-800';
+    // WhatsApp gets official green (#25D366), others get grey
+    const colorClass = source === 'WhatsApp' 
+      ? 'text-white font-medium' 
+      : 'bg-gray-100 text-gray-700';
+    
+    const style = source === 'WhatsApp' 
+      ? { backgroundColor: '#25D366' }
+      : {};
     
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+      <span 
+        className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}
+        style={style}
+      >
         {source}
       </span>
     );
@@ -172,6 +168,12 @@ export default function SalesPage() {
       sortable: true,
       filter: true,
       floatingFilter: true,
+      cellStyle: { 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        padding: '0'
+      },
     },
     {
       headerName: "Invoice #",
@@ -188,8 +190,7 @@ export default function SalesPage() {
       headerName: "Supplier",
       field: "supplierInfo.name",
       valueGetter: (params) => params.data.supplierInfo?.name || params.data.source,
-      flex: 2, // This column will take more space
-      minWidth: 150,
+      minWidth: 250,
       sortable: true,
       filter: true,
       floatingFilter: true,
@@ -199,8 +200,8 @@ export default function SalesPage() {
       field: "accountCode",
       cellRenderer: AccountCodeCellRenderer,
       width: 120,
-      minWidth: 100,
-      maxWidth: 140,
+      minWidth: 150,
+      maxWidth: 180,
       sortable: true,
       filter: true,
       floatingFilter: true,
@@ -210,8 +211,8 @@ export default function SalesPage() {
       field: "vatRate",
       cellRenderer: VATRateCellRenderer,
       width: 100,
-      minWidth: 80,
-      maxWidth: 120,
+      minWidth: 150,
+      maxWidth: 180,
       sortable: false,
       filter: false,
     },
@@ -220,8 +221,8 @@ export default function SalesPage() {
       field: "date",
       valueFormatter: (params) => format(new Date(params.value), 'dd MMM yyyy'),
       width: 110,
-      minWidth: 100,
-      maxWidth: 130,
+      minWidth: 150,
+      maxWidth: 180,
       sortable: true,
       filter: 'agDateColumnFilter',
     },
@@ -240,7 +241,8 @@ export default function SalesPage() {
       field: "documentType",
       cellRenderer: DocumentTypeCellRenderer,
       flex: 1,
-      minWidth: 110,
+      minWidth: 90,
+      maxWidth: 150,
       sortable: true,
       filter: true,
       floatingFilter: true,
@@ -250,7 +252,8 @@ export default function SalesPage() {
       field: "uploadedFile.uploadSource",
       cellRenderer: SourceCellRenderer,
       flex: 1,
-      minWidth: 110,
+      minWidth: 90,
+      maxWidth: 150,
       sortable: true,
       filter: true,
       floatingFilter: true,

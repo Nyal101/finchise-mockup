@@ -17,10 +17,8 @@ import {
   FileText, 
   AlertTriangle, 
   Eye,
-  Download,
   Edit,
   Save,
-  ExternalLink,
   Check,
   ChevronDown,
   ChevronRight,
@@ -118,6 +116,26 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   const currentInvoice = React.useMemo(() => {
     return invoices.find(inv => inv.id === currentInvoiceId);
   }, [invoices, currentInvoiceId]);
+  
+  // Check if invoice is published (read-only)
+  const isPublished = currentInvoice?.status === 'Published';
+  
+  // Handle publish action
+  const handlePublish = () => {
+    if (currentInvoice && !isPublished) {
+      // In a real app, this would make an API call to publish the invoice
+      alert(`Publishing invoice ${currentInvoice.invoiceNumber}`);
+      setEditMode(false); // Exit edit mode when publishing
+    }
+  };
+  
+  // Handle archive action
+  const handleArchive = () => {
+    if (currentInvoice) {
+      // In a real app, this would make an API call to archive the invoice
+      alert(`Archiving invoice ${currentInvoice.invoiceNumber}`);
+    }
+  };
 
   // Filter invoices by status for sidebar
   const filteredInvoices = React.useMemo(() => {
@@ -336,6 +354,9 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                     {invoice.supplierInfo?.name || invoice.source}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
+                    {format(invoice.date, 'dd MMM yyyy')}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
                     £{invoice.total.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
@@ -343,26 +364,6 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                   {invoice.status}
                 </Badge>
               </div>
-              
-              {/* Review Errors Preview */}
-              {invoice.reviewErrors && invoice.reviewErrors.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {invoice.reviewErrors.slice(0, 2).map((error, index) => (
-                    <div key={index} className="flex items-center gap-1">
-                      <div className={`w-1.5 h-1.5 rounded-full ${
-                        error.severity === 'critical' ? 'bg-red-500' : 
-                        error.severity === 'high' ? 'bg-orange-500' : 'bg-yellow-500'
-                      }`}></div>
-                      <span className="text-xs text-gray-600 truncate max-w-20">
-                        {error.title}
-                      </span>
-                    </div>
-                  ))}
-                  {invoice.reviewErrors.length > 2 && (
-                    <span className="text-xs text-gray-500">+{invoice.reviewErrors.length - 2}</span>
-                  )}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -373,25 +374,15 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
         {/* Header */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">
-                  {currentInvoice.invoiceNumber}
-                </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-sm text-gray-600">
-                    {currentInvoice.supplierInfo?.name || currentInvoice.source}
-                  </span>
-                  <Badge className={`${getStatusStyle(currentInvoice.status)} text-xs`}>
-                    {currentInvoice.status}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {currentInvoice.documentType}
-                  </Badge>
-                </div>
-              </div>
+            {/* Left: Back to List */}
+            <div className="flex items-center">
+              <Button variant="outline" size="sm" onClick={onClose}>
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
             </div>
 
+            {/* Center: Navigation */}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -400,6 +391,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                 disabled={!canNavigatePrev}
               >
                 <ArrowLeft className="h-4 w-4" />
+                Back
               </Button>
               <Button
                 variant="outline"
@@ -407,18 +399,27 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                 onClick={navigateNext}
                 disabled={!canNavigateNext}
               >
+                Forward
                 <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handlePublish}
+                disabled={isPublished}
+              >
+                {isPublished ? 'Published' : 'Publish'}
               </Button>
               <Button 
                 variant="outline" 
-                size="sm" 
-                onClick={() => setShowDeleteConfirm(true)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                size="sm"
+                onClick={handleArchive}
               >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
+                Archive
               </Button>
             </div>
           </div>
@@ -463,26 +464,6 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
         <div className="flex-1 flex">
           {/* File Viewer */}
           <div className="w-1/2 bg-white border-r border-gray-200">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900">Original Document</h3>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.open(currentInvoice.uploadedFile?.url, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
             <div className="p-4 h-full">
               {currentInvoice.uploadedFile?.type === 'csv' ? (
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
@@ -650,8 +631,8 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                       <FileText className="h-4 w-4" />
                       Transaction Details
                     </div>
-                    {/* Completion Status */}
-                    <div className="flex items-center gap-2">
+                    {/* Completion Status with Edit Button */}
+                    <div className="flex items-center gap-3">
                       {(() => {
                         const requiredFields = [
                           formData.company,
@@ -683,6 +664,24 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                           </>
                         );
                       })()}
+                      {/* Edit Button moved here */}
+                      {!isPublished && !editMode && (
+                        <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                      {editMode && (
+                        <div className="flex gap-1">
+                          <Button size="sm" onClick={() => setEditMode(false)}>
+                            <Save className="h-3 w-3 mr-1" />
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditMode(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardTitle>
                 </CardHeader>
@@ -782,7 +781,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                         <Input 
                           value={formData.invoiceNumber || ''} 
                           className="mt-1 text-sm"
-                          readOnly={!editMode}
+                          readOnly={!editMode || isPublished}
                           placeholder="Enter invoice number"
                           onChange={(e) => setFormData({...formData, invoiceNumber: e.target.value})}
                         />
@@ -871,7 +870,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                               }));
                             }
                           }}
-                          isEditing={editMode}
+                          isEditing={editMode && !isPublished}
                         />
                       </CollapsibleContent>
                     </Collapsible>
@@ -899,26 +898,29 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                     </div>
                   </div>
 
-                  {/* Action buttons within the card */}
-                  <div className="flex gap-2 pt-4 border-t">
-                    {editMode ? (
-                      <>
-                        <Button size="sm" onClick={() => setEditMode(false)}>
-                          <Save className="h-3 w-3 mr-2" />
-                          Save Changes
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setEditMode(false)}>
-                          Cancel
-                        </Button>
-                      </>
+                  {/* Action buttons within the card - Centered Publish/Archive */}
+                  <div className="flex justify-center gap-3 pt-4 border-t">
+                    {isPublished ? (
+                      <div className="text-sm text-gray-500 italic text-center">
+                        Invoice is published and cannot be modified
+                      </div>
                     ) : (
                       <>
-                        <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
-                          <Edit className="h-3 w-3 mr-2" />
-                          Edit
+                        <Button 
+                          size="sm" 
+                          onClick={handlePublish}
+                          disabled={isPublished}
+                          className="px-6"
+                        >
+                          {isPublished ? 'Published' : 'Publish'}
                         </Button>
-                        <Button size="sm">
-                          Submit Changes
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={handleArchive}
+                          className="px-6"
+                        >
+                          Archive
                         </Button>
                       </>
                     )}
