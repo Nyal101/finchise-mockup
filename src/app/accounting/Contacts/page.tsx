@@ -420,7 +420,7 @@ export default function ContactsPage() {
       floatingFilter: true,
     },
     {
-      headerName: "Account Code",
+      headerName: "Default Account Codes",
       field: "defaultAccountCode",
       cellRenderer: AccountCodeCellRenderer,
       flex: 1.8,
@@ -508,7 +508,7 @@ export default function ContactsPage() {
         <div className="flex gap-3">
           <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Sync with Xero'}
+            {isSyncing ? 'Syncing...' : 'Sync'}
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

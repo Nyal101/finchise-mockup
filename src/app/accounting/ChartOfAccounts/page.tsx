@@ -2,7 +2,6 @@
 
 import React, { useState } from "react"
 import { 
-  FileText,
   Download,
   PlusCircle, 
   Search,
@@ -392,10 +391,7 @@ export default function ChartOfAccountsPage() {
     console.log("Exporting chart of accounts...")
   }
 
-  const handlePrintPDF = () => {
-    // Implement PDF generation
-    console.log("Generating PDF...")
-  }
+
 
   const handleResolveSyncIssue = (issueId: string, action: 'accept' | 'reject') => {
     setSyncIssues(syncIssues.filter(issue => issue.id !== issueId))
@@ -437,7 +433,7 @@ export default function ChartOfAccountsPage() {
         <div className="flex gap-3">
           <Button variant="outline" onClick={handleSync} disabled={syncStatus.syncing}>
             <RefreshCw className={`mr-2 h-4 w-4 ${syncStatus.syncing ? 'animate-spin' : ''}`} />
-            {syncStatus.syncing ? 'Syncing...' : 'Sync with Xero'}
+            {syncStatus.syncing ? 'Syncing...' : 'Sync'}
           </Button>
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
@@ -641,10 +637,6 @@ export default function ChartOfAccountsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline" onClick={handlePrintPDF}>
-            <FileText className="mr-2 h-4 w-4" />
-            Print PDF
-          </Button>
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
             Export
@@ -680,7 +672,6 @@ export default function ChartOfAccountsPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Tax Rate</TableHead>
                 <TableHead>Report Code</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Last Synced</TableHead>
               </TableRow>
             </TableHeader>
@@ -715,14 +706,6 @@ export default function ChartOfAccountsPage() {
                     <TableCell className="text-sm text-gray-600">
                       {account.reportCode}
                     </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={account.status === 'active' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {account.status}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-sm text-gray-600">
                       {new Date(account.lastSynced).toLocaleDateString('en-GB')}
                     </TableCell>
@@ -730,7 +713,7 @@ export default function ChartOfAccountsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No accounts found matching the current filters
                   </TableCell>
                 </TableRow>
