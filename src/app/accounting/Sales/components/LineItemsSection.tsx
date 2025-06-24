@@ -29,6 +29,18 @@ const storeOptions = [
   "London East"
 ];
 
+// Account code options
+const accountCodeOptions = [
+  { value: "4000", label: "4000 - Sales Revenue" },
+  { value: "5000", label: "5000 - Cost of Sales" },
+  { value: "6100", label: "6100 - Professional Services" },
+  { value: "6200", label: "6200 - Property Maintenance" },
+  { value: "6300", label: "6300 - Equipment Maintenance" },
+  { value: "6400", label: "6400 - Utilities & Rates" },
+  { value: "6500", label: "6500 - Marketing" },
+  { value: "6600", label: "6600 - Communications" }
+];
+
 export default function LineItemsSection({ lineItems, setLineItems, isEditing }: LineItemsSectionProps) {
   const handleAddLineItem = () => {
     const newItem: SalesLineItem = {
@@ -42,6 +54,7 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
       vat: 0,
       total: 0,
       trackingCategory: "",
+      accountCode: "",
     };
     setLineItems([...lineItems, newItem]);
   };
@@ -94,6 +107,7 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
               <TableHead className="text-right">Unit Price</TableHead>
               <TableHead className="w-[15%]">Tax Rate</TableHead>
               <TableHead className="w-[15%]">Store</TableHead>
+              <TableHead className="w-[15%]">Account Code</TableHead>
               <TableHead className="text-right">Total</TableHead>
               {isEditing && <TableHead className="w-[50px]"></TableHead>}
             </TableRow>
@@ -186,6 +200,29 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                       </Select>
                     ) : (
                       item.trackingCategory || "-"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {isEditing ? (
+                      <Select
+                        value={item.accountCode || ""}
+                        onValueChange={(value) => handleLineItemChange(item.id, "accountCode", value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select code" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accountCodeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="text-center">
+                        {item.accountCode ? accountCodeOptions.find(opt => opt.value === item.accountCode)?.label || item.accountCode : "-"}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="text-right font-medium">{`£${item.total.toFixed(2)}`}</TableCell>

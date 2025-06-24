@@ -100,6 +100,7 @@ export interface SalesLineItem {
   vat: number;
   total: number;
   trackingCategory?: string;
+  accountCode?: string;
 }
 
 export interface JournalEntry {
