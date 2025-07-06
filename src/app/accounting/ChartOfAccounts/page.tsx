@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   RefreshCw,
   X,
-  Check,
   Eye
 } from "lucide-react"
 import { 
@@ -39,16 +38,38 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import SyncIssuesModal from "./SyncIssuesModal"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+
+
+// Add type definition for account types
+type AccountType = 
+  | "Bank account"
+  | "Current Asset account"
+  | "Current Liability account"
+  | "Depreciation account"
+  | "Direct Costs account"
+  | "Equity account"
+  | "Expense account"
+  | "Fixed Asset account"
+  | "Inventory Asset account"
+  | "Liability account"
+  | "Non-current Asset account"
+  | "Other Income account"
+  | "Overhead account"
+  | "Prepayment account"
+  | "Revenue account"
+  | "Sale account"
+  | "Non-current Liability account";
 
 // Interface definitions
 interface Account {
   id: string;
   code: string;
   name: string;
-  type: string;
+  type: AccountType;
   taxRate: string;
   reportCode: string;
   selected: boolean;
@@ -62,20 +83,26 @@ interface SyncIssue {
   account: {
     code: string;
     name: string;
-    type: string;
+    type: AccountType;
   };
   companies: string[];
   description: string;
   severity: "high" | "medium" | "low";
+  details: Record<string, { 
+    exists: boolean; 
+    name?: string; 
+    type?: AccountType;
+    taxRate?: string; 
+  }>;
 }
 
-// Mock data for chart of accounts
+// Update mock accounts with correct types
 const mockAccounts: Account[] = [
   {
     id: "0010",
     code: "0010",
     name: "Intangible Asset - Franchise Fee/Goodwill - Cost - b/fwd",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -86,7 +113,7 @@ const mockAccounts: Account[] = [
     id: "0011",
     code: "0011",
     name: "Intangible Asset - Franchise Fee/Goodwill - Cost - additions",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "20% (VAT on Expenses)",
     reportCode: "ASS Assets",
     selected: false,
@@ -97,7 +124,7 @@ const mockAccounts: Account[] = [
     id: "0012",
     code: "0012",
     name: "Intangible Asset - Franchise Fee/Goodwill - Cost - disposals",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -108,7 +135,7 @@ const mockAccounts: Account[] = [
     id: "0013",
     code: "0013",
     name: "Intangible Asset - Franchise Fee/Goodwill - Cost - revaluations",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -119,7 +146,7 @@ const mockAccounts: Account[] = [
     id: "0015",
     code: "0015",
     name: "Intangible Asset - Amortisation -b/fwd",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -130,7 +157,7 @@ const mockAccounts: Account[] = [
     id: "0016",
     code: "0016",
     name: "Intangible Asset - Amortisation - provided for the year",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -141,7 +168,7 @@ const mockAccounts: Account[] = [
     id: "0017",
     code: "0017",
     name: "Intangible Asset - Amortisation - disposals",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -152,7 +179,7 @@ const mockAccounts: Account[] = [
     id: "0018",
     code: "0018",
     name: "Intangible Asset - Amortisation - revaluations",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -163,7 +190,7 @@ const mockAccounts: Account[] = [
     id: "0020",
     code: "0020",
     name: "Leasehold property improvements - Cost - b/fwd",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -174,7 +201,7 @@ const mockAccounts: Account[] = [
     id: "0021",
     code: "0021",
     name: "Leasehold property improvements - Cost - additions",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "20% (VAT on Expenses)",
     reportCode: "ASS Assets",
     selected: false,
@@ -185,7 +212,7 @@ const mockAccounts: Account[] = [
     id: "0022",
     code: "0022",
     name: "Leasehold property improvements - Cost - disposals",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -196,7 +223,7 @@ const mockAccounts: Account[] = [
     id: "0030",
     code: "0030",
     name: "Plant & machinery - Cost - b/fwd",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -207,7 +234,7 @@ const mockAccounts: Account[] = [
     id: "0031",
     code: "0031",
     name: "Plant & machinery - Cost - additions",
-    type: "Fixed Asset",
+    type: "Fixed Asset account",
     taxRate: "20% (VAT on Expenses)",
     reportCode: "ASS Assets",
     selected: false,
@@ -218,7 +245,7 @@ const mockAccounts: Account[] = [
     id: "1001",
     code: "1001",
     name: "Stock",
-    type: "Current Asset",
+    type: "Inventory Asset account",
     taxRate: "No VAT",
     reportCode: "ASS Assets",
     selected: false,
@@ -229,7 +256,7 @@ const mockAccounts: Account[] = [
     id: "4001",
     code: "4001",
     name: "STORE - SALES",
-    type: "Revenue",
+    type: "Sale account",
     taxRate: "20% (VAT on Income)",
     reportCode: "REV Revenue",
     selected: false,
@@ -240,7 +267,7 @@ const mockAccounts: Account[] = [
     id: "5001",
     code: "5001",
     name: "Food - Food without VAT",
-    type: "Direct Costs",
+    type: "Direct Costs account",
     taxRate: "No VAT",
     reportCode: "EXP Expense",
     selected: false,
@@ -251,7 +278,7 @@ const mockAccounts: Account[] = [
     id: "6001",
     code: "6001",
     name: "Dominos - Advertising Levy",
-    type: "Overhead",
+    type: "Overhead account",
     taxRate: "20% (VAT on Expenses)",
     reportCode: "EXP Expense",
     selected: false,
@@ -260,7 +287,7 @@ const mockAccounts: Account[] = [
   }
 ];
 
-// Mock sync issues
+// Update mock sync issues with correct types
 const mockSyncIssues: SyncIssue[] = [
   {
     id: "1",
@@ -268,11 +295,17 @@ const mockSyncIssues: SyncIssue[] = [
     account: {
       code: "2001",
       name: "Accounts Payable",
-      type: "Current Liability"
+      type: "Current Liability account"
     },
-    companies: ["Bajs Limited", "Topbake Limited"],
-    description: "Account exists in Bellam & Co Limited but missing in other companies",
-    severity: "high"
+    companies: ["Bajs Limited"],
+    description: "Account code 2001 exists in Bajs Limited but is missing in other companies",
+    severity: "high",
+    details: {
+      "Bajs Limited": { exists: true, name: "Accounts Payable", type: "Current Liability account", taxRate: "No VAT" },
+      "Topbake Limited": { exists: false },
+      "R&D Yorkshire Limited": { exists: false },
+      "Bellam & Co Limited": { exists: false }
+    }
   },
   {
     id: "2",
@@ -280,23 +313,53 @@ const mockSyncIssues: SyncIssue[] = [
     account: {
       code: "4001",
       name: "STORE - SALES",
-      type: "Revenue"
+      type: "Sale account"
     },
-    companies: ["R&D Yorkshire Limited"],
-    description: "Tax rate differs: 20% (VAT on Income) vs No VAT",
-    severity: "medium"
+    companies: ["R&D Yorkshire Limited", "Topbake Limited"],
+    description: "Tax rate differs across companies for account code 4001",
+    severity: "low",
+    details: {
+      "Bajs Limited": { exists: true, name: "STORE - SALES", type: "Sale account", taxRate: "20% (VAT on Income)" },
+      "Topbake Limited": { exists: true, name: "STORE - SALES", type: "Sale account", taxRate: "No VAT" },
+      "R&D Yorkshire Limited": { exists: true, name: "STORE - SALES", type: "Sale account", taxRate: "No VAT" },
+      "Bellam & Co Limited": { exists: true, name: "STORE - SALES", type: "Sale account", taxRate: "20% (VAT on Income)" }
+    }
   },
   {
     id: "3",
-    type: "new",
+    type: "mismatch",
     account: {
-      code: "7010",
-      name: "Marketing Expenses",
-      type: "Overhead"
+      code: "5001",
+      name: "Food Costs",
+      type: "Direct Costs account"
     },
-    companies: ["All Companies"],
-    description: "New account detected in Xero, needs to be added",
-    severity: "low"
+    companies: ["Topbake Limited", "R&D Yorkshire Limited"],
+    description: "Account name differs across companies for account code 5001",
+    severity: "medium",
+    details: {
+      "Bajs Limited": { exists: true, name: "Food - Direct Costs", type: "Direct Costs account", taxRate: "No VAT" },
+      "Topbake Limited": { exists: true, name: "Food Costs", type: "Direct Costs account", taxRate: "No VAT" },
+      "R&D Yorkshire Limited": { exists: true, name: "Food - Cost of Sales", type: "Direct Costs account", taxRate: "No VAT" },
+      "Bellam & Co Limited": { exists: true, name: "Food - Direct Costs", type: "Direct Costs account", taxRate: "No VAT" }
+    }
+  },
+  {
+    id: "4",
+    type: "mismatch",
+    account: {
+      code: "6001",
+      name: "Marketing Expenses",
+      type: "Overhead account"
+    },
+    companies: ["R&D Yorkshire Limited"],
+    description: "Account type differs across companies for account code 6001",
+    severity: "high",
+    details: {
+      "Bajs Limited": { exists: true, name: "Marketing Expenses", type: "Overhead account", taxRate: "20% (VAT on Expenses)" },
+      "Topbake Limited": { exists: true, name: "Marketing Expenses", type: "Overhead account", taxRate: "20% (VAT on Expenses)" },
+      "R&D Yorkshire Limited": { exists: true, name: "Marketing Expenses", type: "Direct Costs account", taxRate: "20% (VAT on Expenses)" },
+      "Bellam & Co Limited": { exists: true, name: "Marketing Expenses", type: "Overhead account", taxRate: "20% (VAT on Expenses)" }
+    }
   }
 ];
 
@@ -307,9 +370,10 @@ export default function ChartOfAccountsPage() {
   const [accounts, setAccounts] = useState(mockAccounts)
   const [selectAll, setSelectAll] = useState(false)
   const [syncStatus, setSyncStatus] = useState({ syncing: false, lastSynced: "10 minutes ago" })
-  const [syncIssues, setSyncIssues] = useState(mockSyncIssues)
+  const [syncIssues, setSyncIssues] = useState<SyncIssue[]>(mockSyncIssues)
   const [showSyncModal, setShowSyncModal] = useState(false)
   const [showSyncBanner, setShowSyncBanner] = useState(true)
+  const [expandedIssues, setExpandedIssues] = useState<Set<string>>(new Set())
   
   // Filter accounts based on search and active tab
   const filteredAccounts = accounts.filter(account => {
@@ -320,19 +384,19 @@ export default function ChartOfAccountsPage() {
     let matchesType = true
     switch (activeTab) {
       case "assets":
-        matchesType = account.type === "Fixed Asset" || account.type === "Current Asset"
+        matchesType = account.type === "Fixed Asset account" || account.type === "Inventory Asset account"
         break
       case "liabilities":
-        matchesType = account.type === "Current Liability" || account.type === "Non-current Liability"
+        matchesType = account.type === "Current Liability account" || account.type === "Non-current Liability account"
         break
       case "equity":
-        matchesType = account.type === "Equity"
+        matchesType = account.type === "Equity account"
         break
       case "expenses":
-        matchesType = account.type === "Direct Costs" || account.type === "Overhead"
+        matchesType = account.type === "Direct Costs account" || account.type === "Overhead account"
         break
       case "revenue":
-        matchesType = account.type === "Revenue" || account.type === "Other Income"
+        matchesType = account.type === "Revenue account" || account.type === "Other Income account"
         break
       default:
         matchesType = true
@@ -369,18 +433,24 @@ export default function ChartOfAccountsPage() {
     setSyncStatus({ syncing: false, lastSynced: "Just now" })
     
     // Simulate finding new sync issues
-    const newIssues = [
+    const newIssues: SyncIssue[] = [
       {
         id: "4",
-        type: "missing" as const,
+        type: "missing",
         account: {
           code: "3001",
           name: "Retained Earnings",
-          type: "Equity"
+          type: "Equity account"
         },
         companies: ["Dhillon Brothers Limited"],
         description: "Account missing after latest sync",
-        severity: "medium" as const
+        severity: "medium",
+        details: {
+          "Bajs Limited": { exists: true, name: "Retained Earnings", taxRate: "No VAT" },
+          "Topbake Limited": { exists: true, name: "Retained Earnings", taxRate: "No VAT" },
+          "R&D Yorkshire Limited": { exists: true, name: "Retained Earnings", taxRate: "No VAT" },
+          "Dhillon Brothers Limited": { exists: false }
+        }
       }
     ]
     setSyncIssues([...syncIssues, ...newIssues])
@@ -391,35 +461,34 @@ export default function ChartOfAccountsPage() {
     console.log("Exporting chart of accounts...")
   }
 
-
-
-  const handleResolveSyncIssue = (issueId: string, action: 'accept' | 'reject') => {
-    setSyncIssues(syncIssues.filter(issue => issue.id !== issueId))
-    console.log(`${action === 'accept' ? 'Accepted' : 'Rejected'} sync issue:`, issueId)
-  }
-
   const selectedCount = accounts.filter(account => account.selected).length
 
   // Account type counts for filter tabs
   const accountCounts = React.useMemo(() => {
     const counts = { 
       all: filteredAccounts.length,
-      assets: filteredAccounts.filter(a => a.type === "Fixed Asset" || a.type === "Current Asset").length,
-      liabilities: filteredAccounts.filter(a => a.type === "Current Liability" || a.type === "Non-current Liability").length,
-      equity: filteredAccounts.filter(a => a.type === "Equity").length,
-      expenses: filteredAccounts.filter(a => a.type === "Direct Costs" || a.type === "Overhead").length,
-      revenue: filteredAccounts.filter(a => a.type === "Revenue" || a.type === "Other Income").length
+      assets: filteredAccounts.filter(a => a.type === "Fixed Asset account" || a.type === "Inventory Asset account").length,
+      liabilities: filteredAccounts.filter(a => a.type === "Current Liability account" || a.type === "Non-current Liability account").length,
+      equity: filteredAccounts.filter(a => a.type === "Equity account").length,
+      expenses: filteredAccounts.filter(a => a.type === "Direct Costs account" || a.type === "Overhead account").length,
+      revenue: filteredAccounts.filter(a => a.type === "Revenue account" || a.type === "Other Income account").length
     }
     return counts
   }, [filteredAccounts])
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200'
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'low': return 'bg-blue-100 text-blue-800 border-blue-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
-    }
+
+
+  // Add function to handle expanding/collapsing issues
+  const toggleIssueExpanded = (issueId: string) => {
+    setExpandedIssues(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(issueId)) {
+        newSet.delete(issueId)
+      } else {
+        newSet.add(issueId)
+      }
+      return newSet
+    })
   }
 
   return (
@@ -671,7 +740,6 @@ export default function ChartOfAccountsPage() {
                 <TableHead>Account Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Tax Rate</TableHead>
-                <TableHead>Report Code</TableHead>
                 <TableHead>Last Synced</TableHead>
               </TableRow>
             </TableHeader>
@@ -704,16 +772,13 @@ export default function ChartOfAccountsPage() {
                       {account.taxRate}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">
-                      {account.reportCode}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
                       {new Date(account.lastSynced).toLocaleDateString('en-GB')}
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No accounts found matching the current filters
                   </TableCell>
                 </TableRow>
@@ -724,96 +789,13 @@ export default function ChartOfAccountsPage() {
       </div>
 
       {/* Sync Issues Modal */}
-      <Dialog open={showSyncModal} onOpenChange={setShowSyncModal}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Sync Issues ({syncIssues.length})</DialogTitle>
-            <DialogDescription>
-              Review and resolve account synchronization issues across companies.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {syncIssues.map((issue) => (
-              <Card key={issue.id} className="border-l-4 border-l-amber-500">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${getSeverityColor(issue.severity)}`}
-                        >
-                          {issue.severity.toUpperCase()}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          {issue.type.toUpperCase()}
-                        </Badge>
-                      </div>
-                      
-                      <h4 className="font-semibold text-gray-900 mb-1">
-                        {issue.account.code} - {issue.account.name}
-                      </h4>
-                      
-                      <p className="text-sm text-gray-600 mb-2">
-                        {issue.description}
-                      </p>
-                      
-                      <div className="text-xs text-gray-500">
-                        <strong>Affected:</strong> {issue.companies.join(', ')}
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleResolveSyncIssue(issue.id, 'accept')}
-                        className="text-green-600 border-green-300 hover:bg-green-50"
-                      >
-                        <Check className="h-3 w-3 mr-1" />
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleResolveSyncIssue(issue.id, 'reject')}
-                        className="text-red-600 border-red-300 hover:bg-red-50"
-                      >
-                        <X className="h-3 w-3 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {syncIssues.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                <h3 className="font-semibold mb-2">All Synced!</h3>
-                <p className="text-sm">No sync issues found. All accounts are synchronized across companies.</p>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSyncModal(false)}>
-              Close
-            </Button>
-            {syncIssues.length > 0 && (
-              <Button onClick={() => {
-                setSyncIssues([])
-                setShowSyncModal(false)
-                setShowSyncBanner(false)
-              }}>
-                Resolve All Issues
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SyncIssuesModal
+        isOpen={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
+        syncIssues={syncIssues}
+        expandedIssues={expandedIssues}
+        onToggleExpanded={toggleIssueExpanded}
+      />
     </div>
   )
 } 
