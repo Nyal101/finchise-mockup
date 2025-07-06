@@ -6,7 +6,6 @@ import {
   PlusCircle, 
   Search,
   AlertTriangle,
-  CheckCircle2,
   RefreshCw,
   X,
   Eye
@@ -22,25 +21,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+
 import SyncIssuesModal from "./SyncIssuesModal"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
+import AddAccountModal from "./AddAccountModal"
 import { Badge } from "@/components/ui/badge"
 
 
@@ -491,6 +474,21 @@ export default function ChartOfAccountsPage() {
     })
   }
 
+  const handleAddAccount = (accountData: Partial<Account>) => {
+    const newAccount: Account = {
+      id: Math.random().toString(36).substr(2, 9),
+      code: accountData.code || "",
+      name: accountData.name || "",
+      type: accountData.type || "Fixed Asset account",
+      taxRate: accountData.taxRate || "No VAT",
+      reportCode: "GEN General",
+      selected: false,
+      status: accountData.status || "active",
+      lastSynced: accountData.lastSynced || new Date().toISOString().split('T')[0]
+    }
+    setAccounts(prev => [...prev, newAccount])
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
@@ -504,139 +502,50 @@ export default function ChartOfAccountsPage() {
             <RefreshCw className={`mr-2 h-4 w-4 ${syncStatus.syncing ? 'animate-spin' : ''}`} />
             {syncStatus.syncing ? 'Syncing...' : 'Sync'}
           </Button>
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Account
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New Account</DialogTitle>
-                <DialogDescription>
-                  Create a new account in the chart of accounts. This will be synced across all companies.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Account Type</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BANK">Bank account</SelectItem>
-                      <SelectItem value="CURRENT">Current Asset account</SelectItem>
-                      <SelectItem value="CURRLIAB">Current Liability account</SelectItem>
-                      <SelectItem value="DEPRECIATN">Depreciation account</SelectItem>
-                      <SelectItem value="DIRECTCOSTS">Direct Costs account</SelectItem>
-                      <SelectItem value="EQUITY">Equity account</SelectItem>
-                      <SelectItem value="EXPENSE">Expense account</SelectItem>
-                      <SelectItem value="FIXED">Fixed Asset account</SelectItem>
-                      <SelectItem value="INVENTORY">Inventory Asset account</SelectItem>
-                      <SelectItem value="LIABILITY">Liability account</SelectItem>
-                      <SelectItem value="NONCURRENT">Non-current Asset account</SelectItem>
-                      <SelectItem value="OTHERINCOME">Other Income account</SelectItem>
-                      <SelectItem value="OVERHEADS">Overhead account</SelectItem>
-                      <SelectItem value="PREPAYMENT">Prepayment account</SelectItem>
-                      <SelectItem value="REVENUE">Revenue account</SelectItem>
-                      <SelectItem value="SALES">Sale account</SelectItem>
-                      <SelectItem value="TERMLIAB">Non-current Liability account</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="code">Code</Label>
-                  <Input id="code" placeholder="e.g. 0010" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" placeholder="Account name" />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
-                  <Input id="description" placeholder="Account description" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Tax</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tax type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INPUT2">20% (VAT on Expenses)</SelectItem>
-                      <SelectItem value="NONE">No VAT</SelectItem>
-                      <SelectItem value="OUTPUT2">20% (VAT on Income)</SelectItem>
-                      <SelectItem value="REVERSECHARGES">Reverse Charge Expenses (20%)</SelectItem>
-                      <SelectItem value="RRINPUT">5% (VAT on Expenses)</SelectItem>
-                      <SelectItem value="RROUTPUT">5% (VAT on Income)</SelectItem>
-                      <SelectItem value="SRINPUT">15% (VAT on Expenses)</SelectItem>
-                      <SelectItem value="SROUTPUT">15% (VAT on Income)</SelectItem>
-                      <SelectItem value="ZERORATEDINPUT">Zero Rated Expenses</SelectItem>
-                      <SelectItem value="ZERORATEDOUTPUT">Zero Rated Income</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => setShowAddDialog(false)}>
-                  Add Account
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={() => setShowAddDialog(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Account
+          </Button>
         </div>
       </div>
 
       {/* Sync Issues Banner */}
       {syncIssues.length > 0 && showSyncBanner && (
-        <Card className="border-l-4 border-l-amber-500 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
-                <div>
-                  <h3 className="font-semibold text-amber-800">
-                    {syncIssues.length} Sync Issue{syncIssues.length !== 1 ? 's' : ''} Found
-                  </h3>
-                  <p className="text-sm text-amber-700">
-                    Some accounts are out of sync across companies. Review and resolve these issues.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowSyncModal(true)}
-                  className="text-amber-800 border-amber-300 hover:bg-amber-100"
-                >
-                  Review Issues
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowSyncBanner(false)}
-                  className="text-amber-600 hover:bg-amber-100"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center gap-3 bg-amber-50 border-l-4 border-l-amber-500 py-2.5 px-4 rounded-lg w-full">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-amber-800">
+              {syncIssues.length} Sync Issue{syncIssues.length !== 1 ? 's' : ''} Found
+            </h3>
+            <p className="text-sm text-amber-700">
+              Some accounts are out of sync across companies.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowSyncModal(true)}
+            className="text-amber-800 border-amber-300 hover:bg-amber-100 whitespace-nowrap ml-4"
+          >
+            Review Issues
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setShowSyncBanner(false)}
+            className="text-amber-600 hover:bg-amber-100"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       )}
 
       {/* Summary Stats */}
       <div className="bg-white rounded-lg border shadow-sm p-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="grid grid-cols-3 gap-8">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
-              <Eye className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100">
+              <Eye className="h-6 w-6 text-blue-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-blue-600">{accounts.length}</p>
@@ -644,19 +553,9 @@ export default function ChartOfAccountsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-green-600">{accounts.filter(a => a.status === 'active').length}</p>
-              <p className="text-sm text-gray-600">Active</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100">
+              <AlertTriangle className="h-6 w-6 text-amber-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-amber-600">{syncIssues.length}</p>
@@ -664,9 +563,9 @@ export default function ChartOfAccountsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100">
-              <RefreshCw className="h-5 w-5 text-purple-600" />
+          <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100">
+              <RefreshCw className="h-6 w-6 text-purple-600" />
             </div>
             <div>
               <p className="text-2xl font-bold text-purple-600">{syncStatus.lastSynced}</p>
@@ -676,7 +575,7 @@ export default function ChartOfAccountsPage() {
         </div>
       </div>
 
-      {/* Filter Tabs and Controls */}
+      {/* Filter Tabs */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
           {Object.entries(accountCounts).map(([type, count]) => (
@@ -695,33 +594,31 @@ export default function ChartOfAccountsPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative min-w-[250px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search accounts..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        </div>
+        <Button variant="outline" onClick={handleExport}>
+          <Download className="mr-2 h-4 w-4" />
+          Export
+        </Button>
       </div>
 
       {/* Accounts Table */}
       <div className="bg-white rounded-lg border shadow-sm">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              {selectedCount === 0 ? 
-                `Showing ${filteredAccounts.length} accounts` : 
-                `${selectedCount} account${selectedCount === 1 ? '' : 's'} selected`}
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search accounts..."
+                className="pl-8 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
+            {selectedCount > 0 && (
+              <div className="text-sm text-gray-600 ml-4">
+                {selectedCount} account{selectedCount === 1 ? '' : 's'} selected
+              </div>
+            )}
           </div>
         </div>
         
@@ -795,6 +692,14 @@ export default function ChartOfAccountsPage() {
         syncIssues={syncIssues}
         expandedIssues={expandedIssues}
         onToggleExpanded={toggleIssueExpanded}
+      />
+
+      {/* Add Account Modal */}
+      <AddAccountModal
+        isOpen={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onAddAccount={handleAddAccount}
+        existingAccounts={accounts}
       />
     </div>
   )
