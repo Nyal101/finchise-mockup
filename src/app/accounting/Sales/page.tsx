@@ -47,6 +47,17 @@ export default function SalesPage() {
     );
   }, []);
 
+  // Handle archive/unarchive
+  const handleArchiveInvoice = React.useCallback((invoiceId: string, archive: boolean) => {
+    setSalesData(prevData => 
+      prevData.map(invoice => 
+        invoice.id === invoiceId 
+          ? { ...invoice, archived: archive }
+          : invoice
+      )
+    );
+  }, []);
+
   // Custom cell renderers - now inside component scope
   const StatusCellRenderer = React.useCallback((params: { value: string; data: SalesInvoiceData }) => {
     const status = params.value;
@@ -274,7 +285,7 @@ export default function SalesPage() {
     },
   ], [StatusCellRenderer, AmountCellRenderer, DocumentTypeCellRenderer, VATRateCellRenderer, SourceCellRenderer, AccountCodeCellRenderer]);
 
-  // Filter data based on search and status
+  // Filter data based on search and status (including archived)
   const filteredData = React.useMemo(() => {
     return salesData.filter(invoice => {
       const matchesSearch = 
@@ -284,7 +295,14 @@ export default function SalesPage() {
         invoice.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
         invoice.company?.toLowerCase().includes(searchTerm.toLowerCase());
         
-      const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+      let matchesStatus = false;
+      if (statusFilter === "all") {
+        matchesStatus = !invoice.archived; // Show only non-archived for "all"
+      } else if (statusFilter === "Archived") {
+        matchesStatus = invoice.archived; // Show only archived invoices
+      } else {
+        matchesStatus = invoice.status === statusFilter && !invoice.archived; // Show specific status, non-archived only
+      }
       
       return matchesSearch && matchesStatus && !invoice.deleted;
     });
@@ -296,13 +314,17 @@ export default function SalesPage() {
     }
   };
 
-  // Quick status filter buttons
+  // Status filter buttons including archived
   const statusCounts = React.useMemo(() => {
-    const counts = { all: 0, Review: 0, Processing: 0, Processed: 0, Published: 0 };
+    const counts = { all: 0, Review: 0, Processing: 0, Processed: 0, Published: 0, Archived: 0 };
     salesData.forEach(invoice => {
       if (!invoice.deleted) {
-        counts.all++;
-        counts[invoice.status as keyof typeof counts]++;
+        if (invoice.archived) {
+          counts.Archived++;
+        } else {
+          counts.all++;
+          counts[invoice.status as keyof typeof counts]++;
+        }
       }
     });
     return counts;
@@ -315,6 +337,7 @@ export default function SalesPage() {
         invoiceId={selectedInvoiceId} 
         onClose={() => setSelectedInvoiceId(null)}
         onDelete={handleDeleteInvoice}
+        onArchive={handleArchiveInvoice}
       />
     );
   }
@@ -352,11 +375,11 @@ export default function SalesPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {status === 'all' ? 'All Invoices' : status} ({count})
+              {status === 'all' ? 'All' : status} ({count})
             </button>
           ))}
         </div>
-        
+          
         <div className="flex gap-4 items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />

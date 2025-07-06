@@ -24,7 +24,6 @@ import {
   ChevronDown,
   ChevronRight,
   Trash2,
-  FileIcon,
   Table,
   File
 } from "lucide-react";
@@ -38,6 +37,7 @@ interface InvoiceDetailsProps {
   invoiceId?: string;
   onClose?: () => void;
   onDelete?: (invoiceId: string) => void;
+  onArchive?: (invoiceId: string, archive: boolean) => void;
 }
 
 // Status styling helper
@@ -107,7 +107,7 @@ const supplierOptions = [
   "Customer Account Services"
 ];
 
-const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete }) => {
+const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete, onArchive }) => {
   const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);
   const [currentInvoiceId, setCurrentInvoiceId] = React.useState(invoiceId || invoices[0]?.id);
   const [statusFilter, setStatusFilter] = React.useState<string>('Review');
@@ -134,19 +134,33 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
     }
   };
   
-  // Handle archive action
+  // Handle archive/unarchive action
   const handleArchive = () => {
-    if (currentInvoice) {
-      // In a real app, this would make an API call to archive the invoice
-      alert(`Archiving invoice ${currentInvoice.invoiceNumber}`);
+    if (currentInvoice && onArchive) {
+      const newArchiveState = !currentInvoice.archived;
+      onArchive(currentInvoice.id, newArchiveState);
+      
+      // Navigate to next invoice or close if none available
+      if (canNavigateNext) {
+        navigateNext();
+      } else if (canNavigatePrev) {
+        navigatePrev();
+      } else {
+        onClose?.();
+      }
     }
   };
 
-  // Filter invoices by status for sidebar
+  // Filter invoices by status for sidebar (including archived as a status)
   const filteredInvoices = React.useMemo(() => {
     return invoices.filter(invoice => {
-      if (statusFilter === 'all') return !invoice.deleted;
-      return invoice.status === statusFilter && !invoice.deleted;
+      let matchesStatus = false;
+      if (statusFilter === 'Archived') {
+        matchesStatus = invoice.archived; // Show only archived invoices
+      } else {
+        matchesStatus = invoice.status === statusFilter && !invoice.archived; // Show specific status, non-archived only
+      }
+      return matchesStatus && !invoice.deleted;
     });
   }, [invoices, statusFilter]);
 
@@ -333,9 +347,9 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar - Invoice List */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-3 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">Invoices</h3>
             <Button variant="ghost" size="sm" onClick={onClose}>
@@ -344,15 +358,15 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
           </div>
           
           {/* Status Filter Tabs */}
-          <div className="flex gap-1 p-1 bg-gray-100 rounded-md">
-            {['Review', 'Processing', 'Processed', 'Published'].map((status) => (
+          <div className="flex gap-0.5 p-0.5 bg-gray-100 rounded-md overflow-x-auto">
+            {['Review', 'Processing', 'Processed', 'Published', 'Archived'].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
+                className={`px-2 py-1.5 text-xs rounded transition-colors whitespace-nowrap flex-shrink-0 ${
                   statusFilter === status
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white text-gray-900 shadow-sm font-medium'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 {status}
@@ -445,7 +459,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                 size="sm"
                 onClick={handleArchive}
               >
-                Archive
+                {currentInvoice.archived ? 'Unarchive' : 'Archive'}
               </Button>
             </div>
           </div>
@@ -1070,7 +1084,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                           onClick={handleArchive}
                           className="px-6"
                         >
-                          Archive
+                          {currentInvoice.archived ? 'Unarchive' : 'Archive'}
                         </Button>
                       </>
                     )}
