@@ -71,23 +71,35 @@ export default function SalesPage() {
 
 
 
-  const DocumentTypeCellRenderer = React.useCallback((params: { value?: string }) => {
+  const DocumentTypeCellRenderer = React.useCallback((params: { value?: string; data: SalesInvoiceData }) => {
     const docType = params.value || "Invoice";
+    const isPaired = params.data.uploadedFiles?.type === 'paired';
     
     // Orange for Bill, Receipt, and Credit Note; Blue for Invoice
     const isOrangeType = docType === "Bill" || docType === "Receipt" || docType === "Credit Note";
     
     return (
-      <Badge 
-        variant="outline" 
-        className={`text-xs ${
-          isOrangeType
-            ? "border-orange-300 text-orange-700 bg-orange-50" 
-            : "border-blue-300 text-blue-700 bg-blue-50"
-        }`}
-      >
-        {docType}
-      </Badge>
+      <div className="flex items-center gap-1">
+        <Badge 
+          variant="outline" 
+          className={`text-xs ${
+            isOrangeType
+              ? "border-orange-300 text-orange-700 bg-orange-50" 
+              : "border-blue-300 text-blue-700 bg-blue-50"
+          }`}
+        >
+          {docType}
+        </Badge>
+        {isPaired && (
+          <Badge 
+            variant="outline" 
+            className="text-xs border-green-300 text-green-700 bg-green-50"
+            title="Paired CSV + PDF files"
+          >
+            CSV+PDF
+          </Badge>
+        )}
+      </div>
     );
   }, []);
 
@@ -123,7 +135,8 @@ export default function SalesPage() {
 
   // Source cell renderer - formats as rounded badge
   const SourceCellRenderer = React.useCallback((params: { data: SalesInvoiceData }) => {
-    const source = params.data.uploadedFile?.uploadSource;
+    // Handle both single and paired file structures
+    const source = params.data.uploadedFiles?.primary?.uploadSource || params.data.uploadedFile?.uploadSource;
     if (!source) {
       return <span className="text-gray-400">-</span>;
     }
@@ -167,7 +180,7 @@ export default function SalesPage() {
       maxWidth: 130,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
       cellStyle: { 
         display: 'flex', 
         alignItems: 'center', 
@@ -183,7 +196,7 @@ export default function SalesPage() {
       maxWidth: 160,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
       cellClass: "font-medium",
     },
     {
@@ -193,7 +206,7 @@ export default function SalesPage() {
       minWidth: 250,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
     {
       headerName: "Account Code",
@@ -204,7 +217,7 @@ export default function SalesPage() {
       maxWidth: 180,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
     {
       headerName: "VAT Rate",
@@ -241,22 +254,23 @@ export default function SalesPage() {
       field: "documentType",
       cellRenderer: DocumentTypeCellRenderer,
       flex: 1,
-      minWidth: 90,
-      maxWidth: 150,
+      minWidth: 120,
+      maxWidth: 180,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
     {
       headerName: "Source",
       field: "uploadedFile.uploadSource",
+      valueGetter: (params) => params.data.uploadedFiles?.primary?.uploadSource || params.data.uploadedFile?.uploadSource,
       cellRenderer: SourceCellRenderer,
       flex: 1,
       minWidth: 90,
       maxWidth: 150,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
   ], [StatusCellRenderer, AmountCellRenderer, DocumentTypeCellRenderer, VATRateCellRenderer, SourceCellRenderer, AccountCodeCellRenderer]);
 
@@ -267,7 +281,8 @@ export default function SalesPage() {
         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         invoice.store.toLowerCase().includes(searchTerm.toLowerCase()) ||
         invoice.supplierInfo?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.source.toLowerCase().includes(searchTerm.toLowerCase());
+        invoice.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        invoice.company?.toLowerCase().includes(searchTerm.toLowerCase());
         
       const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
       

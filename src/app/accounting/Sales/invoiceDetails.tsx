@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { 
   ArrowLeft, 
@@ -22,7 +23,10 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Trash2
+  Trash2,
+  FileIcon,
+  Table,
+  File
 } from "lucide-react";
 import { SalesInvoiceData, ReviewError, SalesLineItem } from "./components/types";
 import salesInvoices from "./invoiceData";
@@ -111,6 +115,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   const [formData, setFormData] = React.useState<Partial<SalesInvoiceData>>({});
   const [lineItemsOpen, setLineItemsOpen] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [activeView, setActiveView] = React.useState<'pdf' | 'csv'>('pdf');
 
   // Get current invoice
   const currentInvoice = React.useMemo(() => {
@@ -227,6 +232,27 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
 
   // Dynamic CSV data based on current invoice
   const getCsvData = () => {
+    // Handle paired files with CSV data
+    if (currentInvoice.uploadedFiles?.type === 'paired' && currentInvoice.uploadedFiles.secondary?.type === 'csv') {
+      // For Domino's customer account statements, use the actual CSV structure
+      if (currentInvoice.invoiceNumber.startsWith('S-')) {
+        const headers = ['Transaction type', 'Transaction date', 'Invoice number', 'Store', 'Total net', 'Total VAT', 'Total gross', 'Nominal code', 'Nominal code name'];
+        const rows = currentInvoice.lineItems?.map(item => [
+          'INV',
+          format(currentInvoice.date, 'yyyy/MM/dd'),
+          currentInvoice.invoiceNumber,
+          currentInvoice.store,
+          `£${item.subtotal.toFixed(2)}`,
+          `£${item.vat.toFixed(2)}`,
+          `£${item.total.toFixed(2)}`,
+          item.accountCode || '',
+          item.description
+        ]) || [];
+        return [headers, ...rows];
+      }
+    }
+    
+    // Handle single CSV files
     if (currentInvoice.uploadedFile?.type === 'csv' && currentInvoice.lineItems) {
       const headers = ['Description', 'Category', 'Quantity', 'Unit Price', 'Subtotal', 'VAT', 'Total'];
       const rows = currentInvoice.lineItems.map(item => [
@@ -462,10 +488,134 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
 
         {/* Content */}
         <div className="flex-1 flex">
-          {/* File Viewer */}
-          <div className="w-1/2 bg-white border-r border-gray-200">
-            <div className="p-4 h-full">
-              {currentInvoice.uploadedFile?.type === 'csv' ? (
+                  {/* File Viewer */}
+        <div className="w-1/2 bg-white border-r border-gray-200">
+          <div className="p-4 h-full">
+            {/* Handle paired files or single file */}
+            {currentInvoice.uploadedFiles?.type === 'paired' ? (
+              <div className="h-full">
+                {/* Document Header */}
+                <div className="mb-4 flex items-center justify-between">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-auto py-1.5 px-2 font-normal">
+                        <div className="flex items-center gap-2">
+                          {activeView === 'pdf' ? (
+                            <>
+                              <File className="h-4 w-4 text-blue-500" />
+                              <span className="text-sm font-medium">
+                                {currentInvoice.uploadedFiles.primary.name}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Table className="h-4 w-4 text-green-500" />
+                              <span className="text-sm font-medium">
+                                {currentInvoice.uploadedFiles.secondary?.name}
+                              </span>
+                            </>
+                          )}
+                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </div>
+                        {((activeView === 'pdf' && currentInvoice.uploadedFiles.primary.uploadSource) ||
+                          (activeView === 'csv' && currentInvoice.uploadedFiles.secondary?.uploadSource)) && (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {activeView === 'pdf'
+                              ? currentInvoice.uploadedFiles.primary.uploadSource
+                              : currentInvoice.uploadedFiles.secondary?.uploadSource}
+                          </Badge>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-72">
+                      <DropdownMenuItem 
+                        onClick={() => setActiveView('pdf')}
+                        className="gap-2"
+                      >
+                        <File className="h-4 w-4 shrink-0 text-blue-500" />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{currentInvoice.uploadedFiles.primary.name}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">PDF Document</span>
+                            {currentInvoice.uploadedFiles.primary.uploadSource && (
+                              <Badge variant="secondary" className="text-xs">
+                                {currentInvoice.uploadedFiles.primary.uploadSource}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setActiveView('csv')}
+                        className="gap-2"
+                      >
+                        <Table className="h-4 w-4 shrink-0 text-green-500" />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{currentInvoice.uploadedFiles.secondary?.name}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">Data File (CSV)</span>
+                            {currentInvoice.uploadedFiles.secondary?.uploadSource && (
+                              <Badge variant="secondary" className="text-xs">
+                                {currentInvoice.uploadedFiles.secondary.uploadSource}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Content Area */}
+                <div className="h-[calc(100%-3rem)] border rounded-lg overflow-hidden bg-white shadow-sm">
+                  {activeView === 'pdf' ? (
+                    <iframe
+                      src={currentInvoice.uploadedFiles.primary.url}
+                      className="w-full h-full border-0"
+                      title="Invoice PDF"
+                    />
+                  ) : (
+                    <div className="h-full">
+                      <div className="bg-gray-50 p-3 border-b">
+                        <h3 className="text-sm font-medium text-gray-700">
+                          Structured Data View
+                        </h3>
+                      </div>
+                      <div className="p-4 h-[calc(100%-3rem)] overflow-auto">
+                        <style jsx global>{`
+                          .handsontable {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+                            font-size: 13px !important;
+                          }
+                          .handsontable td {
+                            border-right: 1px solid #e9ecef !important;
+                          }
+                          .handsontable th {
+                            background-color: #f8f9fa !important;
+                            font-weight: 600 !important;
+                            border-bottom: 2px solid #dee2e6 !important;
+                            color: #495057 !important;
+                          }
+                          .handsontable .htDimmed {
+                            color: #6c757d !important;
+                          }
+                          .handsontable .current {
+                            background-color: #e3f2fd !important;
+                          }
+                          .handsontable .area {
+                            background-color: #f3e5f5 !important;
+                          }
+                        `}</style>
+                        <HotTable
+                          {...handsontableConfig}
+                          height="100%"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : currentInvoice.uploadedFile?.type === 'csv' ? (
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
                     <div className="flex items-center gap-4 min-w-0 flex-1">

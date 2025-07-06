@@ -24,6 +24,7 @@ export interface SalesInvoiceData {
   storeAllocations?: StoreAllocation[];
   // New fields for AI processing
   uploadedFile?: UploadedFile;
+  uploadedFiles?: MultipleUploadedFiles;
   aiExtractedData?: AIExtractedData;
   reviewErrors?: ReviewError[];
   supplierInfo?: SupplierInfo;
@@ -39,6 +40,12 @@ export interface UploadedFile {
   size: number;
   uploadDate: Date;
   uploadSource?: 'Email' | 'WhatsApp' | 'Manual Upload';
+}
+
+export interface MultipleUploadedFiles {
+  primary: UploadedFile;
+  secondary?: UploadedFile;
+  type: 'single' | 'paired';
 }
 
 export interface AIExtractedData {
