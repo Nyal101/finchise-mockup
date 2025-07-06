@@ -47,6 +47,17 @@ export default function SalesPage() {
     );
   }, []);
 
+  // Handle archive/unarchive
+  const handleArchiveInvoice = React.useCallback((invoiceId: string, archive: boolean) => {
+    setSalesData(prevData => 
+      prevData.map(invoice => 
+        invoice.id === invoiceId 
+          ? { ...invoice, archived: archive }
+          : invoice
+      )
+    );
+  }, []);
+
   // Custom cell renderers - now inside component scope
   const StatusCellRenderer = React.useCallback((params: { value: string; data: SalesInvoiceData }) => {
     const status = params.value;
@@ -71,23 +82,35 @@ export default function SalesPage() {
 
 
 
-  const DocumentTypeCellRenderer = React.useCallback((params: { value?: string }) => {
+  const DocumentTypeCellRenderer = React.useCallback((params: { value?: string; data: SalesInvoiceData }) => {
     const docType = params.value || "Invoice";
+    const isPaired = params.data.uploadedFiles?.type === 'paired';
     
     // Orange for Bill, Receipt, and Credit Note; Blue for Invoice
     const isOrangeType = docType === "Bill" || docType === "Receipt" || docType === "Credit Note";
     
     return (
-      <Badge 
-        variant="outline" 
-        className={`text-xs ${
-          isOrangeType
-            ? "border-orange-300 text-orange-700 bg-orange-50" 
-            : "border-blue-300 text-blue-700 bg-blue-50"
-        }`}
-      >
-        {docType}
-      </Badge>
+      <div className="flex items-center gap-1">
+        <Badge 
+          variant="outline" 
+          className={`text-xs ${
+            isOrangeType
+              ? "border-orange-300 text-orange-700 bg-orange-50" 
+              : "border-blue-300 text-blue-700 bg-blue-50"
+          }`}
+        >
+          {docType}
+        </Badge>
+        {isPaired && (
+          <Badge 
+            variant="outline" 
+            className="text-xs border-green-300 text-green-700 bg-green-50"
+            title="Paired CSV + PDF files"
+          >
+            CSV+PDF
+          </Badge>
+        )}
+      </div>
     );
   }, []);
 
@@ -123,7 +146,8 @@ export default function SalesPage() {
 
   // Source cell renderer - formats as rounded badge
   const SourceCellRenderer = React.useCallback((params: { data: SalesInvoiceData }) => {
-    const source = params.data.uploadedFile?.uploadSource;
+    // Handle both single and paired file structures
+    const source = params.data.uploadedFiles?.primary?.uploadSource || params.data.uploadedFile?.uploadSource;
     if (!source) {
       return <span className="text-gray-400">-</span>;
     }
@@ -167,7 +191,7 @@ export default function SalesPage() {
       maxWidth: 130,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
       cellStyle: { 
         display: 'flex', 
         alignItems: 'center', 
@@ -183,7 +207,7 @@ export default function SalesPage() {
       maxWidth: 160,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
       cellClass: "font-medium",
     },
     {
@@ -193,7 +217,7 @@ export default function SalesPage() {
       minWidth: 250,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
     {
       headerName: "Account Code",
@@ -204,7 +228,7 @@ export default function SalesPage() {
       maxWidth: 180,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
     {
       headerName: "VAT Rate",
@@ -241,35 +265,44 @@ export default function SalesPage() {
       field: "documentType",
       cellRenderer: DocumentTypeCellRenderer,
       flex: 1,
-      minWidth: 90,
-      maxWidth: 150,
+      minWidth: 120,
+      maxWidth: 180,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
     {
       headerName: "Source",
       field: "uploadedFile.uploadSource",
+      valueGetter: (params) => params.data.uploadedFiles?.primary?.uploadSource || params.data.uploadedFile?.uploadSource,
       cellRenderer: SourceCellRenderer,
       flex: 1,
       minWidth: 90,
       maxWidth: 150,
       sortable: true,
       filter: true,
-      floatingFilter: true,
+      floatingFilter: false,
     },
   ], [StatusCellRenderer, AmountCellRenderer, DocumentTypeCellRenderer, VATRateCellRenderer, SourceCellRenderer, AccountCodeCellRenderer]);
 
-  // Filter data based on search and status
+  // Filter data based on search and status (including archived)
   const filteredData = React.useMemo(() => {
     return salesData.filter(invoice => {
       const matchesSearch = 
         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         invoice.store.toLowerCase().includes(searchTerm.toLowerCase()) ||
         invoice.supplierInfo?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.source.toLowerCase().includes(searchTerm.toLowerCase());
+        invoice.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        invoice.company?.toLowerCase().includes(searchTerm.toLowerCase());
         
-      const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+      let matchesStatus = false;
+      if (statusFilter === "all") {
+        matchesStatus = !invoice.archived; // Show only non-archived for "all"
+      } else if (statusFilter === "Archived") {
+        matchesStatus = invoice.archived; // Show only archived invoices
+      } else {
+        matchesStatus = invoice.status === statusFilter && !invoice.archived; // Show specific status, non-archived only
+      }
       
       return matchesSearch && matchesStatus && !invoice.deleted;
     });
@@ -281,13 +314,17 @@ export default function SalesPage() {
     }
   };
 
-  // Quick status filter buttons
+  // Status filter buttons including archived
   const statusCounts = React.useMemo(() => {
-    const counts = { all: 0, Review: 0, Processing: 0, Processed: 0, Published: 0 };
+    const counts = { all: 0, Review: 0, Processing: 0, Processed: 0, Published: 0, Archived: 0 };
     salesData.forEach(invoice => {
       if (!invoice.deleted) {
-        counts.all++;
-        counts[invoice.status as keyof typeof counts]++;
+        if (invoice.archived) {
+          counts.Archived++;
+        } else {
+          counts.all++;
+          counts[invoice.status as keyof typeof counts]++;
+        }
       }
     });
     return counts;
@@ -300,6 +337,7 @@ export default function SalesPage() {
         invoiceId={selectedInvoiceId} 
         onClose={() => setSelectedInvoiceId(null)}
         onDelete={handleDeleteInvoice}
+        onArchive={handleArchiveInvoice}
       />
     );
   }
@@ -337,11 +375,11 @@ export default function SalesPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {status === 'all' ? 'All Invoices' : status} ({count})
+              {status === 'all' ? 'All' : status} ({count})
             </button>
           ))}
         </div>
-        
+          
         <div className="flex gap-4 items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />

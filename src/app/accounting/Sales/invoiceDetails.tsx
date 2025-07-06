@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { 
   ArrowLeft, 
@@ -22,7 +23,9 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Trash2
+  Trash2,
+  Table,
+  File
 } from "lucide-react";
 import { SalesInvoiceData, ReviewError, SalesLineItem } from "./components/types";
 import salesInvoices from "./invoiceData";
@@ -34,6 +37,7 @@ interface InvoiceDetailsProps {
   invoiceId?: string;
   onClose?: () => void;
   onDelete?: (invoiceId: string) => void;
+  onArchive?: (invoiceId: string, archive: boolean) => void;
 }
 
 // Status styling helper
@@ -103,7 +107,7 @@ const supplierOptions = [
   "Customer Account Services"
 ];
 
-const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete }) => {
+const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete, onArchive }) => {
   const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);
   const [currentInvoiceId, setCurrentInvoiceId] = React.useState(invoiceId || invoices[0]?.id);
   const [statusFilter, setStatusFilter] = React.useState<string>('Review');
@@ -111,6 +115,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   const [formData, setFormData] = React.useState<Partial<SalesInvoiceData>>({});
   const [lineItemsOpen, setLineItemsOpen] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [activeView, setActiveView] = React.useState<'pdf' | 'csv'>('pdf');
 
   // Get current invoice
   const currentInvoice = React.useMemo(() => {
@@ -129,19 +134,33 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
     }
   };
   
-  // Handle archive action
+  // Handle archive/unarchive action
   const handleArchive = () => {
-    if (currentInvoice) {
-      // In a real app, this would make an API call to archive the invoice
-      alert(`Archiving invoice ${currentInvoice.invoiceNumber}`);
+    if (currentInvoice && onArchive) {
+      const newArchiveState = !currentInvoice.archived;
+      onArchive(currentInvoice.id, newArchiveState);
+      
+      // Navigate to next invoice or close if none available
+      if (canNavigateNext) {
+        navigateNext();
+      } else if (canNavigatePrev) {
+        navigatePrev();
+      } else {
+        onClose?.();
+      }
     }
   };
 
-  // Filter invoices by status for sidebar
+  // Filter invoices by status for sidebar (including archived as a status)
   const filteredInvoices = React.useMemo(() => {
     return invoices.filter(invoice => {
-      if (statusFilter === 'all') return !invoice.deleted;
-      return invoice.status === statusFilter && !invoice.deleted;
+      let matchesStatus = false;
+      if (statusFilter === 'Archived') {
+        matchesStatus = invoice.archived; // Show only archived invoices
+      } else {
+        matchesStatus = invoice.status === statusFilter && !invoice.archived; // Show specific status, non-archived only
+      }
+      return matchesStatus && !invoice.deleted;
     });
   }, [invoices, statusFilter]);
 
@@ -227,6 +246,27 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
 
   // Dynamic CSV data based on current invoice
   const getCsvData = () => {
+    // Handle paired files with CSV data
+    if (currentInvoice.uploadedFiles?.type === 'paired' && currentInvoice.uploadedFiles.secondary?.type === 'csv') {
+      // For Domino's customer account statements, use the actual CSV structure
+      if (currentInvoice.invoiceNumber.startsWith('S-')) {
+        const headers = ['Transaction type', 'Transaction date', 'Invoice number', 'Store', 'Total net', 'Total VAT', 'Total gross', 'Nominal code', 'Nominal code name'];
+        const rows = currentInvoice.lineItems?.map(item => [
+          'INV',
+          format(currentInvoice.date, 'yyyy/MM/dd'),
+          currentInvoice.invoiceNumber,
+          currentInvoice.store,
+          `£${item.subtotal.toFixed(2)}`,
+          `£${item.vat.toFixed(2)}`,
+          `£${item.total.toFixed(2)}`,
+          item.accountCode || '',
+          item.description
+        ]) || [];
+        return [headers, ...rows];
+      }
+    }
+    
+    // Handle single CSV files
     if (currentInvoice.uploadedFile?.type === 'csv' && currentInvoice.lineItems) {
       const headers = ['Description', 'Category', 'Quantity', 'Unit Price', 'Subtotal', 'VAT', 'Total'];
       const rows = currentInvoice.lineItems.map(item => [
@@ -307,9 +347,9 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Left Sidebar - Invoice List */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-3 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">Invoices</h3>
             <Button variant="ghost" size="sm" onClick={onClose}>
@@ -318,15 +358,15 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
           </div>
           
           {/* Status Filter Tabs */}
-          <div className="flex gap-1 p-1 bg-gray-100 rounded-md">
-            {['Review', 'Processing', 'Processed', 'Published'].map((status) => (
+          <div className="flex gap-0.5 p-0.5 bg-gray-100 rounded-md overflow-x-auto">
+            {['Review', 'Processing', 'Processed', 'Published', 'Archived'].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
-                className={`px-2 py-1 text-xs rounded transition-colors ${
+                className={`px-2 py-1.5 text-xs rounded transition-colors whitespace-nowrap flex-shrink-0 ${
                   statusFilter === status
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white text-gray-900 shadow-sm font-medium'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 {status}
@@ -419,7 +459,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                 size="sm"
                 onClick={handleArchive}
               >
-                Archive
+                {currentInvoice.archived ? 'Unarchive' : 'Archive'}
               </Button>
             </div>
           </div>
@@ -462,10 +502,134 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
 
         {/* Content */}
         <div className="flex-1 flex">
-          {/* File Viewer */}
-          <div className="w-1/2 bg-white border-r border-gray-200">
-            <div className="p-4 h-full">
-              {currentInvoice.uploadedFile?.type === 'csv' ? (
+                  {/* File Viewer */}
+        <div className="w-1/2 bg-white border-r border-gray-200">
+          <div className="p-4 h-full">
+            {/* Handle paired files or single file */}
+            {currentInvoice.uploadedFiles?.type === 'paired' ? (
+              <div className="h-full">
+                {/* Document Header */}
+                <div className="mb-4 flex items-center justify-between">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-auto py-1.5 px-2 font-normal">
+                        <div className="flex items-center gap-2">
+                          {activeView === 'pdf' ? (
+                            <>
+                              <File className="h-4 w-4 text-blue-500" />
+                              <span className="text-sm font-medium">
+                                {currentInvoice.uploadedFiles.primary.name}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Table className="h-4 w-4 text-green-500" />
+                              <span className="text-sm font-medium">
+                                {currentInvoice.uploadedFiles.secondary?.name}
+                              </span>
+                            </>
+                          )}
+                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </div>
+                        {((activeView === 'pdf' && currentInvoice.uploadedFiles.primary.uploadSource) ||
+                          (activeView === 'csv' && currentInvoice.uploadedFiles.secondary?.uploadSource)) && (
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {activeView === 'pdf'
+                              ? currentInvoice.uploadedFiles.primary.uploadSource
+                              : currentInvoice.uploadedFiles.secondary?.uploadSource}
+                          </Badge>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-72">
+                      <DropdownMenuItem 
+                        onClick={() => setActiveView('pdf')}
+                        className="gap-2"
+                      >
+                        <File className="h-4 w-4 shrink-0 text-blue-500" />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{currentInvoice.uploadedFiles.primary.name}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">PDF Document</span>
+                            {currentInvoice.uploadedFiles.primary.uploadSource && (
+                              <Badge variant="secondary" className="text-xs">
+                                {currentInvoice.uploadedFiles.primary.uploadSource}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setActiveView('csv')}
+                        className="gap-2"
+                      >
+                        <Table className="h-4 w-4 shrink-0 text-green-500" />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{currentInvoice.uploadedFiles.secondary?.name}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">Data File (CSV)</span>
+                            {currentInvoice.uploadedFiles.secondary?.uploadSource && (
+                              <Badge variant="secondary" className="text-xs">
+                                {currentInvoice.uploadedFiles.secondary.uploadSource}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Content Area */}
+                <div className="h-[calc(100%-3rem)] border rounded-lg overflow-hidden bg-white shadow-sm">
+                  {activeView === 'pdf' ? (
+                    <iframe
+                      src={currentInvoice.uploadedFiles.primary.url}
+                      className="w-full h-full border-0"
+                      title="Invoice PDF"
+                    />
+                  ) : (
+                    <div className="h-full">
+                      <div className="bg-gray-50 p-3 border-b">
+                        <h3 className="text-sm font-medium text-gray-700">
+                          Structured Data View
+                        </h3>
+                      </div>
+                      <div className="p-4 h-[calc(100%-3rem)] overflow-auto">
+                        <style jsx global>{`
+                          .handsontable {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+                            font-size: 13px !important;
+                          }
+                          .handsontable td {
+                            border-right: 1px solid #e9ecef !important;
+                          }
+                          .handsontable th {
+                            background-color: #f8f9fa !important;
+                            font-weight: 600 !important;
+                            border-bottom: 2px solid #dee2e6 !important;
+                            color: #495057 !important;
+                          }
+                          .handsontable .htDimmed {
+                            color: #6c757d !important;
+                          }
+                          .handsontable .current {
+                            background-color: #e3f2fd !important;
+                          }
+                          .handsontable .area {
+                            background-color: #f3e5f5 !important;
+                          }
+                        `}</style>
+                        <HotTable
+                          {...handsontableConfig}
+                          height="100%"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : currentInvoice.uploadedFile?.type === 'csv' ? (
                 <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
                     <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -920,7 +1084,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
                           onClick={handleArchive}
                           className="px-6"
                         >
-                          Archive
+                          {currentInvoice.archived ? 'Unarchive' : 'Archive'}
                         </Button>
                       </>
                     )}
