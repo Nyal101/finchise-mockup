@@ -47,7 +47,7 @@ export const sampleSalesData: SalesInvoiceData[] = [
       isNew: false,
       confidence: 98
     },
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     lineItems: [
       {
         id: "item-001",
@@ -169,7 +169,7 @@ export const sampleSalesData: SalesInvoiceData[] = [
       isNew: false,
       confidence: 92
     },
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     lineItems: [
       {
         id: "item-101",
@@ -263,7 +263,7 @@ export const sampleSalesData: SalesInvoiceData[] = [
         confidence: 45
       }
     ],
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     lineItems: [
       {
         id: "item-201",
@@ -497,7 +497,7 @@ export const sampleSalesData: SalesInvoiceData[] = [
       isNew: false,
       confidence: 98
     },
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     lineItems: [
       {
         id: "item-301",
