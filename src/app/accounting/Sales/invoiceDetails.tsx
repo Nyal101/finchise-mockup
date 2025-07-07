@@ -15,7 +15,8 @@ import {
   ChevronDown,
   Trash2,
   Table,
-  File
+  File,
+  ChevronDown
 } from "lucide-react";
 import { SalesInvoiceData } from "./components/types";
 import salesInvoices from "./invoiceData";
@@ -45,10 +46,6 @@ const getStatusStyle = (status: string) => {
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
-
-
-
-
 
 const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete, onArchive }) => {
   const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);

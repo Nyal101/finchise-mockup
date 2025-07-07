@@ -1,9 +1,11 @@
 // Types for Journal entries
-export type JournalType = "prepayment" | "accrual" | "stock-movement";
+export type JournalType = "prepayment" | "accrual";
 
 export type JournalStatus = "draft" | "review" | "active" | "complete";
 
-export type JournalSource = "bill" | "invoice" | "stock" | "manual";
+export type JournalSource = "bill" | "invoice" | "manual";
+
+export type ScheduleType = "monthly & weekly" | "monthly";
 
 export interface JournalLineItem {
   id: string;
@@ -18,28 +20,29 @@ export interface JournalLineItem {
 export interface MonthlyBreakdown {
   month: string; // Format: "YYYY-MM"
   amount: number;
-  status: "scheduled" | "posted";
+  status: "scheduled" | "posted" | string;
   lineItems: JournalLineItem[];
 }
 
 export interface JournalEntry {
   id: string;
-  type: JournalType;
+  type: 'prepayment' | 'accrual';
   title: string;
   description: string;
   accountCode: string;
   monthlyAccountCode: string;
   category: string;
   totalAmount: number;
-  startDate: Date;
-  endDate: Date;
+  expensePaidMonth: Date; // New: month expense was paid
+  periodStartDate: Date; // New: recognition period start
+  periodEndDate: Date;   // New: recognition period end
   store: string;
-  toStore?: string; // Only for stock movements
   status: JournalStatus;
   createdDate: Date;
   source: JournalSource;
   sourceReference?: string;
-  monthlyBreakdown: MonthlyBreakdown[];
+  monthlyBreakdown?: MonthlyBreakdown[];
+  scheduleType: ScheduleType;
 }
 
 export interface PrepaymentAccrualEntry {

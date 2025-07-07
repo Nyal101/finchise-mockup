@@ -1198,6 +1198,7 @@ export const salesInvoices: SalesInvoiceData[] = [
       supplier: "Xpress Refrigeration",
       supplierAddress: "Unit 12, Cold Storage Industrial Estate, London E14 9SJ",
       invoiceDate: new Date("2025-04-25"),
+      dueDate: new Date("2023-12-08"),
       totalAmount: 738.00,
       subtotalAmount: 615.00,
       vatAmount: 123.00,
