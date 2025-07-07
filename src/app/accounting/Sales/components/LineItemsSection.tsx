@@ -3,7 +3,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, Trash2, ChevronDown } from "lucide-react";
 import { SalesLineItem } from "./types";
 
 interface LineItemsSectionProps {
@@ -12,12 +14,15 @@ interface LineItemsSectionProps {
   isEditing: boolean;
 }
 
-// Tax rate options as requested
+// Updated tax rate options as requested
 const taxRateOptions = [
-  { value: 20, label: "20%" },
-  { value: 5, label: "5%" },
-  { value: 0, label: "No VAT" },
-  { value: -1, label: "Zero Rated Expenses" }
+  { value: "20_income", label: "20% (VAT on Income)" },
+  { value: "20_expenses", label: "20% (VAT on Expenses)" },
+  { value: "no_tax", label: "No Tax" },
+  { value: "5_expenses", label: "5% (VAT on Expenses)" },
+  { value: "5_income", label: "5% (VAT on Income)" },
+  { value: "zero_rated_expenses", label: "Zero Rated Expenses" },
+  { value: "zero_rated_income", label: "Zero Rated Income" }
 ];
 
 // Store options for tracking category
@@ -42,6 +47,17 @@ const accountCodeOptions = [
 ];
 
 export default function LineItemsSection({ lineItems, setLineItems, isEditing }: LineItemsSectionProps) {
+  const [storePopoverStates, setStorePopoverStates] = React.useState<Record<string, boolean>>({});
+  const [accountPopoverStates, setAccountPopoverStates] = React.useState<Record<string, boolean>>({});
+
+  const setStorePopover = (itemId: string, open: boolean) => {
+    setStorePopoverStates(prev => ({ ...prev, [itemId]: open }));
+  };
+
+  const setAccountPopover = (itemId: string, open: boolean) => {
+    setAccountPopoverStates(prev => ({ ...prev, [itemId]: open }));
+  };
+
   const handleAddLineItem = () => {
     const newItem: SalesLineItem = {
       id: `item-${Date.now()}`,
@@ -63,6 +79,37 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
     setLineItems(lineItems.filter((item) => item.id !== id));
   };
 
+  const getVatRateFromOption = (optionValue: string): number => {
+    switch (optionValue) {
+      case "20_income":
+      case "20_expenses":
+        return 20;
+      case "5_income":
+      case "5_expenses":
+        return 5;
+      case "no_tax":
+      case "zero_rated_expenses":
+      case "zero_rated_income":
+        return 0;
+      default:
+        return 20;
+    }
+  };
+
+  const getOptionFromVatRate = (vatRate: number): string => {
+    // Default mapping - in real app this would come from stored data
+    switch (vatRate) {
+      case 20:
+        return "20_expenses";
+      case 5:
+        return "5_expenses";
+      case 0:
+        return "no_tax";
+      default:
+        return "20_expenses";
+    }
+  };
+
   const handleLineItemChange = (id: string, field: keyof SalesLineItem, value: string | number) => {
     setLineItems(lineItems.map((item) => {
       if (item.id === id) {
@@ -70,19 +117,17 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
         
         // Recalculate if quantity, price, or vatRate changes
         if (field === 'quantity' || field === 'price' || field === 'vatRate') {
-          const quantity = field === 'quantity' ? Number(value) : item.quantity;
-          const price = field === 'price' ? Number(value) : item.price;
-          const vatRate = field === 'vatRate' ? Number(value) : item.vatRate;
+          const quantity = field === 'quantity' ? Math.max(0, Number(value)) : item.quantity; // Prevent negative
+          const price = field === 'price' ? Math.max(0, Number(value)) : item.price; // Prevent negative
+          const vatRate = field === 'vatRate' ? getVatRateFromOption(value as string) : item.vatRate;
           const subtotal = quantity * price;
-          
-          // Handle special VAT cases
-          let vat = 0;
-          if (vatRate >= 0) {
-            vat = subtotal * (vatRate / 100);
-          } // Zero rated expenses and no VAT both result in 0 VAT
+          const vat = subtotal * (vatRate / 100);
           
           updatedItem = {
             ...updatedItem,
+            quantity,
+            price,
+            vatRate,
             subtotal,
             vat,
             total: subtotal + vat
@@ -115,7 +160,7 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
           <TableBody>
             {lineItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isEditing ? 7 : 6} className="text-center text-muted-foreground">
+                <TableCell colSpan={isEditing ? 8 : 7} className="text-center text-muted-foreground">
                   No line items found
                 </TableCell>
               </TableRow>
@@ -137,8 +182,10 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                     {isEditing ? (
                       <Input
                         type="number"
+                        min="0"
+                        step="1"
                         value={item.quantity}
-                        onChange={(e) => handleLineItemChange(item.id, "quantity", parseFloat(e.target.value))}
+                        onChange={(e) => handleLineItemChange(item.id, "quantity", Math.max(0, parseFloat(e.target.value) || 0))}
                         className="w-full text-right"
                       />
                     ) : (
@@ -149,8 +196,10 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                     {isEditing ? (
                       <Input
                         type="number"
+                        min="0"
+                        step="0.01"
                         value={item.price}
-                        onChange={(e) => handleLineItemChange(item.id, "price", parseFloat(e.target.value))}
+                        onChange={(e) => handleLineItemChange(item.id, "price", Math.max(0, parseFloat(e.target.value) || 0))}
                         className="w-full text-right"
                       />
                     ) : (
@@ -160,15 +209,15 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                   <TableCell>
                     {isEditing ? (
                       <Select
-                        value={item.vatRate.toString()}
-                        onValueChange={(value) => handleLineItemChange(item.id, "vatRate", parseFloat(value))}
+                        value={getOptionFromVatRate(item.vatRate)}
+                        onValueChange={(value) => handleLineItemChange(item.id, "vatRate", value)}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {taxRateOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value.toString()}>
+                            <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>
                           ))}
@@ -176,49 +225,97 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                       </Select>
                     ) : (
                       <div className="text-center">
-                        {item.vatRate === -1 ? "Zero Rated" : 
-                         item.vatRate === 0 ? "No VAT" : `${item.vatRate}%`}
+                        {item.vatRate === 0 ? "0%" : `${item.vatRate}%`}
                       </div>
                     )}
                   </TableCell>
                   <TableCell>
                     {isEditing ? (
-                      <Select
-                        value={item.trackingCategory || ""}
-                        onValueChange={(value) => handleLineItemChange(item.id, "trackingCategory", value)}
+                      <Popover 
+                        open={storePopoverStates[item.id] || false} 
+                        onOpenChange={(open) => setStorePopover(item.id, open)}
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select store" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {storeOptions.map((store) => (
-                            <SelectItem key={store} value={store}>
-                              {store}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={storePopoverStates[item.id] || false}
+                            className="w-full justify-between text-sm h-8"
+                          >
+                            {item.trackingCategory || "Select store"}
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Search stores..." />
+                            <CommandList>
+                              <CommandEmpty>No store found.</CommandEmpty>
+                              <CommandGroup>
+                                {storeOptions.map((store) => (
+                                  <CommandItem
+                                    key={store}
+                                    value={store}
+                                    onSelect={(currentValue) => {
+                                      handleLineItemChange(item.id, "trackingCategory", currentValue);
+                                      setStorePopover(item.id, false);
+                                    }}
+                                  >
+                                    {store}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       item.trackingCategory || "-"
                     )}
                   </TableCell>
                   <TableCell>
                     {isEditing ? (
-                      <Select
-                        value={item.accountCode || ""}
-                        onValueChange={(value) => handleLineItemChange(item.id, "accountCode", value)}
+                      <Popover 
+                        open={accountPopoverStates[item.id] || false} 
+                        onOpenChange={(open) => setAccountPopover(item.id, open)}
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select code" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {accountCodeOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={accountPopoverStates[item.id] || false}
+                            className="w-full justify-between text-sm h-8"
+                          >
+                            {item.accountCode ? 
+                              accountCodeOptions.find(opt => opt.value === item.accountCode)?.label || item.accountCode 
+                              : "Select code"
+                            }
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Search account codes..." />
+                            <CommandList>
+                              <CommandEmpty>No account code found.</CommandEmpty>
+                              <CommandGroup>
+                                {accountCodeOptions.map((option) => (
+                                  <CommandItem
+                                    key={option.value}
+                                    value={option.value}
+                                    onSelect={(currentValue) => {
+                                      handleLineItemChange(item.id, "accountCode", currentValue);
+                                      setAccountPopover(item.id, false);
+                                    }}
+                                  >
+                                    {option.label}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       <div className="text-center">
                         {item.accountCode ? accountCodeOptions.find(opt => opt.value === item.accountCode)?.label || item.accountCode : "-"}

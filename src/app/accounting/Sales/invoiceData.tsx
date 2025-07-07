@@ -24,7 +24,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Bill",
     uploadedFile: {
       id: "file001",
       name: "Coca-Cola_Europacific_Partners_2025-04-08_556.69.pdf",
@@ -252,7 +252,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Bill",
     uploadedFile: {
       id: "file004",
       name: "Icon_Engineering_2024-11-26_111.00.pdf",
@@ -464,7 +464,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Cash",
     archived: false,
     deleted: false,
-    documentType: "Receipt",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file007",
       name: "Just_Eat_2025-04-20_183.30.png",
@@ -529,6 +529,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file008",
       name: "LUSU_General_Account_2025-04-01_300.00.pdf",
@@ -614,6 +615,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file009",
       name: "Lancaster_City_Council_2025-04-15_172.50.pdf",
@@ -855,7 +857,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Bill",
     uploadedFile: {
       id: "file012",
       name: "Portsmouth_2025-05-07_181.1.pdf",
@@ -980,6 +982,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file014",
       name: "Wynsdale_Waste_Management_2025-04-26_237.98 (1).pdf",
@@ -1266,7 +1269,8 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file018",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-28108-01_27-04-2025.pdf",
@@ -1349,7 +1353,8 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file019",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-29098-01_27-04-2025.pdf",
@@ -1432,7 +1437,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file020",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-29108-01_27-04-2025.pdf",
@@ -1508,7 +1513,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file021a",
@@ -1653,7 +1658,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file022a",
@@ -1798,7 +1803,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file023a",
@@ -1931,7 +1936,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file024a",
@@ -2090,6 +2095,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: true,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file025",
       name: "Archived_Professional_Services_2024-12-15_1020.00.pdf",
@@ -2181,6 +2187,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: true,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file026",
       name: "Archived_Utilities_2024-11-20_534.60.pdf",
@@ -2272,6 +2279,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: true,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file027",
       name: "Archived_Equipment_Maintenance_2024-10-30_1500.00.pdf",

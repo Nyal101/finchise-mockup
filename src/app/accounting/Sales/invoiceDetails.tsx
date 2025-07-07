@@ -32,6 +32,7 @@ import salesInvoices from "./invoiceData";
 import LineItemsSection from "./components/LineItemsSection";
 import { HotTable } from '@handsontable/react';
 import 'handsontable/dist/handsontable.full.min.css';
+import InvoiceExtractedInfo from "./components/invoiceExtractedInfo";
 
 interface InvoiceDetailsProps {
   invoiceId?: string;
@@ -131,6 +132,23 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
       // In a real app, this would make an API call to publish the invoice
       alert(`Publishing invoice ${currentInvoice.invoiceNumber}`);
       setEditMode(false); // Exit edit mode when publishing
+    }
+  };
+
+  // Handle unpublish action
+  const handleUnpublish = () => {
+    if (currentInvoice && isPublished && currentInvoice.paymentStatus !== 'paid') {
+      // In a real app, this would make an API call to unpublish the invoice
+      alert(`Unpublishing invoice ${currentInvoice.invoiceNumber}`);
+      setEditMode(false);
+    }
+  };
+
+  // Handle reprocess action
+  const handleReprocess = () => {
+    if (currentInvoice) {
+      // In a real app, this would trigger AI reprocessing
+      alert(`Reprocessing invoice ${currentInvoice.invoiceNumber}`);
     }
   };
   
@@ -755,343 +773,18 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
 
           {/* Extracted Data Panel */}
           <div className="w-1/2 bg-gray-50 overflow-y-auto">
-            <div className="p-4 space-y-4">
-              {/* Review Errors Section - More Compact */}
-              {currentInvoice.reviewErrors && currentInvoice.reviewErrors.length > 0 && (
-                <Card className="border-red-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-red-900 flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Review Required ({currentInvoice.reviewErrors.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {currentInvoice.reviewErrors.map((error: ReviewError) => (
-                      <div key={error.id} className={`p-2 rounded border text-xs ${getErrorSeverityStyle(error.severity)}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              error.severity === 'critical' ? 'bg-red-500' : 
-                              error.severity === 'high' ? 'bg-orange-500' : 'bg-yellow-500'
-                            }`}></span>
-                            <span className="font-medium text-gray-900">{error.title}</span>
-                          </div>
-                          <Button size="sm" variant="ghost" className="h-6 px-2">
-                            <Check className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <p className="text-gray-700 mt-1 ml-4">{error.description}</p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Transaction Details */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Transaction Details
-                    </div>
-                    {/* Completion Status with Edit Button */}
-                    <div className="flex items-center gap-3">
-                      {(() => {
-                        const requiredFields = [
-                          formData.company,
-                          formData.supplierInfo?.name,
-                          formData.documentType,
-                          formData.invoiceNumber,
-                          formData.accountCode,
-                          formData.date
-                        ];
-                        const completed = requiredFields.filter(Boolean).length;
-                        const total = requiredFields.length;
-                        const percentage = Math.round((completed / total) * 100);
-                        
-                        return (
-                          <>
-                            <div className="text-xs text-gray-500">
-                              {completed}/{total} fields
-                            </div>
-                            <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full transition-all duration-300 ${
-                                  percentage === 100 ? 'bg-green-500' : 
-                                  percentage >= 60 ? 'bg-blue-500' : 
-                                  percentage >= 20 ? 'bg-amber-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                          </>
-                        );
-                      })()}
-                      {/* Edit Button moved here */}
-                      {!isPublished && !editMode && (
-                        <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                      )}
-                      {editMode && (
-                        <div className="flex gap-1">
-                          <Button size="sm" onClick={() => setEditMode(false)}>
-                            <Save className="h-3 w-3 mr-1" />
-                            Save
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditMode(false)}>
-                            Cancel
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Organization Section */}
-                  <div className="space-y-4">
-                    <div className="text-xs font-medium text-gray-700 uppercase tracking-wide pb-1 border-b border-gray-200">
-                      Organization
-                    </div>
-                    
-                    <div>
-                      <Label className="text-xs font-medium text-gray-600">Company *</Label>
-                      {editMode ? (
-                        <Select 
-                          value={formData.company || ''} 
-                          onValueChange={(value) => setFormData({...formData, company: value})}
-                        >
-                          <SelectTrigger className={`mt-1 text-sm ${!formData.company ? 'border-amber-300 bg-amber-50' : ''}`}>
-                            <SelectValue placeholder="Select company" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {companyOptions.map((company) => (
-                              <SelectItem key={company} value={company}>
-                                {company}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className={`mt-1 text-sm p-2 border rounded ${formData.company ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
-                          {formData.company || "⚠️ No company selected"}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label className="text-xs font-medium text-gray-600">Supplier *</Label>
-                      {editMode ? (
-                        <Select 
-                          value={formData.supplierInfo?.name || ''} 
-                          onValueChange={(value) => setFormData({
-                            ...formData, 
-                            supplierInfo: {...formData.supplierInfo, name: value}
-                          })}
-                        >
-                          <SelectTrigger className={`mt-1 text-sm ${!formData.supplierInfo?.name ? 'border-amber-300 bg-amber-50' : ''}`}>
-                            <SelectValue placeholder="Select supplier" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {supplierOptions.map((supplier) => (
-                              <SelectItem key={supplier} value={supplier}>
-                                {supplier}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className={`mt-1 text-sm p-2 border rounded ${formData.supplierInfo?.name ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
-                          {formData.supplierInfo?.name || "⚠️ No supplier selected"}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Invoice Details Section */}
-                  <div className="space-y-4">
-                    <div className="text-xs font-medium text-gray-700 uppercase tracking-wide pb-1 border-b border-gray-200">
-                      Invoice Details
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Document Type *</Label>
-                        {editMode ? (
-                          <Select 
-                            value={formData.documentType || ''} 
-                            onValueChange={(value) => setFormData({...formData, documentType: value as "Invoice" | "Credit Note" | "Receipt" | "Bill"})}
-                          >
-                            <SelectTrigger className={`mt-1 text-sm ${!formData.documentType ? 'border-amber-300 bg-amber-50' : ''}`}>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Invoice">Invoice</SelectItem>
-                              <SelectItem value="Credit Note">Credit Note</SelectItem>
-                              <SelectItem value="Receipt">Receipt</SelectItem>
-                              <SelectItem value="Bill">Bill</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <div className={`mt-1 text-sm p-2 border rounded ${formData.documentType ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
-                            {formData.documentType || "⚠️ No type selected"}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Invoice Number *</Label>
-                        <Input 
-                          value={formData.invoiceNumber || ''} 
-                          className="mt-1 text-sm"
-                          readOnly={!editMode || isPublished}
-                          placeholder="Enter invoice number"
-                          onChange={(e) => setFormData({...formData, invoiceNumber: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Account Code *</Label>
-                        {editMode ? (
-                          <Select 
-                            value={formData.accountCode || ''} 
-                            onValueChange={(value) => setFormData({...formData, accountCode: value})}
-                          >
-                            <SelectTrigger className={`mt-1 text-sm ${!formData.accountCode ? 'border-amber-300 bg-amber-50' : ''}`}>
-                              <SelectValue placeholder="Select account code" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {accountCodeOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <div className={`mt-1 text-sm p-2 border rounded ${formData.accountCode ? 'bg-gray-50' : 'bg-amber-50 border-amber-300'}`}>
-                            {formData.accountCode ? 
-                              accountCodeOptions.find(opt => opt.value === formData.accountCode)?.label || formData.accountCode 
-                              : "⚠️ No account code selected"
-                            }
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Date Information Section */}
-                  <div className="space-y-4">
-                    <div className="text-xs font-medium text-gray-700 uppercase tracking-wide pb-1 border-b border-gray-200">
-                      Date Information
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Invoice Date *</Label>
-                        <Input 
-                          value={formData.date ? format(new Date(formData.date), 'yyyy-MM-dd') : ''} 
-                          type="date"
-                          className="mt-1 text-sm"
-                          readOnly={!editMode}
-                          onChange={(e) => setFormData({...formData, date: new Date(e.target.value)})}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Due Date</Label>
-                        <Input 
-                          value={formData.dueDate ? format(new Date(formData.dueDate), 'yyyy-MM-dd') : ''} 
-                          type="date"
-                          className="mt-1 text-sm"
-                          readOnly={!editMode}
-                          placeholder="Optional"
-                          onChange={(e) => setFormData({...formData, dueDate: new Date(e.target.value)})}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Line Items Section */}
-                  <div>
-                    <Collapsible open={lineItemsOpen} onOpenChange={setLineItemsOpen}>
-                      <CollapsibleTrigger className="w-full justify-between p-0 h-auto text-xs text-gray-600 font-normal bg-transparent border-none hover:bg-gray-50">
-                        <span>Line Items ({formData.lineItems?.length || 0})</span>
-                        {lineItemsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2">
-                        <LineItemsSection
-                          lineItems={formData.lineItems || []}
-                          setLineItems={(lineItems: SalesLineItem[] | ((prev: SalesLineItem[]) => SalesLineItem[])) => {
-                            if (typeof lineItems === 'function') {
-                              setFormData(prev => ({
-                                ...prev,
-                                lineItems: lineItems(prev.lineItems || [])
-                              }));
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                lineItems: lineItems
-                              }));
-                            }
-                          }}
-                          isEditing={editMode && !isPublished}
-                        />
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
-
-                  {/* Totals Section */}
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal:</span>
-                      <span className="font-medium">
-                        £{formData.subtotal?.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">VAT (20%):</span>
-                      <span className="font-medium">
-                        £{formData.vat?.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-base font-semibold border-t pt-2">
-                      <span>Total:</span>
-                      <span>
-                        £{formData.total?.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action buttons within the card - Centered Publish/Archive */}
-                  <div className="flex justify-center gap-3 pt-4 border-t">
-                    {isPublished ? (
-                      <div className="text-sm text-gray-500 italic text-center">
-                        Invoice is published and cannot be modified
-                      </div>
-                    ) : (
-                      <>
-                        <Button 
-                          size="sm" 
-                          onClick={handlePublish}
-                          disabled={isPublished}
-                          className="px-6"
-                        >
-                          {isPublished ? 'Published' : 'Publish'}
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={handleArchive}
-                          className="px-6"
-                        >
-                          {currentInvoice.archived ? 'Unarchive' : 'Archive'}
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <InvoiceExtractedInfo
+              currentInvoice={currentInvoice}
+              formData={formData}
+              setFormData={setFormData}
+              editMode={editMode}
+              setEditMode={setEditMode}
+              isPublished={isPublished}
+              handlePublish={handlePublish}
+              handleUnpublish={handleUnpublish}
+              handleReprocess={handleReprocess}
+              handleArchive={handleArchive}
+            />
           </div>
         </div>
       </div>
