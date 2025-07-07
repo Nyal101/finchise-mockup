@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,17 +20,6 @@ const companyOptions = [
   "Regional Operations Ltd", 
   "Central Management Ltd",
   "Local Store Co Ltd"
-];
-
-const accountCodeOptions = [
-  { value: "4000", label: "4000 - Sales Revenue" },
-  { value: "5000", label: "5000 - Cost of Sales" },
-  { value: "6100", label: "6100 - Professional Services" },
-  { value: "6200", label: "6200 - Property Maintenance" },
-  { value: "6300", label: "6300 - Equipment Maintenance" },
-  { value: "6400", label: "6400 - Utilities & Rates" },
-  { value: "6500", label: "6500 - Marketing" },
-  { value: "6600", label: "6600 - Communications" }
 ];
 
 const supplierOptions = [

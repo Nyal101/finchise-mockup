@@ -3,12 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { 
@@ -16,20 +11,14 @@ import {
   ArrowRight, 
   X, 
   FileText, 
-  AlertTriangle, 
   Eye,
-  Edit,
-  Save,
-  Check,
   ChevronDown,
-  ChevronRight,
   Trash2,
   Table,
   File
 } from "lucide-react";
-import { SalesInvoiceData, ReviewError, SalesLineItem } from "./components/types";
+import { SalesInvoiceData } from "./components/types";
 import salesInvoices from "./invoiceData";
-import LineItemsSection from "./components/LineItemsSection";
 import { HotTable } from '@handsontable/react';
 import 'handsontable/dist/handsontable.full.min.css';
 import InvoiceExtractedInfo from "./components/invoiceExtractedInfo";
@@ -57,56 +46,9 @@ const getStatusStyle = (status: string) => {
   }
 };
 
-// Error severity styling
-const getErrorSeverityStyle = (severity: string) => {
-  switch (severity) {
-    case 'critical':
-      return 'border-red-200 bg-red-50';
-    case 'high':
-      return 'border-orange-200 bg-orange-50';
-    case 'medium':
-      return 'border-yellow-200 bg-yellow-50';
-    case 'low':
-      return 'border-blue-200 bg-blue-50';
-    default:
-      return 'border-gray-200 bg-gray-50';
-  }
-};
 
-// Dropdown options
-const companyOptions = [
-  "Franchise Holdings Ltd",
-  "Regional Operations Ltd", 
-  "Central Management Ltd",
-  "Local Store Co Ltd"
-];
 
-const accountCodeOptions = [
-  { value: "4000", label: "4000 - Sales Revenue" },
-  { value: "5000", label: "5000 - Cost of Sales" },
-  { value: "6100", label: "6100 - Professional Services" },
-  { value: "6200", label: "6200 - Property Maintenance" },
-  { value: "6300", label: "6300 - Equipment Maintenance" },
-  { value: "6400", label: "6400 - Utilities & Rates" },
-  { value: "6500", label: "6500 - Marketing" },
-  { value: "6600", label: "6600 - Communications" }
-];
 
-const supplierOptions = [
-  "Coca-Cola Europacific Partners",
-  "Combat Fire Limited", 
-  "Comfort Cooling Services",
-  "Imperial Green",
-  "J C McCollom",
-  "Just Eat Holdings Ltd",
-  "LUSU General Account",
-  "Lancaster City Council",
-  "Paragon Customer Communications",
-  "Prudent Plumbing",
-  "Wynsdale Waste Management",
-  "Xpress Refrigeration",
-  "Customer Account Services"
-];
 
 const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete, onArchive }) => {
   const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);
@@ -114,7 +56,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   const [statusFilter, setStatusFilter] = React.useState<string>('Review');
   const [editMode, setEditMode] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<SalesInvoiceData>>({});
-  const [lineItemsOpen, setLineItemsOpen] = React.useState(false);
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [activeView, setActiveView] = React.useState<'pdf' | 'csv'>('pdf');
 
@@ -220,7 +162,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   React.useEffect(() => {
     if (currentInvoice) {
       setFormData(currentInvoice);
-      setLineItemsOpen(false); // Reset to collapsed when switching invoices
+
       setShowDeleteConfirm(false); // Reset delete confirmation
     }
   }, [currentInvoice]);
@@ -228,7 +170,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   // Auto-open line items when entering edit mode
   React.useEffect(() => {
     if (editMode) {
-      setLineItemsOpen(true);
+
     }
   }, [editMode]);
 
