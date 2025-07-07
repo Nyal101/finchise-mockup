@@ -154,12 +154,23 @@ function JournalsContent() {
       filter: 'agNumberColumnFilter',
     },
     {
-      headerName: "Period",
-      field: "startDate",
+      headerName: "Paid Month",
+      field: "expensePaidMonth",
       valueFormatter: (params) => {
-        const start = format(new Date(params.data.startDate), 'MMM yyyy');
-        const end = format(new Date(params.data.endDate), 'MMM yyyy');
-        return `${start} - ${end}`;
+        return params.data.expensePaidMonth ? format(new Date(params.data.expensePaidMonth), 'MMM yyyy') : '';
+      },
+      width: 120,
+      minWidth: 100,
+      maxWidth: 140,
+      sortable: true,
+    },
+    {
+      headerName: "Recognition Period",
+      field: "recognitionPeriod",
+      valueFormatter: (params) => {
+        const start = params.data.periodStartDate ? format(new Date(params.data.periodStartDate), 'MMM yyyy') : '';
+        const end = params.data.periodEndDate ? format(new Date(params.data.periodEndDate), 'MMM yyyy') : '';
+        return start && end ? `${start} - ${end}` : '';
       },
       width: 180,
       minWidth: 150,

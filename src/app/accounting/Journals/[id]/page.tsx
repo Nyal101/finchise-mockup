@@ -21,21 +21,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Plus,
-  MoreVertical,
   X,
   Save,
   ChevronDown
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Command, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { journalEntries } from "../journalData";
-import { JournalType, JournalLineItem } from "../types";
+import { JournalLineItem, ScheduleType } from "../types";
+import { calculateJournal } from "../utils/journalCalculations";
 
 // Map of account codes to descriptive names
 const accountDescriptions: Record<string, string> = {
@@ -49,16 +42,45 @@ const accountDescriptions: Record<string, string> = {
   // Add more as needed
 };
 
+
+
 export default function JournalDetailsPage() {
   const params = useParams();
   const router = useRouter();
   // Track which month is currently expanded (only one at a time)
   const [selectedMonth, setSelectedMonth] = React.useState<string | null>(null);
   const [statusFilter, setStatusFilter] = React.useState("all");
-  const [journalData, setJournalData] = React.useState(journalEntries.find(j => j.id === params.id));
+  const [journalData, setJournalData] = React.useState(() => {
+    const j = journalEntries.find(j => j.id === params.id);
+    return j ? { ...j, scheduleType: j.scheduleType || 'monthly & weekly', monthlyBreakdown: j.monthlyBreakdown || [] } : undefined;
+  });
   
   // Find the current journal
   const journal = journalData;
+
+  // Calculate monthly breakdown using the new calculation function
+  const monthlyBreakdown = React.useMemo(() => {
+    if (!journal || !journal.periodStartDate || !journal.periodEndDate || !journal.expensePaidMonth) return [];
+    
+    const result = calculateJournal({
+      description: journal.description,
+      totalAmount: journal.totalAmount,
+      expensePaidMonth: journal.expensePaidMonth,
+      periodStartDate: journal.periodStartDate,
+      periodEndDate: journal.periodEndDate,
+      scheduleType: journal.scheduleType,
+      accountCode: journal.accountCode,
+      monthlyAccountCode: journal.monthlyAccountCode,
+    });
+
+    if (result.error) {
+      // TODO: Show error to user
+      console.error(result.error);
+      return [];
+    }
+
+    return result.monthlyBreakdown;
+  }, [journal]);
 
   // Filter journals for the list
   const filteredJournals = React.useMemo(() => {
@@ -86,15 +108,6 @@ export default function JournalDetailsPage() {
       case "complete": return "bg-blue-100 text-blue-800 border-blue-200";
       case "draft": return "bg-gray-100 text-gray-800 border-gray-200";
       case "review": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getJournalTypeColor = (type: string) => {
-    switch (type) {
-      case "prepayment": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "accrual": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "stock-movement": return "bg-orange-100 text-orange-800 border-orange-200";
       default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
@@ -161,10 +174,12 @@ export default function JournalDetailsPage() {
     value,
     onChange,
     options,
+    className,
   }: {
     value: string;
     onChange: (val: string) => void;
     options: string[];
+    className?: string;
   }) {
     const [open, setOpen] = React.useState(false);
     return (
@@ -172,13 +187,13 @@ export default function JournalDetailsPage() {
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="w-32 h-8 justify-between px-2 text-sm font-normal"
+            className={`w-full h-8 justify-between px-2 text-sm font-normal ${className || ''}`}
           >
             {value ? `${value} - ${accountDescriptions[value] ?? ""}` : "Code"}
             <ChevronDown className="h-3 w-3 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-48 p-0">
+        <PopoverContent className="w-full min-w-[12rem] max-w-[24rem] p-0">
           <Command>
             <CommandInput placeholder="Search code..." className="h-8" />
             <CommandGroup>
@@ -255,7 +270,7 @@ export default function JournalDetailsPage() {
                     {j.description}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    {format(j.startDate, 'dd MMM yyyy')}
+                    {format(j.periodStartDate, 'dd MMM yyyy')}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {formatCurrency(j.totalAmount)}
@@ -274,78 +289,63 @@ export default function JournalDetailsPage() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6 space-y-6">
-          {/* Navigation Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/accounting/Journals")}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Journals
-              </Button>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className={getJournalTypeColor(journal.type)}>
-                  {journal.type.charAt(0).toUpperCase() + journal.type.slice(1)}
-                </Badge>
-                <Badge variant="outline" className={getStatusColor(journal.status)}>
-                  {journal.status}
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {prevJournal && (
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push(`/accounting/Journals/${prevJournal.id}`)}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
-              )}
-              {nextJournal && (
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push(`/accounting/Journals/${nextJournal.id}`)}
-                >
-                  Next
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Export Journal</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600">
-                    Delete Journal
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+        <div className="flex items-center justify-between bg-white border-b border-gray-200 px-6 h-16" style={{ marginTop: 0 }}>
+          {/* Left: Back to Journals */}
+          <div className="flex items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/accounting/Journals")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
           </div>
 
+          {/* Center: Navigation */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => prevJournal && router.push(`/accounting/Journals/${prevJournal.id}`)}
+              disabled={!prevJournal}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => nextJournal && router.push(`/accounting/Journals/${nextJournal.id}`)}
+              disabled={!nextJournal}
+            >
+              Forward
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+
+          {/* Right: Save Changes */}
+          <div>
+            <Button 
+              onClick={() => {
+                // Handle save
+                console.log("Saving journal changes");
+              }}
+              className="bg-gray-900 text-white hover:bg-gray-800"
+              size="sm"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
+
+        <div className="pt-0 px-6 pb-6 space-y-6">
           {/* Journal Summary */}
-          <Card>
+          <Card className="mt-4">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Journal Details</h1>
-                <Button 
-                  onClick={() => {
-                    // Handle save
-                    console.log("Saving journal changes");
-                  }}
-                  className="bg-gray-900 text-white hover:bg-gray-800"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -353,16 +353,11 @@ export default function JournalDetailsPage() {
                 <div className="flex">
                   <div className="w-[calc(100%/6)]">
                     <label className="text-sm font-medium text-muted-foreground">Journal Type</label>
-                    <Select defaultValue={journal.type} onValueChange={(value) => setJournalData(prev => ({...prev!, type: value as JournalType}))}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="accrual">Accrual</SelectItem>
-                        <SelectItem value="prepayment">Prepayment</SelectItem>
-                        <SelectItem value="stock-movement">Stock Movement</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="mt-1">
+                      <Badge variant="outline">
+                        {journalData?.type === 'accrual' ? 'Accrual' : 'Prepayment'}
+                      </Badge>
+                    </div>
                   </div>
                   <div className="flex-1 pl-2">
                     <label className="text-sm font-medium text-muted-foreground">Description</label>
@@ -379,14 +374,18 @@ export default function JournalDetailsPage() {
                     <label className="text-sm font-medium text-muted-foreground">Total Amount</label>
                     <Input
                       type="number"
-                      defaultValue={journal.totalAmount}
+                      value={journalData?.totalAmount ?? ''}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value || '0');
+                        setJournalData(prev => prev ? { ...prev, totalAmount: val } : prev);
+                      }}
                       className="mt-1"
                       step="0.01"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Start Date</label>
+                    <label className="text-sm font-medium text-muted-foreground">Expense Paid Month</label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -394,16 +393,22 @@ export default function JournalDetailsPage() {
                           className="w-full mt-1 justify-start text-left font-normal"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {journal.startDate ? format(journal.startDate, 'dd MMM yyyy') : <span>Pick a date</span>}
+                          {journalData?.expensePaidMonth ? format(journalData.expensePaidMonth, 'MMM yyyy') : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
-                          selected={journal.startDate}
+                          selected={journalData?.expensePaidMonth}
+                          defaultMonth={journalData?.expensePaidMonth}
                           onSelect={(date) => {
                             if (date) {
-                              setJournalData(prev => ({ ...prev!, startDate: date }));
+                              const updatedJournal = {
+                                ...journalData!,
+                                expensePaidMonth: date,
+                                monthlyBreakdown: [] // Clear existing breakdown
+                              };
+                              setJournalData(updatedJournal);
                             }
                           }}
                           initialFocus
@@ -413,7 +418,7 @@ export default function JournalDetailsPage() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">End Date</label>
+                    <label className="text-sm font-medium text-muted-foreground">Recognition Period Start</label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -421,16 +426,55 @@ export default function JournalDetailsPage() {
                           className="w-full mt-1 justify-start text-left font-normal"
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {journal.endDate ? format(journal.endDate, 'dd MMM yyyy') : <span>Pick a date</span>}
+                          {journalData?.periodStartDate ? format(journalData.periodStartDate, 'dd MMM yyyy') : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
-                          selected={journal.endDate}
+                          selected={journalData?.periodStartDate}
+                          defaultMonth={journalData?.periodStartDate}
                           onSelect={(date) => {
-                             if (date) {
-                              setJournalData(prev => ({ ...prev!, endDate: date }));
+                            if (date) {
+                              const updatedJournal = {
+                                ...journalData!,
+                                periodStartDate: date,
+                                monthlyBreakdown: [] // Clear existing breakdown
+                              };
+                              setJournalData(updatedJournal);
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Recognition Period End</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full mt-1 justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {journalData?.periodEndDate ? format(journalData.periodEndDate, 'dd MMM yyyy') : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={journalData?.periodEndDate}
+                          defaultMonth={journalData?.periodEndDate}
+                          onSelect={(date) => {
+                            if (date) {
+                              const updatedJournal = {
+                                ...journalData!,
+                                periodEndDate: date,
+                                monthlyBreakdown: [] // Clear existing breakdown
+                              };
+                              setJournalData(updatedJournal);
                             }
                           }}
                           initialFocus
@@ -441,14 +485,16 @@ export default function JournalDetailsPage() {
 
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Schedule Type</label>
-                    <Select defaultValue="monthly">
+                    <Select
+                      value={journalData?.scheduleType || 'monthly & weekly'}
+                      onValueChange={value => setJournalData(prev => prev ? { ...prev, scheduleType: value as ScheduleType } : prev)}
+                    >
                       <SelectTrigger className="w-full mt-1">
                         <SelectValue placeholder="Select schedule type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="yearly">Yearly</SelectItem>
+                        <SelectItem value="monthly & weekly">Monthly & Weekly (by days)</SelectItem>
+                        <SelectItem value="monthly">Monthly (equal split)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -456,19 +502,21 @@ export default function JournalDetailsPage() {
                   {journal.type === 'prepayment' && (
                     <>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Prepayment Account</label>
-                        <Input
-                          defaultValue={journal.accountCode}
+                        <label className="text-sm font-medium text-muted-foreground">Prepayment Account Code</label>
+                        <AccountCodeCombobox
+                          value={journal.accountCode}
+                          onChange={(val) => setJournalData(prev => ({ ...prev!, accountCode: val }))}
+                          options={Object.keys(accountDescriptions)}
                           className="mt-1"
-                          placeholder="e.g. 1400"
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Monthly Transfer</label>
-                        <Input
-                          defaultValue={journal.monthlyAccountCode}
+                        <label className="text-sm font-medium text-muted-foreground">Monthly Transfer Account Code</label>
+                        <AccountCodeCombobox
+                          value={journal.monthlyAccountCode}
+                          onChange={(val) => setJournalData(prev => ({ ...prev!, monthlyAccountCode: val }))}
+                          options={Object.keys(accountDescriptions)}
                           className="mt-1"
-                          placeholder="e.g. 6500"
                         />
                       </div>
                     </>
@@ -476,19 +524,21 @@ export default function JournalDetailsPage() {
                   {journal.type === 'accrual' && (
                     <>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Accrual Account</label>
-                        <Input
-                          defaultValue={journal.accountCode}
+                        <label className="text-sm font-medium text-muted-foreground">Accrual Account Code</label>
+                        <AccountCodeCombobox
+                          value={journal.accountCode}
+                          onChange={(val) => setJournalData(prev => ({ ...prev!, accountCode: val }))}
+                          options={Object.keys(accountDescriptions)}
                           className="mt-1"
-                          placeholder="e.g. 2200"
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Monthly Transfer</label>
-                        <Input
-                          defaultValue={journal.monthlyAccountCode}
+                        <label className="text-sm font-medium text-muted-foreground">Monthly Transfer Account Code</label>
+                        <AccountCodeCombobox
+                          value={journal.monthlyAccountCode}
+                          onChange={(val) => setJournalData(prev => ({ ...prev!, monthlyAccountCode: val }))}
+                          options={Object.keys(accountDescriptions)}
                           className="mt-1"
-                          placeholder="e.g. 6300"
                         />
                       </div>
                     </>
@@ -505,9 +555,6 @@ export default function JournalDetailsPage() {
                 <CalendarIcon className="h-4 w-4" />
                 Monthly Breakdown
               </h3>
-              <div className="text-xs text-muted-foreground">
-                {format(journal.startDate, "MMM yyyy")} - {format(journal.endDate, "MMM yyyy")}
-              </div>
             </div>
             
             <div className="border rounded-lg p-3 bg-gradient-to-r from-muted/20 to-muted/10">
@@ -528,104 +575,76 @@ export default function JournalDetailsPage() {
               </div>
               
               <div className="overflow-x-auto">
-                <div className="flex gap-4 pb-4" style={{ minWidth: `${journal.monthlyBreakdown.length * 300}px` }}>
-                  {journal.monthlyBreakdown.map((breakdown, index) => {
-                    const monthDate = new Date(breakdown.month + "-01");
-                    const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
-                    const isExpanded = selectedMonth === breakdown.month;
-                    
-                    return (
-                      <div key={breakdown.month} className="w-[300px] space-y-4">
-                        {/* Month Card */}
-                        <div 
-                          className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 ${
-                             isCurrentMonth 
-                               ? 'border-purple-500 bg-purple-50 shadow-lg' 
-                               : breakdown.status === 'posted'
-                                 ? 'border-green-500 bg-green-50'
-                                 : 'border-gray-200 bg-white'
-                           }`}
-                          onClick={() => toggleMonth(breakdown.month)}
-                        >
-                          {/* Header */}
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">
-                                {format(monthDate, "MMM yyyy")}
-                              </span>
-                              {isCurrentMonth && (
-                                <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300">
-                                  Current
-                                </Badge>
-                              )}
-                            </div>
-                            <Badge 
-                              variant="outline" 
-                              className={breakdown.status === 'posted' 
-                                ? 'bg-green-100 text-green-800 border-green-200'
-                                : 'bg-gray-100 text-gray-800 border-gray-200'
-                              }
-                            >
-                              {breakdown.status}
-                            </Badge>
-                          </div>
+                <div className="flex gap-4 pb-4" style={{ minWidth: `${monthlyBreakdown.length * 260}px` }}>
+                  {monthlyBreakdown
+                    .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
+                    .map((breakdown) => {
+                      const monthDate = new Date(breakdown.month + "-01");
+                      const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
 
-                          {/* Amount */}
-                          <div className="mb-3">
-                            <div className="text-2xl font-bold">
-                              {formatCurrency(breakdown.amount)}
+                      return (
+                        <div key={breakdown.month} className="w-[260px] space-y-2">
+                          <div
+                            className={`cursor-pointer p-4 rounded-lg border transition-all duration-200 text-sm ${
+                              isCurrentMonth
+                                ? 'border-purple-500 bg-purple-50 shadow-lg'
+                                : breakdown.status === 'posted'
+                                ? 'border-green-500 bg-green-50'
+                                : 'border-gray-200 bg-white'
+                            }`}
+                            onClick={() => toggleMonth(breakdown.month)}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-base">{format(monthDate, "MMM yyyy")}</span>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  breakdown.status === 'posted'
+                                    ? 'bg-green-100 text-green-800 border-green-200'
+                                    : 'bg-gray-100 text-gray-800 border-gray-200'
+                                }
+                              >
+                                {breakdown.status}
+                              </Badge>
                             </div>
-                          </div>
-
-                          {/* Running Balance */}
-                          <div className="pt-2 border-t">
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="text-muted-foreground">Balance:</span>
-                              <span className="font-mono font-bold">
-                                {formatCurrency(breakdown.amount * (index + 1))}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Line Items Preview */}
-                          <div className="mt-3 space-y-2">
-                            <h4 className="text-xs font-medium mb-1">Line Items</h4>
-                            {!isExpanded && breakdown.lineItems.length > 0 && (
-                              <div className="space-y-1">
-                                {breakdown.lineItems.slice(0, 2).map((item) => (
-                                  <div key={item.id} className="flex justify-between items-center text-xs">
-                                    <span className="text-muted-foreground truncate">
-                                      {item.accountCode} - {item.description}
-                                    </span>
-                                    <span className="font-mono">
-                                      {item.debitAmount > 0 ? `Dr ${formatCurrency(item.debitAmount)}` : `Cr ${formatCurrency(item.creditAmount)}`}
-                                    </span>
-                                  </div>
-                                ))}
-                                {breakdown.lineItems.length > 2 && (
-                                  <div className="text-xs text-muted-foreground text-center">
-                                    +{breakdown.lineItems.length - 2} more lines
-                                  </div>
-                                )}
-                              </div>
+                            {journal.type === 'prepayment' && (
+                              <>
+                                <div className="flex justify-between text-muted-foreground">
+                                  <span>Prepay Bal</span>
+                                  <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                </div>
+                                <div className="flex justify-between text-muted-foreground">
+                                  <span>Expense Bal</span>
+                                  <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                </div>
+                              </>
+                            )}
+                            {journal.type === 'accrual' && (
+                              <>
+                                <div className="flex justify-between text-muted-foreground">
+                                  <span>Accrual Bal</span>
+                                  <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                </div>
+                                <div className="flex justify-between text-muted-foreground">
+                                  <span>Expense Bal</span>
+                                  <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                </div>
+                              </>
                             )}
                           </div>
                         </div>
-
-                        {/* Single full-width line items table rendered below cards */}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
             </div>
 
             {/* Full-width line items table for selected month */}
             {selectedMonth && (() => {
-              const breakdown = journal.monthlyBreakdown.find(b => b.month === selectedMonth);
+              const breakdown = monthlyBreakdown.find(b => b.month === selectedMonth);
               if (!breakdown) return null;
 
-              const accountCodes = Array.from(new Set(journal.monthlyBreakdown.flatMap(b => b.lineItems.map(li => li.accountCode))));
+              const accountCodes = Array.from(new Set(monthlyBreakdown.flatMap(b => b.lineItems.map(li => li.accountCode))));
               const stores = [
                 "Kings Hill",
                 "Tonbridge",
