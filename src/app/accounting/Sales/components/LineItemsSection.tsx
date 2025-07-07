@@ -2,9 +2,10 @@ import * as React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, ChevronDown } from "lucide-react";
 import { SalesLineItem } from "./types";
 
 interface LineItemsSectionProps {
@@ -13,15 +14,15 @@ interface LineItemsSectionProps {
   isEditing: boolean;
 }
 
-// Tax rate options as requested from the screenshot
+// Updated tax rate options as requested
 const taxRateOptions = [
-  { value: 20, label: "20% (VAT on Income)" },
-  { value: 20.1, label: "20% (VAT on Expenses)" },
-  { value: 0, label: "No Tax" },
-  { value: 5.1, label: "5% (VAT on Expenses)" },
-  { value: 5, label: "5% (VAT on Income)" },
-  { value: -1, label: "Zero Rated Expenses" },
-  { value: -2, label: "Zero Rated Income" }
+  { value: "20_income", label: "20% (VAT on Income)" },
+  { value: "20_expenses", label: "20% (VAT on Expenses)" },
+  { value: "no_tax", label: "No Tax" },
+  { value: "5_expenses", label: "5% (VAT on Expenses)" },
+  { value: "5_income", label: "5% (VAT on Income)" },
+  { value: "zero_rated_expenses", label: "Zero Rated Expenses" },
+  { value: "zero_rated_income", label: "Zero Rated Income" }
 ];
 
 // Store options for tracking category
@@ -45,78 +46,18 @@ const accountCodeOptions = [
   { value: "6600", label: "6600 - Comms" }
 ];
 
-// Searchable Dropdown Component
-const SearchableDropdown = ({ 
-  options, 
-  value, 
-  onValueChange, 
-  placeholder, 
-  className = "" 
-}: {
-  options: string[] | { value: string | number; label: string }[];
-  value: string | number;
-  onValueChange: (value: string | number) => void;
-  placeholder: string;
-  className?: string;
-}) => {
-  const [open, setOpen] = React.useState(false);
-  
-  const displayValue = React.useMemo(() => {
-    if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'object') {
-      const option = (options as { value: string | number; label: string }[]).find(opt => opt.value === value);
-      return option ? option.label : value;
-    }
-    return value;
-  }, [options, value]);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={`w-full justify-between text-left font-normal ${className}`}
-        >
-          {value ? displayValue : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup>
-            {options.map((option) => {
-              const optionValue = typeof option === 'string' ? option : option.value;
-              const optionLabel = typeof option === 'string' ? option : option.label;
-              
-              return (
-                <CommandItem
-                  key={optionValue}
-                  value={optionValue.toString()}
-                  onSelect={() => {
-                    onValueChange(optionValue);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      value === optionValue ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                  {optionLabel}
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-};
-
 export default function LineItemsSection({ lineItems, setLineItems, isEditing }: LineItemsSectionProps) {
+  const [storePopoverStates, setStorePopoverStates] = React.useState<Record<string, boolean>>({});
+  const [accountPopoverStates, setAccountPopoverStates] = React.useState<Record<string, boolean>>({});
+
+  const setStorePopover = (itemId: string, open: boolean) => {
+    setStorePopoverStates(prev => ({ ...prev, [itemId]: open }));
+  };
+
+  const setAccountPopover = (itemId: string, open: boolean) => {
+    setAccountPopoverStates(prev => ({ ...prev, [itemId]: open }));
+  };
+
   const handleAddLineItem = () => {
     const newItem: SalesLineItem = {
       id: `item-${Date.now()}`,
@@ -138,6 +79,37 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
     setLineItems(lineItems.filter((item) => item.id !== id));
   };
 
+  const getVatRateFromOption = (optionValue: string): number => {
+    switch (optionValue) {
+      case "20_income":
+      case "20_expenses":
+        return 20;
+      case "5_income":
+      case "5_expenses":
+        return 5;
+      case "no_tax":
+      case "zero_rated_expenses":
+      case "zero_rated_income":
+        return 0;
+      default:
+        return 20;
+    }
+  };
+
+  const getOptionFromVatRate = (vatRate: number): string => {
+    // Default mapping - in real app this would come from stored data
+    switch (vatRate) {
+      case 20:
+        return "20_expenses";
+      case 5:
+        return "5_expenses";
+      case 0:
+        return "no_tax";
+      default:
+        return "20_expenses";
+    }
+  };
+
   const handleLineItemChange = (id: string, field: keyof SalesLineItem, value: string | number) => {
     setLineItems(lineItems.map((item) => {
       if (item.id === id) {
@@ -145,21 +117,19 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
         
         // Recalculate if quantity, price, or vatRate changes
         if (field === 'quantity' || field === 'price' || field === 'vatRate') {
-          const quantity = field === 'quantity' ? Math.max(0, Number(value)) : item.quantity;
-          const price = field === 'price' ? Math.max(0, Number(value)) : item.price;
-          const vatRate = field === 'vatRate' ? Number(value) : item.vatRate;
+          const quantity = field === 'quantity' ? Math.max(0, Number(value)) : item.quantity; // Prevent negative
+          const price = field === 'price' ? Math.max(0, Number(value)) : item.price; // Prevent negative
+          const vatRate = field === 'vatRate' ? getVatRateFromOption(value as string) : item.vatRate;
           const subtotal = quantity * price;
-          
-          // Handle special VAT cases
-          let vat = 0;
-          if (vatRate >= 0) {
-            vat = subtotal * (vatRate / 100);
-          } // Zero rated expenses and income both result in 0 VAT
+          const vat = subtotal * (vatRate / 100);
+
           
           updatedItem = {
             ...updatedItem,
             quantity,
             price,
+            vatRate,
+
             subtotal,
             vat,
             total: subtotal + vat
@@ -170,20 +140,6 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
       }
       return item;
     }));
-  };
-
-  const getTaxRateDisplay = (vatRate: number) => {
-    const option = taxRateOptions.find(opt => opt.value === vatRate);
-    if (option) {
-      if (vatRate === -1) return "Zero Rated Exp";
-      if (vatRate === -2) return "Zero Rated Inc";
-      if (vatRate === 0) return "No Tax";
-      if (vatRate === 5) return "5% (Income)";
-      if (vatRate === 5.1) return "5% (Expenses)";
-      if (vatRate === 20) return "20% (Income)";
-      if (vatRate === 20.1) return "20% (Expenses)";
-    }
-    return `${vatRate}%`;
   };
 
   return (
@@ -219,7 +175,7 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
           <TableBody>
             {lineItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isEditing ? 8 : 7} className="text-center text-muted-foreground text-sm py-8">
+                <TableCell colSpan={isEditing ? 8 : 7} className="text-center text-muted-foreground">
                   No line items found
                 </TableCell>
               </TableRow>
@@ -242,11 +198,11 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                     {isEditing ? (
                       <Input
                         type="number"
+                        min="0"
+                        step="1"
                         value={item.quantity}
                         onChange={(e) => handleLineItemChange(item.id, "quantity", Math.max(0, parseFloat(e.target.value) || 0))}
-                        className="h-7 text-xs px-2 text-right"
-                        min="0"
-                        step="0.01"
+                        className="w-full text-right"
                       />
                     ) : (
                       <div className="text-xs">{item.quantity}</div>
@@ -256,11 +212,12 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                     {isEditing ? (
                       <Input
                         type="number"
-                        value={item.price}
-                        onChange={(e) => handleLineItemChange(item.id, "price", Math.max(0, parseFloat(e.target.value) || 0))}
-                        className="h-7 text-xs px-2 text-right"
                         min="0"
                         step="0.01"
+                        value={item.price}
+                        onChange={(e) => handleLineItemChange(item.id, "price", Math.max(0, parseFloat(e.target.value) || 0))}
+
+                        className="w-full text-right"
                       />
                     ) : (
                       <div className="text-xs">£{item.price.toFixed(2)}</div>
@@ -268,41 +225,115 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
                   </TableCell>
                   <TableCell className="p-2">
                     {isEditing ? (
-                      <SearchableDropdown
-                        options={taxRateOptions}
-                        value={item.vatRate}
+
+                      <Select
+                        value={getOptionFromVatRate(item.vatRate)}
                         onValueChange={(value) => handleLineItemChange(item.id, "vatRate", value)}
-                        placeholder="Tax Type"
-                        className="h-7 text-xs px-2"
-                      />
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {taxRateOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
-                      <div className="text-xs text-center">
-                        {getTaxRateDisplay(item.vatRate)}
+                      <div className="text-center">
+                        {item.vatRate === 0 ? "0%" : `${item.vatRate}%`}
                       </div>
                     )}
                   </TableCell>
                   <TableCell className="p-2">
                     {isEditing ? (
-                      <SearchableDropdown
-                        options={storeOptions}
-                        value={item.trackingCategory || ""}
-                        onValueChange={(value) => handleLineItemChange(item.id, "trackingCategory", value)}
-                        placeholder="Store"
-                        className="h-7 text-xs px-2"
-                      />
+                      <Popover 
+                        open={storePopoverStates[item.id] || false} 
+                        onOpenChange={(open) => setStorePopover(item.id, open)}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={storePopoverStates[item.id] || false}
+                            className="w-full justify-between text-sm h-8"
+                          >
+                            {item.trackingCategory || "Select store"}
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Search stores..." />
+                            <CommandList>
+                              <CommandEmpty>No store found.</CommandEmpty>
+                              <CommandGroup>
+                                {storeOptions.map((store) => (
+                                  <CommandItem
+                                    key={store}
+                                    value={store}
+                                    onSelect={(currentValue) => {
+                                      handleLineItemChange(item.id, "trackingCategory", currentValue);
+                                      setStorePopover(item.id, false);
+                                    }}
+                                  >
+                                    {store}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       <div className="text-xs text-center">{item.trackingCategory || "-"}</div>
                     )}
                   </TableCell>
                   <TableCell className="p-2">
                     {isEditing ? (
-                      <SearchableDropdown
-                        options={accountCodeOptions}
-                        value={item.accountCode || ""}
-                        onValueChange={(value) => handleLineItemChange(item.id, "accountCode", value)}
-                        placeholder="Account Code"
-                        className="h-7 text-xs px-2"
-                      />
+                      <Popover 
+                        open={accountPopoverStates[item.id] || false} 
+                        onOpenChange={(open) => setAccountPopover(item.id, open)}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={accountPopoverStates[item.id] || false}
+                            className="w-full justify-between text-sm h-8"
+                          >
+                            {item.accountCode ? 
+                              accountCodeOptions.find(opt => opt.value === item.accountCode)?.label || item.accountCode 
+                              : "Select code"
+                            }
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Search account codes..." />
+                            <CommandList>
+                              <CommandEmpty>No account code found.</CommandEmpty>
+                              <CommandGroup>
+                                {accountCodeOptions.map((option) => (
+                                  <CommandItem
+                                    key={option.value}
+                                    value={option.value}
+                                    onSelect={(currentValue) => {
+                                      handleLineItemChange(item.id, "accountCode", currentValue);
+                                      setAccountPopover(item.id, false);
+                                    }}
+                                  >
+                                    {option.label}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       <div className="text-xs text-center">
                         {item.accountCode ? accountCodeOptions.find(opt => opt.value === item.accountCode)?.value || item.accountCode : "-"}
