@@ -252,7 +252,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Sales Invoice",
+    documentType: "Bill",
     uploadedFile: {
       id: "file004",
       name: "Icon_Engineering_2024-11-26_111.00.pdf",
@@ -529,6 +529,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file008",
       name: "LUSU_General_Account_2025-04-01_300.00.pdf",
@@ -614,6 +615,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file009",
       name: "Lancaster_City_Council_2025-04-15_172.50.pdf",
@@ -855,7 +857,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Sales Invoice",
+    documentType: "Bill",
     uploadedFile: {
       id: "file012",
       name: "Portsmouth_2025-05-07_181.1.pdf",
@@ -980,6 +982,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file014",
       name: "Wynsdale_Waste_Management_2025-04-26_237.98 (1).pdf",
@@ -1268,6 +1271,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Sales Invoice",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file018",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-28108-01_27-04-2025.pdf",
@@ -1351,6 +1355,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: false,
     deleted: false,
     documentType: "Sales Invoice",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file019",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-29098-01_27-04-2025.pdf",
@@ -2091,6 +2096,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: true,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file025",
       name: "Archived_Professional_Services_2024-12-15_1020.00.pdf",
@@ -2182,6 +2188,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: true,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "unpaid",
     uploadedFile: {
       id: "file026",
       name: "Archived_Utilities_2024-11-20_534.60.pdf",
@@ -2273,6 +2280,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     archived: true,
     deleted: false,
     documentType: "Bill",
+    paymentStatus: "paid",
     uploadedFile: {
       id: "file027",
       name: "Archived_Equipment_Maintenance_2024-10-30_1500.00.pdf",

@@ -12,6 +12,7 @@ import {
   X, 
   FileText, 
   Eye,
+  ChevronDown,
   Trash2,
   Table,
   File,
@@ -19,9 +20,9 @@ import {
 } from "lucide-react";
 import { SalesInvoiceData } from "./components/types";
 import salesInvoices from "./invoiceData";
-import InvoiceInfo from "./invoiceInfo";
 import { HotTable } from '@handsontable/react';
 import 'handsontable/dist/handsontable.full.min.css';
+import InvoiceExtractedInfo from "./components/invoiceExtractedInfo";
 
 interface InvoiceDetailsProps {
   invoiceId?: string;
@@ -46,15 +47,13 @@ const getStatusStyle = (status: string) => {
   }
 };
 
-
-
 const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onDelete, onArchive }) => {
   const [invoices] = React.useState<SalesInvoiceData[]>(salesInvoices);
   const [currentInvoiceId, setCurrentInvoiceId] = React.useState(invoiceId || invoices[0]?.id);
   const [statusFilter, setStatusFilter] = React.useState<string>('Review');
   const [editMode, setEditMode] = React.useState(false);
   const [formData, setFormData] = React.useState<Partial<SalesInvoiceData>>({});
-  const [lineItemsOpen, setLineItemsOpen] = React.useState(false);
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [activeView, setActiveView] = React.useState<'pdf' | 'csv'>('pdf');
 
@@ -72,6 +71,23 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
       // In a real app, this would make an API call to publish the invoice
       alert(`Publishing invoice ${currentInvoice.invoiceNumber}`);
       setEditMode(false); // Exit edit mode when publishing
+    }
+  };
+
+  // Handle unpublish action
+  const handleUnpublish = () => {
+    if (currentInvoice && isPublished && currentInvoice.paymentStatus !== 'paid') {
+      // In a real app, this would make an API call to unpublish the invoice
+      alert(`Unpublishing invoice ${currentInvoice.invoiceNumber}`);
+      setEditMode(false);
+    }
+  };
+
+  // Handle reprocess action
+  const handleReprocess = () => {
+    if (currentInvoice) {
+      // In a real app, this would trigger AI reprocessing
+      alert(`Reprocessing invoice ${currentInvoice.invoiceNumber}`);
     }
   };
   
@@ -143,7 +159,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   React.useEffect(() => {
     if (currentInvoice) {
       setFormData(currentInvoice);
-      setLineItemsOpen(false); // Reset to collapsed when switching invoices
+
       setShowDeleteConfirm(false); // Reset delete confirmation
     }
   }, [currentInvoice]);
@@ -151,7 +167,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
   // Auto-open line items when entering edit mode
   React.useEffect(() => {
     if (editMode) {
-      setLineItemsOpen(true);
+
     }
   }, [editMode]);
 
@@ -695,18 +711,20 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({ invoiceId, onClose, onD
           </div>
 
           {/* Extracted Data Panel */}
-          <InvoiceInfo
-            currentInvoice={currentInvoice}
-            formData={formData}
-            setFormData={setFormData}
-            editMode={editMode}
-            setEditMode={setEditMode}
-            lineItemsOpen={lineItemsOpen}
-            setLineItemsOpen={setLineItemsOpen}
-            isPublished={isPublished}
-            handlePublish={handlePublish}
-            handleArchive={handleArchive}
-          />
+          <div className="w-1/2 bg-gray-50 overflow-y-auto">
+            <InvoiceExtractedInfo
+              currentInvoice={currentInvoice}
+              formData={formData}
+              setFormData={setFormData}
+              editMode={editMode}
+              setEditMode={setEditMode}
+              isPublished={isPublished}
+              handlePublish={handlePublish}
+              handleUnpublish={handleUnpublish}
+              handleReprocess={handleReprocess}
+              handleArchive={handleArchive}
+            />
+          </div>
         </div>
       </div>
     </div>
