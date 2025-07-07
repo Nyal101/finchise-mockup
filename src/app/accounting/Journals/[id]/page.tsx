@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -20,15 +19,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { 
   ArrowLeft,
   ArrowRight,
+  ChevronDown,
+  Maximize2,
+  ChevronLeft,
   Plus,
-  X,
-  Save,
-  ChevronDown
+  ChevronUp
 } from "lucide-react";
 import { Command, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { journalEntries } from "../journalData";
-import { JournalLineItem, ScheduleType } from "../types";
+import { ScheduleType } from "../types";
 import { calculateJournal } from "../utils/journalCalculations";
+import { useState, useEffect } from "react";
 
 // Map of account codes to descriptive names
 const accountDescriptions: Record<string, string> = {
@@ -39,24 +40,80 @@ const accountDescriptions: Record<string, string> = {
   "2200": "Accruals",
   "8100": "Capital Expenditure",
   "7101": "Property - Business Rates",
-  // Add more as needed
 };
 
-
+// Combobox for searching account codes
+function AccountCodeCombobox({
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  className?: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={`w-full h-8 justify-between px-2 text-sm font-normal ${className || ''}`}
+        >
+          {value ? `${value} - ${accountDescriptions[value] ?? ""}` : "Code"}
+          <ChevronDown className="h-3 w-3 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full min-w-[12rem] max-w-[24rem] p-0">
+        <Command>
+          <CommandInput placeholder="Search code..." className="h-8" />
+          <CommandGroup>
+            {options.map((code) => (
+              <CommandItem
+                key={code}
+                value={code}
+                onSelect={() => {
+                  onChange(code);
+                  setOpen(false);
+                }}
+              >
+                {`${code} - ${accountDescriptions[code] ?? ""}`}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function JournalDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  // Track which month is currently expanded (only one at a time)
-  const [selectedMonth, setSelectedMonth] = React.useState<string | null>(null);
   const [statusFilter, setStatusFilter] = React.useState("all");
+  const [showSourceDocument, setShowSourceDocument] = useState(true);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [journalData, setJournalData] = React.useState(() => {
     const j = journalEntries.find(j => j.id === params.id);
     return j ? { ...j, scheduleType: j.scheduleType || 'monthly & weekly', monthlyBreakdown: j.monthlyBreakdown || [] } : undefined;
   });
-  
+
   // Find the current journal
   const journal = journalData;
+
+  // Set initial selected document
+  useEffect(() => {
+    if (!journal) return;
+    if (!selectedDocumentId && journal.sourceDocuments.length > 0) {
+      setSelectedDocumentId(journal.sourceDocuments[0].id);
+    }
+  }, [journal, selectedDocumentId]);
+
+  // Get current selected document
+  const selectedDocument = journal?.sourceDocuments.find(doc => doc.id === selectedDocumentId);
 
   // Calculate monthly breakdown using the new calculation function
   const monthlyBreakdown = React.useMemo(() => {
@@ -74,7 +131,6 @@ export default function JournalDetailsPage() {
     });
 
     if (result.error) {
-      // TODO: Show error to user
       console.error(result.error);
       return [];
     }
@@ -112,110 +168,6 @@ export default function JournalDetailsPage() {
     }
   };
 
-  // Toggle selected month (collapse if same month clicked again)
-  const toggleMonth = (month: string) => {
-    setSelectedMonth((prev) => (prev === month ? null : month));
-  };
-
-  // Update a line item field within a specific month
-  const updateLineItem = (
-    month: string,
-    itemId: string,
-    field: keyof Omit<JournalLineItem, "id">,
-    value: string | number
-  ) => {
-    setJournalData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        monthlyBreakdown: prev.monthlyBreakdown.map((b) => {
-          if (b.month !== month) return b;
-          return {
-            ...b,
-            lineItems: b.lineItems.map((li) =>
-              li.id === itemId ? { ...li, [field]: value } : li
-            ),
-          };
-        }),
-      };
-    });
-  };
-
-  // Add a blank line item to a month
-  const addLineItem = (month: string) => {
-    setJournalData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        monthlyBreakdown: prev.monthlyBreakdown.map((b) => {
-          if (b.month !== month) return b;
-          return {
-            ...b,
-            lineItems: [
-              ...b.lineItems,
-              {
-                id: `li_${Date.now()}`,
-                accountCode: "",
-                description: "",
-                debitAmount: 0,
-                creditAmount: 0,
-                store: "",
-                taxRate: "no-tax",
-              },
-            ],
-          };
-        }),
-      };
-    });
-  };
-
-  // Combobox for searching account codes
-  function AccountCodeCombobox({
-    value,
-    onChange,
-    options,
-    className,
-  }: {
-    value: string;
-    onChange: (val: string) => void;
-    options: string[];
-    className?: string;
-  }) {
-    const [open, setOpen] = React.useState(false);
-    return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={`w-full h-8 justify-between px-2 text-sm font-normal ${className || ''}`}
-          >
-            {value ? `${value} - ${accountDescriptions[value] ?? ""}` : "Code"}
-            <ChevronDown className="h-3 w-3 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-full min-w-[12rem] max-w-[24rem] p-0">
-          <Command>
-            <CommandInput placeholder="Search code..." className="h-8" />
-            <CommandGroup>
-              {options.map((code) => (
-                <CommandItem
-                  key={code}
-                  value={code}
-                  onSelect={() => {
-                    onChange(code);
-                    setOpen(false);
-                  }}
-                >
-                  {`${code} - ${accountDescriptions[code] ?? ""}`}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    );
-  }
-
   if (!journal) {
     return <div>Journal not found</div>;
   }
@@ -229,7 +181,7 @@ export default function JournalDetailsPage() {
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">Journals</h3>
             <Button variant="ghost" size="sm" onClick={() => router.push("/accounting/Journals")}>
-              <X className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
           
@@ -288,550 +240,600 @@ export default function JournalDetailsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex items-center justify-between bg-white border-b border-gray-200 px-6 h-16" style={{ marginTop: 0 }}>
-          {/* Left: Back to Journals */}
-          <div className="flex items-center">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between bg-white border-b border-gray-200 px-6 h-16">
+          <div className="flex items-center gap-4">
             <Button
               variant="outline"
               size="sm"
               onClick={() => router.push("/accounting/Journals")}
+              className="flex items-center"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4 mr-1" />
               Back
             </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => prevJournal && router.push(`/accounting/Journals/${prevJournal.id}`)}
+                disabled={!prevJournal}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => nextJournal && router.push(`/accounting/Journals/${nextJournal.id}`)}
+                disabled={!nextJournal}
+              >
+                Next
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
 
-          {/* Center: Navigation */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => prevJournal && router.push(`/accounting/Journals/${prevJournal.id}`)}
-              disabled={!prevJournal}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => nextJournal && router.push(`/accounting/Journals/${nextJournal.id}`)}
-              disabled={!nextJournal}
-            >
-              Forward
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-
-          {/* Right: Save Changes */}
-          <div>
             <Button 
-              onClick={() => {
-                // Handle save
-                console.log("Saving journal changes");
-              }}
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSourceDocument(!showSourceDocument)}
+            >
+              {showSourceDocument ? "Hide Documents" : "Show Documents"}
+            </Button>
+            <Button 
+              onClick={() => console.log("Saving journal changes")}
               className="bg-gray-900 text-white hover:bg-gray-800"
               size="sm"
             >
-              <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>
           </div>
         </div>
 
-        <div className="pt-0 px-6 pb-6 space-y-6">
-          {/* Journal Summary */}
-          <Card className="mt-4">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Journal Details</h1>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex">
-                  <div className="w-[calc(100%/6)]">
-                    <label className="text-sm font-medium text-muted-foreground">Journal Type</label>
-                    <div className="mt-1">
-                      <Badge variant="outline">
-                        {journalData?.type === 'accrual' ? 'Accrual' : 'Prepayment'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex-1 pl-2">
+        {/* Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Panel: Journal Details */}
+          <div className={`${showSourceDocument ? 'w-1/2' : 'w-full'} overflow-y-auto transition-all duration-300`}>
+            <div className="p-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-lg font-semibold">Journal Details</h2>
+                  <Badge variant="outline" className="capitalize">
+                    {journal.type}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
                     <label className="text-sm font-medium text-muted-foreground">Description</label>
                     <Input
-                      defaultValue={journal.description}
+                      value={journal.description}
                       className="mt-1"
                       placeholder="Enter journal description"
                     />
                   </div>
+
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Total Amount</label>
+                      <Input
+                        type="number"
+                        value={journalData?.totalAmount ?? ''}
+                        onChange={e => {
+                          const val = parseFloat(e.target.value || '0');
+                          setJournalData(prev => prev ? { ...prev, totalAmount: val } : prev);
+                        }}
+                        className="mt-1"
+                        step="0.01"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Expense Paid</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full mt-1 justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {journalData?.expensePaidMonth ? format(journalData.expensePaidMonth, 'MMM yyyy') : <span>Month</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={journalData?.expensePaidMonth}
+                            defaultMonth={journalData?.expensePaidMonth}
+                            onSelect={(date) => {
+                              if (date) setJournalData(prev => prev ? { ...prev, expensePaidMonth: date } : prev);
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Recognition Start</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full mt-1 justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {journalData?.periodStartDate ? format(journalData.periodStartDate, 'dd MMM yyyy') : <span>Start</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={journalData?.periodStartDate}
+                            defaultMonth={journalData?.periodStartDate}
+                            onSelect={(date) => {
+                              if (date) setJournalData(prev => prev ? { ...prev, periodStartDate: date } : prev);
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Recognition End</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full mt-1 justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {journalData?.periodEndDate ? format(journalData.periodEndDate, 'dd MMM yyyy') : <span>End</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={journalData?.periodEndDate}
+                            defaultMonth={journalData?.periodEndDate}
+                            onSelect={(date) => {
+                              if (date) setJournalData(prev => prev ? { ...prev, periodEndDate: date } : prev);
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">
+                        {journal.type === 'prepayment' ? 'Prepayment Account' : 'Accrual Account'}
+                      </label>
+                      <AccountCodeCombobox
+                        value={journal.accountCode}
+                        onChange={(val) => setJournalData(prev => ({ ...prev!, accountCode: val }))}
+                        options={Object.keys(accountDescriptions)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Monthly Transfer Account</label>
+                      <AccountCodeCombobox
+                        value={journal.monthlyAccountCode}
+                        onChange={(val) => setJournalData(prev => ({ ...prev!, monthlyAccountCode: val }))}
+                        options={Object.keys(accountDescriptions)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Schedule Type</label>
+                      <Select
+                        value={journalData?.scheduleType || 'monthly & weekly'}
+                        onValueChange={value => setJournalData(prev => prev ? { ...prev, scheduleType: value as ScheduleType } : prev)}
+                      >
+                        <SelectTrigger className="w-full mt-1">
+                          <SelectValue placeholder="Select schedule type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly & weekly">Monthly</SelectItem>
+                          <SelectItem value="monthly">Equal Split</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Monthly Breakdown */}
+            <div className="px-4">
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-white p-3 border-b flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-sm">
+                    <h3 className="font-semibold">Monthly Breakdown</h3>
+                    <div className="flex items-center gap-4 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span>Posted</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                        <span>Scheduled</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Scroll horizontally to view all months →
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-6 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Total Amount</label>
-                    <Input
-                      type="number"
-                      value={journalData?.totalAmount ?? ''}
-                      onChange={e => {
-                        const val = parseFloat(e.target.value || '0');
-                        setJournalData(prev => prev ? { ...prev, totalAmount: val } : prev);
-                      }}
-                      className="mt-1"
-                      step="0.01"
-                    />
-                  </div>
+                <div className="bg-gray-50/50">
+                  {/* Monthly Cards */}
+                  <div className="overflow-x-auto">
+                    <div className="flex gap-3 p-3" style={{ minWidth: `${monthlyBreakdown.length * 260}px` }}>
+                      {monthlyBreakdown
+                        .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
+                        .map((breakdown) => {
+                          const monthDate = new Date(breakdown.month + "-01");
+                          const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
+                          const isSelected = selectedMonth === breakdown.month;
 
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Expense Paid Month</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full mt-1 justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {journalData?.expensePaidMonth ? format(journalData.expensePaidMonth, 'MMM yyyy') : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={journalData?.expensePaidMonth}
-                          defaultMonth={journalData?.expensePaidMonth}
-                          onSelect={(date) => {
-                            if (date) {
-                              const updatedJournal = {
-                                ...journalData!,
-                                expensePaidMonth: date,
-                                monthlyBreakdown: [] // Clear existing breakdown
-                              };
-                              setJournalData(updatedJournal);
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Recognition Period Start</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full mt-1 justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {journalData?.periodStartDate ? format(journalData.periodStartDate, 'dd MMM yyyy') : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={journalData?.periodStartDate}
-                          defaultMonth={journalData?.periodStartDate}
-                          onSelect={(date) => {
-                            if (date) {
-                              const updatedJournal = {
-                                ...journalData!,
-                                periodStartDate: date,
-                                monthlyBreakdown: [] // Clear existing breakdown
-                              };
-                              setJournalData(updatedJournal);
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Recognition Period End</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full mt-1 justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {journalData?.periodEndDate ? format(journalData.periodEndDate, 'dd MMM yyyy') : <span>Pick a date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={journalData?.periodEndDate}
-                          defaultMonth={journalData?.periodEndDate}
-                          onSelect={(date) => {
-                            if (date) {
-                              const updatedJournal = {
-                                ...journalData!,
-                                periodEndDate: date,
-                                monthlyBreakdown: [] // Clear existing breakdown
-                              };
-                              setJournalData(updatedJournal);
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Schedule Type</label>
-                    <Select
-                      value={journalData?.scheduleType || 'monthly & weekly'}
-                      onValueChange={value => setJournalData(prev => prev ? { ...prev, scheduleType: value as ScheduleType } : prev)}
-                    >
-                      <SelectTrigger className="w-full mt-1">
-                        <SelectValue placeholder="Select schedule type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="monthly & weekly">Monthly & Weekly (by days)</SelectItem>
-                        <SelectItem value="monthly">Monthly (equal split)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {journal.type === 'prepayment' && (
-                    <>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Prepayment Account Code</label>
-                        <AccountCodeCombobox
-                          value={journal.accountCode}
-                          onChange={(val) => setJournalData(prev => ({ ...prev!, accountCode: val }))}
-                          options={Object.keys(accountDescriptions)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Monthly Transfer Account Code</label>
-                        <AccountCodeCombobox
-                          value={journal.monthlyAccountCode}
-                          onChange={(val) => setJournalData(prev => ({ ...prev!, monthlyAccountCode: val }))}
-                          options={Object.keys(accountDescriptions)}
-                          className="mt-1"
-                        />
-                      </div>
-                    </>
-                  )}
-                  {journal.type === 'accrual' && (
-                    <>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Accrual Account Code</label>
-                        <AccountCodeCombobox
-                          value={journal.accountCode}
-                          onChange={(val) => setJournalData(prev => ({ ...prev!, accountCode: val }))}
-                          options={Object.keys(accountDescriptions)}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Monthly Transfer Account Code</label>
-                        <AccountCodeCombobox
-                          value={journal.monthlyAccountCode}
-                          onChange={(val) => setJournalData(prev => ({ ...prev!, monthlyAccountCode: val }))}
-                          options={Object.keys(accountDescriptions)}
-                          className="mt-1"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Monthly Breakdown */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4" />
-                Monthly Breakdown
-              </h3>
-            </div>
-            
-            <div className="border rounded-lg p-3 bg-gradient-to-r from-muted/20 to-muted/10">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                    <span>Posted</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-                    <span>Scheduled</span>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Scroll horizontally to view all months →
-                </div>
-              </div>
-              
-              <div className="overflow-x-auto">
-                <div className="flex gap-4 pb-4" style={{ minWidth: `${monthlyBreakdown.length * 260}px` }}>
-                  {monthlyBreakdown
-                    .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
-                    .map((breakdown) => {
-                      const monthDate = new Date(breakdown.month + "-01");
-                      const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
-
-                      return (
-                        <div key={breakdown.month} className="w-[260px] space-y-2">
-                          <div
-                            className={`cursor-pointer p-4 rounded-lg border transition-all duration-200 text-sm ${
-                              isCurrentMonth
-                                ? 'border-purple-500 bg-purple-50 shadow-lg'
-                                : breakdown.status === 'posted'
-                                ? 'border-green-500 bg-green-50'
-                                : 'border-gray-200 bg-white'
-                            }`}
-                            onClick={() => toggleMonth(breakdown.month)}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold text-base">{format(monthDate, "MMM yyyy")}</span>
-                              <Badge
-                                variant="outline"
-                                className={
-                                  breakdown.status === 'posted'
-                                    ? 'bg-green-100 text-green-800 border-green-200'
-                                    : 'bg-gray-100 text-gray-800 border-gray-200'
-                                }
+                          return (
+                            <div key={breakdown.month} className="w-[260px]">
+                              <div
+                                className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
+                                  isCurrentMonth
+                                    ? 'border-purple-500 bg-purple-50 shadow-lg'
+                                    : breakdown.status === 'posted'
+                                    ? 'border-green-500 bg-green-50'
+                                    : 'border-gray-200 bg-white'
+                                } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                                onClick={() => setSelectedMonth(prev => prev === breakdown.month ? null : breakdown.month)}
                               >
-                                {breakdown.status}
-                              </Badge>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-semibold text-base">{format(monthDate, "MMM yyyy")}</span>
+                                  <div className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={
+                                        breakdown.status === 'posted'
+                                          ? 'bg-green-100 text-green-800 border-green-200'
+                                          : 'bg-gray-100 text-gray-800 border-gray-200'
+                                      }
+                                    >
+                                      {breakdown.status}
+                                    </Badge>
+                                    {isSelected ? (
+                                      <ChevronUp className="h-4 w-4 text-blue-500" />
+                                    ) : (
+                                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    )}
+                                  </div>
+                                </div>
+                                {journal.type === 'prepayment' && (
+                                  <>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Prepay Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Expense Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                    </div>
+                                  </>
+                                )}
+                                {journal.type === 'accrual' && (
+                                  <>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Accrual Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Expense Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
-                            {journal.type === 'prepayment' && (
-                              <>
-                                <div className="flex justify-between text-muted-foreground">
-                                  <span>Prepay Bal</span>
-                                  <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
-                                </div>
-                                <div className="flex justify-between text-muted-foreground">
-                                  <span>Expense Bal</span>
-                                  <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
-                                </div>
-                              </>
-                            )}
-                            {journal.type === 'accrual' && (
-                              <>
-                                <div className="flex justify-between text-muted-foreground">
-                                  <span>Accrual Bal</span>
-                                  <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
-                                </div>
-                                <div className="flex justify-between text-muted-foreground">
-                                  <span>Expense Bal</span>
-                                  <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
-                                </div>
-                              </>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Line Items Section - Full Width */}
+                  {selectedMonth && (() => {
+                    const breakdown = monthlyBreakdown.find(b => b.month === selectedMonth);
+                    if (!breakdown) return null;
+
+                    return (
+                      <div className="border-t">
+                        <div className="bg-white p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-medium text-lg">
+                              Line Items - {format(new Date(selectedMonth + "-01"), "MMMM yyyy")}
+                            </h4>
+                            {breakdown.status === 'scheduled' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setJournalData(prev => {
+                                    if (!prev) return prev;
+                                    return {
+                                      ...prev,
+                                      monthlyBreakdown: prev.monthlyBreakdown.map(b => {
+                                        if (b.month !== breakdown.month) return b;
+                                        return {
+                                          ...b,
+                                          lineItems: [
+                                            ...b.lineItems,
+                                            {
+                                              id: `li_${Date.now()}`,
+                                              accountCode: "",
+                                              description: "",
+                                              debitAmount: 0,
+                                              creditAmount: 0,
+                                              store: "",
+                                              taxRate: "no-tax",
+                                            },
+                                          ],
+                                        };
+                                      }),
+                                    };
+                                  });
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Line
+                              </Button>
                             )}
                           </div>
+
+                          <div className="rounded-lg border overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                                <tr>
+                                  <th className="px-4 py-2 text-left">Description</th>
+                                  <th className="px-4 py-2 text-left">Account</th>
+                                  <th className="px-4 py-2 text-left">Store</th>
+                                  <th className="px-4 py-2 text-right w-[150px]">Debit</th>
+                                  <th className="px-4 py-2 text-right w-[150px]">Credit</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {breakdown.lineItems.map((item) => (
+                                  <tr key={item.id} className="border-t">
+                                    <td className="px-4 py-2">
+                                      {breakdown.status === 'scheduled' ? (
+                                        <Input
+                                          value={item.description}
+                                          onChange={(e) => {
+                                            setJournalData(prev => {
+                                              if (!prev) return prev;
+                                              return {
+                                                ...prev,
+                                                monthlyBreakdown: prev.monthlyBreakdown.map(b => {
+                                                  if (b.month !== breakdown.month) return b;
+                                                  return {
+                                                    ...b,
+                                                    lineItems: b.lineItems.map(li =>
+                                                      li.id === item.id ? { ...li, description: e.target.value } : li
+                                                    ),
+                                                  };
+                                                }),
+                                              };
+                                            });
+                                          }}
+                                          className="h-8"
+                                        />
+                                      ) : (
+                                        item.description
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      {breakdown.status === 'scheduled' ? (
+                                        <AccountCodeCombobox
+                                          value={item.accountCode}
+                                          onChange={(val) => {
+                                            setJournalData(prev => {
+                                              if (!prev) return prev;
+                                              return {
+                                                ...prev,
+                                                monthlyBreakdown: prev.monthlyBreakdown.map(b => {
+                                                  if (b.month !== breakdown.month) return b;
+                                                  return {
+                                                    ...b,
+                                                    lineItems: b.lineItems.map(li =>
+                                                      li.id === item.id ? { ...li, accountCode: val } : li
+                                                    ),
+                                                  };
+                                                }),
+                                              };
+                                            });
+                                          }}
+                                          options={Object.keys(accountDescriptions)}
+                                        />
+                                      ) : (
+                                        `${item.accountCode} - ${accountDescriptions[item.accountCode] ?? ""}`
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      {breakdown.status === 'scheduled' ? (
+                                        <Select
+                                          value={item.store}
+                                          onValueChange={(val) => {
+                                            setJournalData(prev => {
+                                              if (!prev) return prev;
+                                              return {
+                                                ...prev,
+                                                monthlyBreakdown: prev.monthlyBreakdown.map(b => {
+                                                  if (b.month !== breakdown.month) return b;
+                                                  return {
+                                                    ...b,
+                                                    lineItems: b.lineItems.map(li =>
+                                                      li.id === item.id ? { ...li, store: val } : li
+                                                    ),
+                                                  };
+                                                }),
+                                              };
+                                            });
+                                          }}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Store" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {["Kings Hill", "Manchester", "London", "Birmingham", "Leeds"].map(store => (
+                                              <SelectItem key={store} value={store}>{store}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      ) : (
+                                        item.store
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      {breakdown.status === 'scheduled' ? (
+                                        <Input
+                                          type="number"
+                                          value={item.debitAmount}
+                                          onChange={(e) => {
+                                            const val = parseFloat(e.target.value || "0");
+                                            setJournalData(prev => {
+                                              if (!prev) return prev;
+                                              return {
+                                                ...prev,
+                                                monthlyBreakdown: prev.monthlyBreakdown.map(b => {
+                                                  if (b.month !== breakdown.month) return b;
+                                                  return {
+                                                    ...b,
+                                                    lineItems: b.lineItems.map(li =>
+                                                      li.id === item.id ? { ...li, debitAmount: val, creditAmount: 0 } : li
+                                                    ),
+                                                  };
+                                                }),
+                                              };
+                                            });
+                                          }}
+                                          className="h-8 text-right"
+                                        />
+                                      ) : (
+                                        formatCurrency(item.debitAmount)
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                      {breakdown.status === 'scheduled' ? (
+                                        <Input
+                                          type="number"
+                                          value={item.creditAmount}
+                                          onChange={(e) => {
+                                            const val = parseFloat(e.target.value || "0");
+                                            setJournalData(prev => {
+                                              if (!prev) return prev;
+                                              return {
+                                                ...prev,
+                                                monthlyBreakdown: prev.monthlyBreakdown.map(b => {
+                                                  if (b.month !== breakdown.month) return b;
+                                                  return {
+                                                    ...b,
+                                                    lineItems: b.lineItems.map(li =>
+                                                      li.id === item.id ? { ...li, creditAmount: val, debitAmount: 0 } : li
+                                                    ),
+                                                  };
+                                                }),
+                                              };
+                                            });
+                                          }}
+                                          className="h-8 text-right"
+                                        />
+                                      ) : (
+                                        formatCurrency(item.creditAmount)
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot className="bg-gray-50 font-medium">
+                                <tr className="border-t">
+                                  <td colSpan={3} className="px-4 py-3 text-right">Total</td>
+                                  <td className="px-4 py-3 text-right">
+                                    {formatCurrency(
+                                      breakdown.lineItems.reduce((sum, item) => sum + (item.debitAmount || 0), 0)
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    {formatCurrency(
+                                      breakdown.lineItems.reduce((sum, item) => sum + (item.creditAmount || 0), 0)
+                                    )}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
-
-            {/* Full-width line items table for selected month */}
-            {selectedMonth && (() => {
-              const breakdown = monthlyBreakdown.find(b => b.month === selectedMonth);
-              if (!breakdown) return null;
-
-              const accountCodes = Array.from(new Set(monthlyBreakdown.flatMap(b => b.lineItems.map(li => li.accountCode))));
-              const stores = [
-                "Kings Hill",
-                "Tonbridge",
-                "London",
-                "Manchester",
-                "Birmingham",
-                "Leeds",
-                "Liverpool",
-              ];
-
-              const taxRateOptions = [
-                "20% (VAT on Income)",
-                "20% (VAT on Expenses)",
-                "No Tax",
-                "5% (VAT on Expenses)",
-                "5% (VAT on Income)",
-                "Zero Rated Expenses",
-                "Zero Rated Income",
-              ];
-
-              // Calculate subtotals and totals
-              const totals = breakdown.lineItems.reduce(
-                (acc, li) => {
-                  const isTax = li.taxRate && li.taxRate !== "No Tax";
-                  acc.totalDebit += li.debitAmount;
-                  acc.totalCredit += li.creditAmount;
-                  if (isTax) {
-                    acc.taxDebit += li.debitAmount;
-                    acc.taxCredit += li.creditAmount;
-                  } else {
-                    acc.noTaxDebit += li.debitAmount;
-                    acc.noTaxCredit += li.creditAmount;
-                  }
-                  return acc;
-                },
-                { noTaxDebit: 0, noTaxCredit: 0, taxDebit: 0, taxCredit: 0, totalDebit: 0, totalCredit: 0 }
-              );
-
-              const imbalanced = totals.totalDebit !== totals.totalCredit;
-
-              const isEditable = breakdown.status === "scheduled";
-
-              return (
-                <Card className="mt-4">
-                  <CardHeader className="py-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium">Line Items – {format(new Date(selectedMonth + "-01"), "MMM yyyy")} ({breakdown.status})</h3>
-                      {isEditable && (
-                        <Button variant="outline" size="sm" onClick={() => addLineItem(selectedMonth)}>
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add Line
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0 overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-gray-50 text-muted-foreground uppercase text-xs">
-                        <tr>
-                          <th className="px-3 py-2 text-left">Description</th>
-                          <th className="px-3 py-2 text-left">Account</th>
-                          <th className="px-3 py-2 text-left">Tax Rate</th>
-                          <th className="px-3 py-2 text-left">Store</th>
-                          <th className="px-3 py-2 text-right">Debit</th>
-                          <th className="px-3 py-2 text-right">Credit</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {breakdown.lineItems.map((item) => (
-                          <tr key={item.id} className="border-t">
-                            <td className="px-3 py-1">
-                              {isEditable ? (
-                                <Input
-                                  value={item.description}
-                                  onChange={(e) => updateLineItem(selectedMonth, item.id, "description", e.target.value)}
-                                  className="h-8"
-                                />
-                              ) : (
-                                <span>{item.description}</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-1">
-                              {isEditable ? (
-                                <AccountCodeCombobox
-                                  value={item.accountCode}
-                                  onChange={(val) => updateLineItem(selectedMonth, item.id, "accountCode", val)}
-                                  options={accountCodes}
-                                />
-                              ) : (
-                                <span>{`${item.accountCode} - ${accountDescriptions[item.accountCode] ?? ""}`}</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-1">
-                              {isEditable ? (
-                                <Select value={item.taxRate} onValueChange={(val) => updateLineItem(selectedMonth, item.id, "taxRate", val)}>
-                                  <SelectTrigger className="w-40 h-8">
-                                    <SelectValue placeholder="Tax" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {taxRateOptions.map((tr) => (
-                                      <SelectItem key={tr} value={tr}>{tr}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span>{item.taxRate}</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-1">
-                              {isEditable ? (
-                                <Select value={item.store} onValueChange={(val) => updateLineItem(selectedMonth, item.id, "store", val)}>
-                                  <SelectTrigger className="w-36 h-8">
-                                    <SelectValue placeholder="Store" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {stores.map((st) => (
-                                      <SelectItem key={st} value={st}>{st}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span>{item.store}</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-1 text-right">
-                              {isEditable ? (
-                                <Input
-                                  type="number"
-                                  className="h-8 text-right"
-                                  value={item.debitAmount}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value || "0");
-                                    updateLineItem(selectedMonth, item.id, "debitAmount", val);
-                                    updateLineItem(selectedMonth, item.id, "creditAmount", 0);
-                                  }}
-                                />
-                              ) : (
-                                formatCurrency(item.debitAmount || 0)
-                              )}
-                            </td>
-                            <td className="px-3 py-1 text-right">
-                              {isEditable ? (
-                                <Input
-                                  type="number"
-                                  className="h-8 text-right"
-                                  value={item.creditAmount}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value || "0");
-                                    updateLineItem(selectedMonth, item.id, "creditAmount", val);
-                                    updateLineItem(selectedMonth, item.id, "debitAmount", 0);
-                                  }}
-                                />
-                              ) : (
-                                formatCurrency(item.creditAmount || 0)
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="border-t bg-gray-50">
-                          <td colSpan={4} className="px-3 py-2 text-right font-medium">Subtotal (No Tax)</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(totals.noTaxDebit)}</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(totals.noTaxCredit)}</td>
-                        </tr>
-                        <tr className="border-t bg-gray-50">
-                          <td colSpan={4} className="px-3 py-2 text-right font-medium">Subtotal (Tax)</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(totals.taxDebit)}</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(totals.taxCredit)}</td>
-                        </tr>
-                        <tr className={`border-t font-bold ${imbalanced ? "text-red-600" : ""}`}>
-                          <td colSpan={4} className="px-3 py-2 text-right">Total</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(totals.totalDebit)}</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(totals.totalCredit)}</td>
-                        </tr>
-                        {imbalanced && (
-                          <tr className="text-red-600 text-xs">
-                            <td colSpan={6} className="px-3 py-1 text-right">Debit and Credit totals must be equal</td>
-                          </tr>
-                        )}
-                      </tfoot>
-                    </table>
-                  </CardContent>
-                </Card>
-              );
-            })()}
           </div>
+
+          {/* Right Panel: Document Preview */}
+          {showSourceDocument && (
+            <div className="w-1/2 border-l border-gray-200 bg-gray-50 flex flex-col overflow-hidden">
+              <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+                <div className="flex-1 flex items-center gap-3">
+                  <h3 className="font-semibold">Source Documents</h3>
+                  {journal.sourceDocuments.length > 1 && (
+                    <Select value={selectedDocumentId || ''} onValueChange={setSelectedDocumentId}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue placeholder="Select document" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {journal.sourceDocuments.map(doc => (
+                          <SelectItem key={doc.id} value={doc.id}>
+                            {doc.description}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                {selectedDocument && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(selectedDocument.url, '_blank')}
+                  >
+                    <Maximize2 className="h-4 w-4 mr-2" />
+                    Open in New Tab
+                  </Button>
+                )}
+              </div>
+
+              {selectedDocument ? (
+                <div className="flex-1 overflow-hidden">
+                  <iframe
+                    src={selectedDocument.url}
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-gray-500">
+                  No document selected
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
