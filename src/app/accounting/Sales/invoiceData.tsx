@@ -24,7 +24,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Bill",
     uploadedFile: {
       id: "file001",
       name: "Coca-Cola_Europacific_Partners_2025-04-08_556.69.pdf",
@@ -252,7 +252,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file004",
       name: "Icon_Engineering_2024-11-26_111.00.pdf",
@@ -464,7 +464,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Cash",
     archived: false,
     deleted: false,
-    documentType: "Receipt",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file007",
       name: "Just_Eat_2025-04-20_183.30.png",
@@ -855,7 +855,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file012",
       name: "Portsmouth_2025-05-07_181.1.pdf",
@@ -1195,6 +1195,7 @@ export const salesInvoices: SalesInvoiceData[] = [
       supplier: "Xpress Refrigeration",
       supplierAddress: "Unit 12, Cold Storage Industrial Estate, London E14 9SJ",
       invoiceDate: new Date("2025-04-25"),
+      dueDate: new Date("2023-12-08"),
       totalAmount: 738.00,
       subtotalAmount: 615.00,
       vatAmount: 123.00,
@@ -1266,7 +1267,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file018",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-28108-01_27-04-2025.pdf",
@@ -1349,7 +1350,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file019",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-29098-01_27-04-2025.pdf",
@@ -1432,7 +1433,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFile: {
       id: "file020",
       name: "PRE PROCESSED - CustAccountStatementExt.Report_S-29108-01_27-04-2025.pdf",
@@ -1508,7 +1509,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file021a",
@@ -1653,7 +1654,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file022a",
@@ -1798,7 +1799,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file023a",
@@ -1931,7 +1932,7 @@ export const salesInvoices: SalesInvoiceData[] = [
     paymentMethod: "Bank Transfer",
     archived: false,
     deleted: false,
-    documentType: "Invoice",
+    documentType: "Sales Invoice",
     uploadedFiles: {
       primary: {
         id: "file024a",
