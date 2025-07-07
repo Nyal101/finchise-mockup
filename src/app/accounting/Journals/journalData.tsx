@@ -16,8 +16,22 @@ export const journalEntries: JournalEntry[] = [
     store: "Kings Hill",
     status: "active",
     createdDate: new Date("2025-06-15"),
-    source: "bill",
-    sourceReference: "BILL-2025-06-001",
+    sourceDocuments: [
+      {
+        id: "doc1",
+        type: "bill",
+        reference: "BILL-2025-06-001",
+        url: "/invoice-previews/InvoiceExamples/Icon_Engineering_2024-11-26_111.00.pdf",
+        description: "Original Insurance Bill"
+      },
+      {
+        id: "doc2",
+        type: "invoice",
+        reference: "INV-2025-06-001",
+        url: "/invoice-previews/InvoiceExamples/Combat_Fire_Limited_2025-03-24_137.52.pdf",
+        description: "Insurance Certificate"
+      }
+    ],
     scheduleType: "monthly & weekly",
   },
   {
@@ -35,8 +49,15 @@ export const journalEntries: JournalEntry[] = [
     store: "Manchester",
     status: "active",
     createdDate: new Date("2025-06-15"),
-    source: "manual",
-    sourceReference: "MJ-2025-06-001",
+    sourceDocuments: [
+      {
+        id: "doc3",
+        type: "manual",
+        reference: "MJ-2025-06-001",
+        url: "/invoice-previews/InvoiceExamples/Comfort_Cooling_Services_2025-05-07_282.00.pdf",
+        description: "Utility Estimate"
+      }
+    ],
     scheduleType: "monthly & weekly",
   },
   {
@@ -54,8 +75,22 @@ export const journalEntries: JournalEntry[] = [
     store: "London",
     status: "active",
     createdDate: new Date("2025-06-20"),
-    source: "bill",
-    sourceReference: "BILL-2025-06-002",
+    sourceDocuments: [
+      {
+        id: "doc4",
+        type: "bill",
+        reference: "BILL-2025-06-002",
+        url: "/invoice-previews/InvoiceExamples/Combat_Fire_Limited_2025-03-24_137.52.pdf",
+        description: "Software License Bill"
+      },
+      {
+        id: "doc5",
+        type: "invoice",
+        reference: "INV-2025-06-002",
+        url: "/invoice-previews/InvoiceExamples/Lancaster_City_Council_2025-04-15_172.50.pdf",
+        description: "License Agreement"
+      }
+    ],
     scheduleType: "monthly & weekly",
   },
   {
@@ -73,8 +108,15 @@ export const journalEntries: JournalEntry[] = [
     store: "Birmingham",
     status: "review",
     createdDate: new Date("2024-12-31"),
-    source: "manual",
-    sourceReference: "MJ-2024-12-001",
+    sourceDocuments: [
+      {
+        id: "doc6",
+        type: "manual",
+        reference: "MJ-2024-12-001",
+        url: "/invoice-previews/InvoiceExamples/LUSU_General_Account_2025-04-01_300.00.pdf",
+        description: "Bonus Calculation Sheet"
+      }
+    ],
     scheduleType: "monthly & weekly",
   },
   {
@@ -92,8 +134,22 @@ export const journalEntries: JournalEntry[] = [
     store: "Leeds",
     status: "review",
     createdDate: new Date("2025-06-15"),
-    source: "invoice",
-    sourceReference: "INV-2025-06-001",
+    sourceDocuments: [
+      {
+        id: "doc7",
+        type: "invoice",
+        reference: "INV-2025-06-001",
+        url: "/invoice-previews/InvoiceExamples/Comfort_Cooling_Services_2025-05-07_282.00.pdf",
+        description: "Contractor Quote"
+      },
+      {
+        id: "doc8",
+        type: "invoice",
+        reference: "INV-2025-06-002",
+        url: "/invoice-previews/InvoiceExamples/Imperial_Green_2023-11-08_4290.00.pdf",
+        description: "Project Plan"
+      }
+    ],
     scheduleType: "monthly & weekly",
   }
 ]; 

@@ -24,6 +24,14 @@ export interface MonthlyBreakdown {
   lineItems: JournalLineItem[];
 }
 
+export type SourceDocument = {
+  id: string;
+  type: "bill" | "invoice" | "manual";
+  reference: string;
+  url: string;
+  description: string;
+};
+
 export interface JournalEntry {
   id: string;
   type: 'prepayment' | 'accrual';
@@ -39,10 +47,9 @@ export interface JournalEntry {
   store: string;
   status: JournalStatus;
   createdDate: Date;
-  source: JournalSource;
-  sourceReference?: string;
-  monthlyBreakdown?: MonthlyBreakdown[];
+  sourceDocuments: SourceDocument[];
   scheduleType: ScheduleType;
+  monthlyBreakdown?: MonthlyBreakdown[];
 }
 
 export interface PrepaymentAccrualEntry {
