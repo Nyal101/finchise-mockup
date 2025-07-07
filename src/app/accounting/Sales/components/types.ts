@@ -15,7 +15,7 @@ export interface SalesInvoiceData {
   paymentMethod: string;
   archived: boolean;
   deleted: boolean;
-  documentType?: "Invoice" | "Credit Note" | "Receipt" | "Bill";
+  documentType?: "Bill" | "Sales Invoice" | "Credit Note";
   lineItems: SalesLineItem[];
   requiresJournaling: boolean;
   journalEntries?: JournalEntry[];
