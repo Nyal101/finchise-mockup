@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Trash2, ChevronDown } from "lucide-react";
+import { SalesLineItem } from "./types";
 
 interface LineItemsSectionProps {
   lineItems: SalesLineItem[];
@@ -44,77 +45,6 @@ const accountCodeOptions = [
   { value: "6500", label: "6500 - Marketing" },
   { value: "6600", label: "6600 - Comms" }
 ];
-
-// Searchable Dropdown Component
-const SearchableDropdown = ({ 
-  options, 
-  value, 
-  onValueChange, 
-  placeholder, 
-  className = "" 
-}: {
-  options: string[] | { value: string | number; label: string }[];
-  value: string | number;
-  onValueChange: (value: string | number) => void;
-  placeholder: string;
-  className?: string;
-}) => {
-  const [open, setOpen] = React.useState(false);
-  
-  const displayValue = React.useMemo(() => {
-    if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'object') {
-      const option = (options as { value: string | number; label: string }[]).find(opt => opt.value === value);
-      return option ? option.label : value;
-    }
-    return value;
-  }, [options, value]);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={`w-full justify-between text-left font-normal ${className}`}
-        >
-          {value ? displayValue : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}...`} />
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup>
-            {options.map((option) => {
-              const optionValue = typeof option === 'string' ? option : option.value;
-              const optionLabel = typeof option === 'string' ? option : option.label;
-              
-              return (
-                <CommandItem
-                  key={optionValue}
-                  value={optionValue.toString()}
-                  onSelect={() => {
-                    onValueChange(optionValue);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      value === optionValue ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                  {optionLabel}
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-};
 
 export default function LineItemsSection({ lineItems, setLineItems, isEditing }: LineItemsSectionProps) {
   const [storePopoverStates, setStorePopoverStates] = React.useState<Record<string, boolean>>({});
@@ -210,20 +140,6 @@ export default function LineItemsSection({ lineItems, setLineItems, isEditing }:
       }
       return item;
     }));
-  };
-
-  const getTaxRateDisplay = (vatRate: number) => {
-    const option = taxRateOptions.find(opt => opt.value === vatRate);
-    if (option) {
-      if (vatRate === -1) return "Zero Rated Exp";
-      if (vatRate === -2) return "Zero Rated Inc";
-      if (vatRate === 0) return "No Tax";
-      if (vatRate === 5) return "5% (Income)";
-      if (vatRate === 5.1) return "5% (Expenses)";
-      if (vatRate === 20) return "20% (Income)";
-      if (vatRate === 20.1) return "20% (Expenses)";
-    }
-    return `${vatRate}%`;
   };
 
   return (
