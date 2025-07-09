@@ -15,8 +15,7 @@ import {
   ChevronDown,
   Trash2,
   Table,
-  File,
-  ChevronDown
+  File
 } from "lucide-react";
 import { SalesInvoiceData } from "./components/types";
 import salesInvoices from "./invoiceData";
