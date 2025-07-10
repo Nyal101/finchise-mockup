@@ -34,6 +34,7 @@ export const journalEntries: JournalEntry[] = [
       }
     ],
     scheduleType: "monthly (weekly split)",
+    source: "bill",
   },
   {
     id: "j002",
@@ -61,6 +62,7 @@ export const journalEntries: JournalEntry[] = [
       }
     ],
     scheduleType: "monthly (weekly split)",
+    source: "invoice",
   },
   {
     id: "j004",
@@ -95,6 +97,7 @@ export const journalEntries: JournalEntry[] = [
       }
     ],
     scheduleType: "monthly (equal split)",
+    source: "bill",
   },
   {
     id: "j005",
@@ -122,6 +125,7 @@ export const journalEntries: JournalEntry[] = [
       }
     ],
     scheduleType: "monthly (weekly split)",
+    source: "invoice",
   },
   {
     id: "j007",
@@ -156,6 +160,7 @@ export const journalEntries: JournalEntry[] = [
       }
     ],
     scheduleType: "monthly (equal split)",
+    source: "invoice",
   },
   {
     id: "j008",
@@ -185,6 +190,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Stock Count Sheet"
       }
     ],
+    source: "stock-entry",
   },
   {
     id: "j014",
@@ -214,6 +220,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Week 1 Stock Count Sheet"
       }
     ],
+    source: "stock-entry",
   },
   {
     id: "j009",
@@ -243,6 +250,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Week 2 Stock Count Sheet"
       }
     ],
+    source: "stock-entry",
   },
   {
     id: "j010",
@@ -272,6 +280,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Week 3 Stock Count Sheet"
       }
     ],
+    source: "stock-entry",
   },
   {
     id: "j011",
@@ -301,6 +310,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Week 4 Stock Count Sheet"
       }
     ],
+    source: "stock-entry",
   },
   {
     id: "j012",
@@ -330,6 +340,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Week 5 Stock Count Sheet"
       }
     ],
+    source: "stock-entry",
   },
   {
     id: "j013",
@@ -359,5 +370,6 @@ export const journalEntries: JournalEntry[] = [
         description: "June 2025 Month End Stock Count Sheet"
       }
     ],
+    source: "stock-entry",
   }
 ]; 

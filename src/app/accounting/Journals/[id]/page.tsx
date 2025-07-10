@@ -16,7 +16,8 @@ import {
   Download,
   X,
   ChevronRight,
-  Package
+  Package,
+  RotateCcw
 } from "lucide-react";
 import {
   Select,
@@ -112,25 +113,25 @@ export default function JournalDetailsPage() {
       if (!journal.periodStartDate || !journal.periodEndDate || !journal.expensePaidMonth || !journal.scheduleType) {
         return [];
       }
-      
-      const result = calculateJournal({
-        description: journal.description,
-        totalAmount: journal.totalAmount,
-        expensePaidMonth: journal.expensePaidMonth,
-        periodStartDate: journal.periodStartDate,
-        periodEndDate: journal.periodEndDate,
-        scheduleType: journal.scheduleType,
-        accountCode: journal.accountCode,
-        monthlyAccountCode: journal.monthlyAccountCode,
+    
+    const result = calculateJournal({
+      description: journal.description,
+      totalAmount: journal.totalAmount,
+      expensePaidMonth: journal.expensePaidMonth,
+      periodStartDate: journal.periodStartDate,
+      periodEndDate: journal.periodEndDate,
+      scheduleType: journal.scheduleType,
+      accountCode: journal.accountCode,
+      monthlyAccountCode: journal.monthlyAccountCode,
         status: journal.status as 'published' | 'review' | 'archived',
-      });
+    });
 
-      if (result.error) {
-        console.error(result.error);
-        return [];
-      }
+    if (result.error) {
+      console.error(result.error);
+      return [];
+    }
 
-      return result.monthlyBreakdown;
+    return result.monthlyBreakdown;
     }
   }, [journal]);
 
@@ -279,9 +280,9 @@ export default function JournalDetailsPage() {
                   
                   {/* Journal Items */}
                   {journals.map((j) => (
-                    <div
-                      key={j.id}
-                      onClick={() => router.push(`/accounting/Journals/${j.id}`)}
+            <div
+              key={j.id}
+              onClick={() => router.push(`/accounting/Journals/${j.id}`)}
                       className={`group px-4 py-3 border-b border-gray-100 cursor-pointer transition-all
                         ${j.id === journal?.id 
                           ? 'bg-blue-50 border-l-4 border-l-blue-500 px-3' 
@@ -308,8 +309,8 @@ export default function JournalDetailsPage() {
                             
                             <div>
                               <div className="font-medium text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
-                                {j.title}
-                              </div>
+                    {j.title}
+                  </div>
                               <div className="text-xs text-gray-500 flex items-center gap-2">
                                 {format(
                                   j.type === 'stock' 
@@ -321,10 +322,10 @@ export default function JournalDetailsPage() {
                                 <span className={`font-medium ${j.totalAmount < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                                   {formatCurrency(j.totalAmount)}
                                 </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                  </div>
+                  </div>
+                  </div>
+                </div>
 
                         <div className="flex flex-col items-end gap-1.5 min-w-[100px]">
                           <div className={`text-xs font-medium px-2 py-1 rounded-full
@@ -340,12 +341,12 @@ export default function JournalDetailsPage() {
                               : 'bg-yellow-50 text-yellow-700'}`}
                           >
                             {j.status === 'published' ? '✓' : '⚠️'}
-                            {j.status}
+                    {j.status}
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
                 </div>
               ));
           })()}
@@ -433,13 +434,13 @@ export default function JournalDetailsPage() {
                   <Badge variant="outline" className="capitalize">
                     {journal.type}
                   </Badge>
-                  </div>
+                </div>
                   {journal.sourceDocuments.length > 0 && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900">
                         {journal.sourceDocuments.length} Document{journal.sourceDocuments.length > 1 ? 's' : ''}
                       </span>
-                      <Button
+                          <Button
                         variant="ghost"
                         size="sm"
                         className={`p-1 h-8 w-8 ${showDocuments ? 'bg-gray-100' : ''}`}
@@ -471,127 +472,135 @@ export default function JournalDetailsPage() {
 
             {/* Monthly Breakdown - Only show for non-stock journals or stock journals with breakdown */}
             {(journal.type !== 'stock' || monthlyBreakdown.length > 0) && (
-              <div className="px-4">
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-white p-3 border-b flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-sm">
+            <div className="px-4">
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-white p-3 border-b flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-sm">
                       <h3 className="font-semibold">
                         {journal.type === 'stock' ? 'Journal Entry' : 'Monthly Breakdown'}
                       </h3>
-                      <div className="flex items-center gap-4 text-xs">
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <div className="flex items-center gap-4 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
                           <span>Published</span>
-                        </div>
-                        <div className="flex items-center gap-1">
+                      </div>
+                      <div className="flex items-center gap-1">
                           <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                           <span>Review</span>
                         </div>
                       </div>
                     </div>
                     {journal.type !== 'stock' && (
-                      <div className="text-xs text-muted-foreground">
-                        Scroll horizontally to view all months →
-                      </div>
-                    )}
+                  <div className="text-xs text-muted-foreground">
+                    Scroll horizontally to view all months →
                   </div>
-                  
-                  <div className="bg-gray-50/50">
-                    {/* Monthly Cards */}
+                    )}
+                </div>
+                
+                <div className="bg-gray-50/50">
+                  {/* Monthly Cards */}
                     <div className={journal.type === 'stock' ? 'p-3' : 'overflow-x-auto'}>
                       <div className={journal.type === 'stock' ? '' : `flex gap-3 p-3`} style={journal.type !== 'stock' ? { minWidth: `${monthlyBreakdown.length * 260}px` } : {}}>
-                        {monthlyBreakdown
-                          .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
-                          .map((breakdown) => {
-                            const monthDate = new Date(breakdown.month + "-01");
-                            const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
-                            const isSelected = selectedMonth === breakdown.month;
+                      {monthlyBreakdown
+                        .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
+                        .map((breakdown) => {
+                          const monthDate = new Date(breakdown.month + "-01");
+                          const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
+                          const isSelected = selectedMonth === breakdown.month;
 
-                            return (
+                          return (
                               <div key={breakdown.month} className={journal.type === 'stock' ? 'w-full' : 'w-[260px]'}>
-                                <div
-                                  className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
-                                    isCurrentMonth
-                                      ? 'border-purple-500 bg-purple-50 shadow-lg'
-                                      : breakdown.status === 'published'
-                                      ? 'border-green-500 bg-green-50'
-                                      : 'border-yellow-500 bg-yellow-50'
-                                  } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                              <div
+                                className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
+                                  breakdown.status === 'published'
+                                    ? 'border-green-500 bg-green-50'
+                                    : 'border-yellow-500 bg-yellow-50'
+                                } ${isCurrentMonth && !isSelected ? 'ring-2 ring-blue-300' : ''} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
                                   onClick={() => handleMonthSelect(breakdown.month)}
-                                >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="font-semibold text-base">{format(monthDate, "MMM yyyy")}</span>
-                                    <div className="flex items-center gap-2">
-                                      <Badge
-                                        variant="outline"
-                                        className={
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-semibold text-base flex items-center gap-1">
+                                    {isCurrentMonth && (
+                                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500" title="Current month"></span>
+                                    )}
+                                     {format(monthDate, "MMM yyyy")}
+                                   </span>
+                                  <div className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={
                                           breakdown.status === 'published'
-                                            ? 'bg-green-100 text-green-800 border-green-200'
+                                          ? 'bg-green-100 text-green-800 border-green-200'
                                             : 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                        }
-                                      >
-                                        {breakdown.status}
-                                      </Badge>
-                                      {isSelected ? (
-                                        <ChevronUp className="h-4 w-4 text-blue-500" />
-                                      ) : (
-                                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                                      )}
-                                    </div>
+                                      }
+                                    >
+                                      {breakdown.status}
+                                    </Badge>
+                                    {breakdown.isReversing && (
+                                      <span title="Reversing entry">
+                                        <RotateCcw className="h-4 w-4 text-purple-600" />
+                                      </span>
+                                    )}
+                                    {isSelected ? (
+                                      <ChevronUp className="h-4 w-4 text-blue-500" />
+                                    ) : (
+                                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    )}
                                   </div>
+                                </div>
                                   {journal.type === 'stock' && (
                                     <div className="flex justify-between text-muted-foreground">
                                       <span>Stock Movement</span>
                                       <span className="font-mono">{formatCurrency(breakdown.amount)}</span>
                                     </div>
                                   )}
-                                  {journal.type === 'prepayment' && (
-                                    <>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Prepay Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
-                                      </div>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Expense Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
-                                      </div>
-                                    </>
-                                  )}
-                                  {journal.type === 'accrual' && (
-                                    <>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Accrual Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
-                                      </div>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Expense Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
+                                {journal.type === 'prepayment' && (
+                                  <>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Prepay Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Expense Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                    </div>
+                                  </>
+                                )}
+                                {journal.type === 'accrual' && (
+                                  <>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Accrual Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Expense Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
-                            );
-                          })}
-                      </div>
+                            </div>
+                          );
+                        })}
                     </div>
+                  </div>
 
                     {/* Line Items Section */}
-                    {selectedMonth && (() => {
-                      const breakdown = monthlyBreakdown.find(b => b.month === selectedMonth);
-                      if (!breakdown) return null;
+                  {selectedMonth && (() => {
+                    const breakdown = monthlyBreakdown.find(b => b.month === selectedMonth);
+                    if (!breakdown) return null;
 
-                      return (
+                    return (
                         <JournalLineItems
                           key={`${params.id}-${selectedMonth}`}
                           selectedMonth={selectedMonth}
                           breakdown={breakdown}
                         />
-                      );
-                    })()}
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
+            </div>
             )}
           </div>
 

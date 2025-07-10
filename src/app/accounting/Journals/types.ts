@@ -35,35 +35,47 @@ export interface MonthlyBreakdown {
   prepayBalance: number;
   expenseBalance: number;
   amount: number;
+  /**
+   * Indicates this entry is the reversing journal entry created in the paid month.
+   */
+  isReversing?: boolean;
 }
 
 export interface JournalEntry {
   id: string;
-  type: JournalType;
+  type: "prepayment" | "accrual" | "stock";
   title: string;
   description: string;
   company: string;
   accountCode: string;
   monthlyAccountCode: string;
+  stockAccountCode?: string;
+  stockMovementAccountCode?: string;
   category: string;
   totalAmount: number;
-  expensePaidMonth?: Date; // Optional for stock journals
-  periodStartDate?: Date; // Optional for stock journals
-  periodEndDate?: Date;   // Optional for stock journals
-  store: string;
-  status: 'published' | 'review' | 'archived';
-  createdDate: Date;
-  sourceDocuments: JournalDocument[];
-  scheduleType?: ScheduleType; // Optional for stock journals
-  monthlyBreakdown?: MonthlyBreakdown[];
-  
-  // Stock-specific fields
+  expensePaidMonth?: Date;
+  periodStartDate?: Date;
+  periodEndDate?: Date;
   openingStockDate?: Date;
   openingStockValue?: number;
   closingStockDate?: Date;
   closingStockValue?: number;
-  stockMovementAccountCode?: string;
-  stockAccountCode?: string;
+  store: string;
+  status: "published" | "review" | "archived";
+  createdDate: Date;
+  sourceDocuments: {
+    id: string;
+    type: string;
+    reference: string;
+    url: string;
+    description: string;
+  }[];
+  scheduleType?: ScheduleType;
+  /**
+   * Optional cached monthly breakdown (used by UI when editing in memory)
+   */
+  monthlyBreakdown?: MonthlyBreakdown[];
+  source: "bill" | "invoice" | "stock-entry";
 }
 
 export interface PrepaymentAccrualEntry {

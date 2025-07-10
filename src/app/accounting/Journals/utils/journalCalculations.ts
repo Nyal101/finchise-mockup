@@ -133,12 +133,13 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
     month: paidMonthStr,
     amount: totalAmount,
     status: status, // Use journal's status
+    isReversing: true,
     prepayBalance: totalAmount,
     expenseBalance: 0,
     lineItems: type === 'prepayment' ? [
       {
         id: `li_rev_pre_a_${paidMonthStr}`,
-        accountCode: monthlyAccountCode,
+        accountCode: accountCode, // Prepayment account
         description: `Initial ${description}`,
         debitAmount: totalAmount,
         creditAmount: 0,
@@ -148,7 +149,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
       },
       {
         id: `li_rev_pre_b_${paidMonthStr}`,
-        accountCode: accountCode,
+        accountCode: monthlyAccountCode, // Transfer account
         description: 'To Prepayment',
         debitAmount: 0,
         creditAmount: totalAmount,
@@ -207,6 +208,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
       month: period.month,
       amount,
       status: status, // Use journal's status for all entries
+      isReversing: false,
       prepayBalance: totalAmount - runningExpenseTotal,
       expenseBalance: runningExpenseTotal,
       lineItems: type === 'prepayment' ? [
@@ -276,7 +278,6 @@ interface StockJournalInput {
 export function calculateStockJournal(input: StockJournalInput): JournalCalculationResult {
   const {
     description,
-    openingStockDate,
     openingStockValue,
     closingStockDate,
     closingStockValue,
