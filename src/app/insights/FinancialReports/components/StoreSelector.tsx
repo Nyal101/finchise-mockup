@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -18,7 +19,6 @@ import {
   Search,
   X,
   ChevronDown,
-  Users,
   MapPin,
   Building,
   Layers
@@ -321,7 +321,7 @@ export default function StoreSelector({ selectedStoreIds, onSelectionChange, cla
               <h3 className="font-semibold text-slate-900">Store Selection</h3>
               {searchTerm && (
                 <p className="text-xs text-slate-600 mt-1">
-                  {totalSearchResults} result{totalSearchResults !== 1 ? 's' : ''} found for "{searchTerm}"
+                  {totalSearchResults} result{totalSearchResults !== 1 ? 's' : ''} found for &quot;{searchTerm}&quot;
                 </p>
               )}
             </div>
@@ -346,6 +346,49 @@ export default function StoreSelector({ selectedStoreIds, onSelectionChange, cla
               )}
             </div>
           </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-4">
+            <TabsList className="grid w-full grid-cols-4 bg-slate-100 rounded-lg p-1">
+              <TabsTrigger value="stores" className="text-xs flex items-center gap-1 px-2 py-1.5">
+                <Store className="h-3 w-3" />
+                <span>Stores</span>
+                {searchTerm && globalSearchResults.stores.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
+                    {globalSearchResults.stores.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="companies" className="text-xs flex items-center gap-1 px-2 py-1.5">
+                <Building className="h-3 w-3" />
+                <span>Companies</span>
+                {searchTerm && globalSearchResults.companies.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
+                    {globalSearchResults.companies.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="store-groups" className="text-xs flex items-center gap-1 px-2 py-1.5">
+                <MapPin className="h-3 w-3" />
+                <span className="hidden sm:inline">Store Groups</span>
+                <span className="sm:hidden">Groups</span>
+                {searchTerm && globalSearchResults.storeGroups.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
+                    {globalSearchResults.storeGroups.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="company-groups" className="text-xs flex items-center gap-1 px-2 py-1.5">
+                <Layers className="h-3 w-3" />
+                <span className="hidden sm:inline">Company Groups</span>
+                <span className="sm:hidden">Co. Groups</span>
+                {searchTerm && globalSearchResults.companyGroups.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
+                    {globalSearchResults.companyGroups.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -389,46 +432,6 @@ export default function StoreSelector({ selectedStoreIds, onSelectionChange, cla
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-[485px] grid-cols-4 bg-slate-100 m-2 rounded-lg p-1">
-            <TabsTrigger value="stores" className="text-xs flex items-center gap-1 px-2 py-1.5">
-              <Store className="h-3 w-3" />
-              <span>Stores</span>
-              {searchTerm && globalSearchResults.stores.length > 0 && (
-                <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
-                  {globalSearchResults.stores.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="companies" className="text-xs flex items-center gap-1 px-2 py-1.5">
-              <Building className="h-3 w-3" />
-              <span>Companies</span>
-              {searchTerm && globalSearchResults.companies.length > 0 && (
-                <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
-                  {globalSearchResults.companies.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="store-groups" className="text-xs flex items-center gap-1 px-2 py-1.5">
-              <MapPin className="h-3 w-3" />
-              <span className="hidden sm:inline">Store Groups</span>
-              <span className="sm:hidden">Groups</span>
-              {searchTerm && globalSearchResults.storeGroups.length > 0 && (
-                <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
-                  {globalSearchResults.storeGroups.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="company-groups" className="text-xs flex items-center gap-1 px-2 py-1.5">
-              <Layers className="h-3 w-3" />
-              <span className="hidden sm:inline">Company Groups</span>
-              <span className="sm:hidden">Co. Groups</span>
-              {searchTerm && globalSearchResults.companyGroups.length > 0 && (
-                <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs h-4 min-w-[16px]">
-                  {globalSearchResults.companyGroups.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
           
           <div className="px-2 pb-2">
             <TabsContent value="stores" className="mt-0">

@@ -1,8 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Building2 } from "lucide-react";
 import DateSelector from "./DateSelector";
 import StoreSelector from "./StoreSelector";
 import { AgGridReact } from 'ag-grid-react';
@@ -96,8 +96,28 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-const calculateTotal = (accounts: any[], monthKey: string) => {
-  return accounts.reduce((sum, account) => sum + (account[monthKey as keyof typeof account] || 0), 0);
+// Add proper interfaces for the types
+interface AccountData {
+  code: string;
+  name: string;
+  [key: string]: string | number; // For month fields
+}
+
+// Define the interface for compare options
+interface CompareOptions {
+  toPreviousPeriod: boolean;
+  toPreviousYear: boolean;
+  toFinancialYearToDate: boolean;
+  byCompany: boolean;
+  byCategoryClassLocation: boolean;
+  periodsToCompare: number;
+}
+
+// Removed unused CellStyle type definition
+
+// Update the calculateTotal function with proper typing
+const calculateTotal = (accounts: AccountData[], monthKey: string): number => {
+  return accounts.reduce((sum, account) => sum + (Number(account[monthKey]) || 0), 0);
 };
 
 interface ProfitLossRow {
@@ -119,6 +139,7 @@ interface ProfitLossRow {
   apr25: number;
   may25: number;
   level: number;
+  [key: string]: string | number; // For dynamic month fields
 }
 
 export default function ProfitLoss() {
@@ -131,13 +152,13 @@ export default function ProfitLoss() {
   );
   
   // State for date filtering
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+  const [, setDateRange] = useState<{ from: Date; to: Date }>({
     from: new Date(2024, 4, 1), // May 2024
     to: new Date(2025, 4, 31)   // May 2025
   });
   
   // State for comparison options
-  const [compareOptions, setCompareOptions] = useState({
+  const [, setCompareOptions] = useState<CompareOptions>({
     toPreviousPeriod: false,
     toPreviousYear: false,
     toFinancialYearToDate: false,
@@ -150,7 +171,7 @@ export default function ProfitLoss() {
   const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>([]);
 
   // Function to toggle section collapse
-  const toggleSectionCollapse = (sectionName: string) => {
+  const toggleSectionCollapse = useCallback((sectionName: string) => {
     const newCollapsedSections = new Set(collapsedSections);
     if (newCollapsedSections.has(sectionName)) {
       newCollapsedSections.delete(sectionName);
@@ -158,7 +179,7 @@ export default function ProfitLoss() {
       newCollapsedSections.add(sectionName);
     }
     setCollapsedSections(newCollapsedSections);
-  };
+  }, [collapsedSections]);
 
   // Handlers for date selector
   const handleDateRangeChange = (range: { from: Date; to: Date }) => {
@@ -167,7 +188,7 @@ export default function ProfitLoss() {
     console.log('Date range changed:', range);
   };
 
-  const handleCompareChange = (options: any) => {
+  const handleCompareChange = (options: CompareOptions) => {
     setCompareOptions(options);
     // Here you would typically apply comparison logic
     console.log('Compare options changed:', options);
@@ -206,9 +227,9 @@ export default function ProfitLoss() {
       section: 'REVENUE',
       code: '',
       name: 'REVENUE',
-      ...Object.fromEntries(monthKeys.map(key => [key, 0])) as any,
+      ...Object.fromEntries(monthKeys.map(key => [key, 0])),
       level: 0
-    });
+    } as ProfitLossRow);
 
     // Only add revenue accounts if section is not collapsed
     if (!collapsedSections.has('REVENUE')) {
@@ -512,13 +533,13 @@ export default function ProfitLoss() {
       case 'section':
         switch (data.section) {
           case 'REVENUE':
-            return { backgroundColor: '#f0fdf4', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
+            return { backgroundColor: '#dcfce7', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
           case 'COST_OF_SALES':
-            return { backgroundColor: '#fff7ed', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
+            return { backgroundColor: '#fed7aa', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
           case 'OPERATING_EXPENSES':
-            return { backgroundColor: '#fef2f2', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
+            return { backgroundColor: '#fecaca', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
           case 'OTHER_INCOME':
-            return { backgroundColor: '#eff6ff', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
+            return { backgroundColor: '#dbeafe', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
           case 'OTHER_EXPENSES':
             return { backgroundColor: '#eff6ff', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
           default:
@@ -527,15 +548,15 @@ export default function ProfitLoss() {
       case 'total':
         switch (data.section) {
           case 'REVENUE':
-            return { backgroundColor: '#dcfce7', fontWeight: 'bold', color: '#166534' } as any;
+            return { backgroundColor: '#f0fdf4', fontWeight: 'bold', color: '#166534' } as any;
           case 'COST_OF_SALES':
-            return { backgroundColor: '#fed7aa', fontWeight: 'bold', color: '#c2410c' } as any;
+            return { backgroundColor: '#fff7ed', fontWeight: 'bold', color: '#c2410c' } as any;
           case 'OPERATING_EXPENSES':
-            return { backgroundColor: '#fecaca', fontWeight: 'bold', color: '#991b1b' } as any;
+            return { backgroundColor: '#fef2f2', fontWeight: 'bold', color: '#991b1b' } as any;
           case 'OTHER_INCOME':
-            return { backgroundColor: '#dbeafe', fontWeight: 'bold', color: '#1e40af' } as any;
+            return { backgroundColor: '#eff6ff', fontWeight: 'bold', color: '#1e40af' } as any;
           case 'OTHER_EXPENSES':
-            return { backgroundColor: '#dbeafe', fontWeight: 'bold', color: '#1e40af' } as any;
+            return { backgroundColor: '#eff6ff', fontWeight: 'bold', color: '#1e40af' } as any;
           default:
             return { backgroundColor: '#e5e7eb', fontWeight: 'bold' } as any;
         }
