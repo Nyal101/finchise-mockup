@@ -9,7 +9,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
-import { ColDef, ICellRendererParams, RowClassParams } from 'ag-grid-community';
+import { ColDef, ColGroupDef, ICellRendererParams, RowClassParams } from 'ag-grid-community';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 // Register modules immediately
@@ -32,7 +32,8 @@ const csvData = {
     { code: "4906", name: "RENTAL VEHICLE RECONCILE", may24: 0, jun24: 0, jul24: 0, aug24: 0, sep24: 0, oct24: 1737.73, nov24: 571.58, dec24: 1092.98, jan25: 0, feb25: 108.84, mar25: 0, apr25: 0, may25: 0 },
     { code: "4908", name: "Profit on sale of Motor Vehicle", may24: 0, jun24: 0, jul24: 0, aug24: 0, sep24: 0, oct24: 0, nov24: 0, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 }
   ],
-  costOfSales: [
+  // Food-related costs
+  foodCosts: [
     { code: "5000", name: "Food - Ice Cream & Drinks", may24: 29950.24, jun24: 28714.93, jul24: 35616.35, aug24: 26710.69, sep24: 507504.42, oct24: 32639.83, nov24: 37307.31, dec24: 39471.33, jan25: 32270.29, feb25: 34654.37, mar25: 42638.22, apr25: 39023.07, may25: 36344.09 },
     { code: "5001", name: "Food - Food with VAT", may24: 675930.74, jun24: 678132.35, jul24: 666697.77, aug24: 639033.26, sep24: 735322.27, oct24: 1027763.66, nov24: 982787.55, dec24: 1151052.69, jan25: 874698.99, feb25: 906610.12, mar25: 1004268.46, apr25: 953611.91, may25: 997769.57 },
     { code: "5002", name: "Food - Food Non VAT", may24: 83575.15, jun24: 84544.86, jul24: 82365.86, aug24: 77907.72, sep24: 89960.16, oct24: 120021.92, nov24: 121331.80, dec24: 143097.52, jan25: 100946.56, feb25: 108310.04, mar25: 120729.09, apr25: 117095.14, may25: 118629.89 },
@@ -44,10 +45,13 @@ const csvData = {
     { code: "5100", name: "Food - Delivery (Dominos)", may24: 37350.39, jun24: 36804.77, jul24: 38502.56, aug24: 38581.88, sep24: 47393.92, oct24: 53678.08, nov24: 51613.04, dec24: 52311.99, jan25: 54723.11, feb25: 49375.04, mar25: 53748.01, apr25: 53240.46, may25: 55765.80 },
     { code: "5109", name: "UBER EATS DELIVERY", may24: 2867.82, jun24: 2018.92, jul24: 2379.86, aug24: 1686.63, sep24: 2244.07, oct24: 3093.19, nov24: 4856.49, dec24: 6498.27, jan25: 10700.68, feb25: 5761.15, mar25: 6377.97, apr25: 7128.26, may25: 8341.57 },
     { code: "5110", name: "JUST EATS DELIVERY", may24: 8750.55, jun24: 7143.43, jul24: 11293.18, aug24: 9320.68, sep24: 8440.17, oct24: 10914.50, nov24: 14441.62, dec24: 17078.92, jan25: 22400.10, feb25: 21727.71, mar25: 26683.61, apr25: 25314.36, may25: 17174.94 },
-    { code: "5111", name: "Direct Labour", may24: 0, jun24: 0, jul24: 0, aug24: 0, sep24: 0, oct24: 0, nov24: 0, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 },
     { code: "5112", name: "Cost of Sales -Other", may24: 0, jun24: 0, jul24: 0, aug24: 0, sep24: 61588.63, oct24: 0, nov24: 0, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 },
     { code: "5200", name: "Opening Stock", may24: 175546.77, jun24: 162554.51, jul24: 173511.75, aug24: 133823.22, sep24: 261999.91, oct24: 134196.01, nov24: 260693.48, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 },
-    { code: "5201", name: "Closing Stock", may24: -162554.51, jun24: -151379.31, jul24: -183341.20, aug24: -140985.34, sep24: -193406.01, oct24: -194387.26, nov24: -235323.43, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 },
+    { code: "5201", name: "Closing Stock", may24: -162554.51, jun24: -151379.31, jul24: -183341.20, aug24: -140985.34, sep24: -193406.01, oct24: -194387.26, nov24: -235323.43, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 }
+  ],
+  // Labour-related costs
+  labourCosts: [
+    { code: "5111", name: "Direct Labour", may24: 0, jun24: 0, jul24: 0, aug24: 0, sep24: 0, oct24: 0, nov24: 0, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 },
     { code: "5204", name: "Direct labour", may24: 0, jun24: 50903.26, jul24: 0, aug24: 0, sep24: 0, oct24: 0, nov24: 0, dec24: 0, jan25: 0, feb25: 0, mar25: 0, apr25: 0, may25: 0 },
     { code: "7002", name: "Holiday pay/ Statutory Pay/ Bonus", may24: 0, jun24: 0, jul24: 0, aug24: 0, sep24: 0, oct24: 0, nov24: 85837.48, dec24: 78099.21, jan25: 91887.74, feb25: 81538.43, mar25: 156613.66, apr25: 0, may25: 0 },
     { code: "7003", name: "Employer NICs/ Pension- Recharge", may24: 0, jun24: 0, jul24: 0, aug24: 0, sep24: 0, oct24: 0, nov24: 1233.73, dec24: 1365.80, jan25: 1075.14, feb25: 983.26, mar25: 0, apr25: 5.74, may25: 30.01 },
@@ -152,7 +156,7 @@ export default function ProfitLoss() {
   
   // State to track which sections are collapsed - all sections collapsed by default
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
-    new Set(['REVENUE', 'COST_OF_SALES', 'OPERATING_EXPENSES', 'OTHER_INCOME', 'OTHER_EXPENSES'])
+    new Set(['REVENUE', 'COST_OF_SALES', 'FOOD_COSTS', 'LABOUR_COSTS', 'OPERATING_EXPENSES', 'OTHER_INCOME', 'OTHER_EXPENSES'])
   );
   
   // State for date filtering
@@ -179,6 +183,7 @@ export default function ProfitLoss() {
   const [compareToPreviousYear, setCompareToPreviousYear] = useState(false);
   const [showPercentOfSales, setShowPercentOfSales] = useState(false);
   const [showAverageColumn, setShowAverageColumn] = useState(false);
+  const [showStoreBreakdown, setShowStoreBreakdown] = useState(false);
 
   // Function to toggle section collapse
   const toggleSectionCollapse = useCallback((sectionName: string) => {
@@ -253,8 +258,9 @@ export default function ProfitLoss() {
 
   // Calculate totals for each month
   const revenueTotals = monthKeys.map(month => calculateTotal(csvData.revenue, month));
-  const cosTotals = monthKeys.map(month => calculateTotal(csvData.costOfSales, month));
-  const grossProfits = monthKeys.map((month, index) => revenueTotals[index] - cosTotals[index]);
+  const foodCostsTotals = monthKeys.map(month => calculateTotal(csvData.foodCosts, month));
+  const labourCostsTotals = monthKeys.map(month => calculateTotal(csvData.labourCosts, month));
+  const grossProfits = monthKeys.map((month, index) => revenueTotals[index] - (foodCostsTotals[index] + labourCostsTotals[index]));
   const expenseTotals = monthKeys.map(month => calculateTotal(csvData.operatingExpenses, month));
   const operatingProfits = monthKeys.map((month, index) => grossProfits[index] - expenseTotals[index]);
   const otherIncomeTotals = monthKeys.map(month => calculateTotal(csvData.otherIncome, month));
@@ -265,8 +271,9 @@ export default function ProfitLoss() {
   // Generate mock previous year data (random variations of current data)
   const generatePreviousYearData = useMemo(() => {
     const pyRevenueTotals = revenueTotals.map(val => val * (0.85 + Math.random() * 0.3));
-    const pyCosTotals = cosTotals.map(val => val * (0.85 + Math.random() * 0.3));
-    const pyGrossProfits = pyRevenueTotals.map((rev, index) => rev - pyCosTotals[index]);
+    const pyFoodCostsTotals = foodCostsTotals.map(val => val * (0.85 + Math.random() * 0.3));
+    const pyLabourCostsTotals = labourCostsTotals.map(val => val * (0.85 + Math.random() * 0.3));
+    const pyGrossProfits = pyRevenueTotals.map((rev, index) => rev - (pyFoodCostsTotals[index] + pyLabourCostsTotals[index]));
     const pyExpenseTotals = expenseTotals.map(val => val * (0.85 + Math.random() * 0.3));
     const pyOperatingProfits = pyGrossProfits.map((gp, index) => gp - pyExpenseTotals[index]);
     const pyOtherIncomeTotals = otherIncomeTotals.map(val => val * (0.85 + Math.random() * 0.3));
@@ -276,7 +283,8 @@ export default function ProfitLoss() {
     
     return {
       revenue: pyRevenueTotals,
-      costOfSales: pyCosTotals,
+      foodCosts: pyFoodCostsTotals,
+      labourCosts: pyLabourCostsTotals,
       grossProfits: pyGrossProfits,
       operatingExpenses: pyExpenseTotals,
       operatingProfits: pyOperatingProfits,
@@ -285,7 +293,7 @@ export default function ProfitLoss() {
       totalOtherProfits: pyTotalOtherProfits,
       netProfits: pyNetProfits
     };
-  }, [revenueTotals, cosTotals, expenseTotals, otherIncomeTotals, otherExpensesTotals]);
+  }, [revenueTotals, foodCostsTotals, labourCostsTotals, expenseTotals, otherIncomeTotals, otherExpensesTotals]);
 
   // Calculate row totals for Total Column
   const calculateRowTotal = useCallback((row: ProfitLossRow) => {
@@ -362,16 +370,51 @@ export default function ProfitLoss() {
       level: 0
     });
 
-    // Only add cost of sales accounts if section is not collapsed
+    // Only add cost of sales subsections if section is not collapsed
     if (!collapsedSections.has('COST_OF_SALES')) {
-      csvData.costOfSales.forEach(account => {
-        rows.push({
-          rowType: 'account',
-          section: 'COST_OF_SALES',
-          ...account,
-          level: 1
-        } as ProfitLossRow);
+      // FOOD COSTS SUBSECTION
+      rows.push({
+        rowType: 'section',
+        section: 'FOOD_COSTS',
+        code: '',
+        name: 'Food Costs',
+        ...Object.fromEntries(monthKeys.map((key, index) => [key, foodCostsTotals[index]])) as any,
+        level: 1
       });
+
+      // Only add food cost accounts if food costs subsection is not collapsed
+      if (!collapsedSections.has('FOOD_COSTS')) {
+        csvData.foodCosts.forEach(account => {
+          rows.push({
+            rowType: 'account',
+            section: 'FOOD_COSTS',
+            ...account,
+            level: 2
+          } as ProfitLossRow);
+        });
+      }
+
+      // LABOUR COSTS SUBSECTION
+      rows.push({
+        rowType: 'section',
+        section: 'LABOUR_COSTS',
+        code: '',
+        name: 'Labour Costs',
+        ...Object.fromEntries(monthKeys.map((key, index) => [key, labourCostsTotals[index]])) as any,
+        level: 1
+      });
+
+      // Only add labour cost accounts if labour costs subsection is not collapsed
+      if (!collapsedSections.has('LABOUR_COSTS')) {
+        csvData.labourCosts.forEach(account => {
+          rows.push({
+            rowType: 'account',
+            section: 'LABOUR_COSTS',
+            ...account,
+            level: 2
+          } as ProfitLossRow);
+        });
+      }
     }
 
     // Cost of Sales Total
@@ -380,7 +423,7 @@ export default function ProfitLoss() {
       section: 'COST_OF_SALES',
       code: '',
       name: 'Total Cost of Sales',
-      ...Object.fromEntries(monthKeys.map((key, index) => [key, cosTotals[index]])) as any,
+      ...Object.fromEntries(monthKeys.map((key, index) => [key, foodCostsTotals[index] + labourCostsTotals[index]])) as any,
       level: 0
     });
 
@@ -561,23 +604,82 @@ export default function ProfitLoss() {
     });
 
     return rows;
-  }, [revenueTotals, cosTotals, grossProfits, expenseTotals, operatingProfits, otherIncomeTotals, otherExpensesTotals, totalOtherProfits, netProfits, collapsedSections]);
+  }, [revenueTotals, foodCostsTotals, labourCostsTotals, grossProfits, expenseTotals, operatingProfits, otherIncomeTotals, otherExpensesTotals, totalOtherProfits, netProfits, collapsedSections]);
+
+  // Get selected store names for header grouping
+  const getSelectedStoreNames = useMemo(() => {
+    if (selectedStoreIds.length === 0 && !showStoreBreakdown) {
+      return ['All Stores']; // Default when no specific stores selected
+    }
+    
+    // If showStoreBreakdown is enabled, show sample stores even if none selected
+    if (selectedStoreIds.length === 0 && showStoreBreakdown) {
+      return ['SHEERNESS', 'SITTINGBOURNE', 'HERNE BAY']; // Sample stores for demonstration
+    }
+    
+    // Mock store data - in a real app, this would come from the store selector
+    const storeNames: Record<string, string> = {
+      '28684': 'SHEERNESS',
+      '28260': 'SITTINGBOURNE', 
+      '28862': 'HERNE BAY',
+      '28921': 'HEATHFIELD',
+      '28868': 'PADDOCK WOOD',
+      '29130': 'SOUTHBOROUGH',
+      '28115': 'TUNBRIDGE WELLS',
+      '29123': 'HONOR OAK',
+      '28109': 'ORPINGTON',
+      '28621': 'ST PAULS CRAY',
+      '29200': 'DARTFORD',
+      '28345': 'GRAVESEND',
+      '28456': 'BEXLEYHEATH',
+      '28567': 'CANTERBURY',
+      '28678': 'MAIDSTONE',
+      '28789': 'CHATHAM',
+      '28890': 'GILLINGHAM',
+      '28901': 'ROCHESTER',
+      '29012': 'STROOD',
+      '29124': 'RAINHAM'
+    };
+    
+    return selectedStoreIds.map(id => storeNames[id] || `Store ${id}`);
+  }, [selectedStoreIds, showStoreBreakdown]);
 
   // Cell renderer for currency values
   const CurrencyCellRenderer = useCallback((params: ICellRendererParams) => {
-    const value = params.value;
     const data = params.data as ProfitLossRow;
     const colId = params.column?.getColId();
     
     // Don't show currency for spacing rows
     if (data.section === 'SPACING') return '';
     
+    // Handle store-specific columns
+    let value = params.value;
+    let monthIndex = -1;
+    
+    if (colId?.includes('_store_')) {
+      // Extract month and store info from column ID
+      const monthKey = colId.split('_store_')[0];
+      monthIndex = monthKeys.indexOf(monthKey);
+      
+      if (monthIndex !== -1) {
+        // Get the original value for this month
+        const originalValue = Number(data[monthKeys[monthIndex]]) || 0;
+        const storeCount = getSelectedStoreNames.length;
+        
+        // For demonstration, divide the value evenly across stores
+        // In a real app, you'd have actual store-specific data
+        value = originalValue / Math.max(storeCount, 1);
+      }
+    } else {
+      // Regular column
+      monthIndex = monthKeys.indexOf(colId || '');
+      value = params.value;
+    }
+    
+    const isValidMonth = monthIndex !== -1;
+    
     // Don't show £0 for zero values
     if (typeof value !== 'number' || value === 0) return '';
-    
-    // Get month index for percentage calculation
-    const monthIndex = monthKeys.indexOf(colId || '');
-    const isValidMonth = monthIndex !== -1;
     
     // Determine text color based on profit/loss and comparisons
     let textColor = '#374151';
@@ -591,7 +693,9 @@ export default function ProfitLoss() {
     if (compareToPreviousYear && data.rowType === 'total' && isValidMonth) {
       let pyValue = 0;
       if (data.section === 'REVENUE') pyValue = generatePreviousYearData.revenue[monthIndex];
-      else if (data.section === 'COST_OF_SALES') pyValue = generatePreviousYearData.costOfSales[monthIndex];
+      else if (data.section === 'COST_OF_SALES') pyValue = generatePreviousYearData.foodCosts[monthIndex] + generatePreviousYearData.labourCosts[monthIndex];
+      else if (data.section === 'FOOD_COSTS') pyValue = generatePreviousYearData.foodCosts[monthIndex];
+      else if (data.section === 'LABOUR_COSTS') pyValue = generatePreviousYearData.labourCosts[monthIndex];
       else if (data.section === 'OPERATING_EXPENSES') pyValue = generatePreviousYearData.operatingExpenses[monthIndex];
       else if (data.section === 'OTHER_INCOME') pyValue = generatePreviousYearData.otherIncome[monthIndex];
       else if (data.section === 'OTHER_EXPENSES') pyValue = generatePreviousYearData.otherExpenses[monthIndex];
@@ -604,7 +708,11 @@ export default function ProfitLoss() {
     
     const formattedValue = formatCurrency(value);
     
-    if (showPercentOfSales && isValidMonth && data.rowType !== 'section') {
+    // Show percentage of sales for most rows, including Food/Labour cost section headers
+    const shouldShowPercentage = showPercentOfSales && isValidMonth && 
+      (data.rowType !== 'section' || data.section === 'FOOD_COSTS' || data.section === 'LABOUR_COSTS');
+    
+    if (shouldShowPercentage) {
       const percentage = calculatePercentOfSales(value, monthIndex);
       return (
         <div className="flex flex-col">
@@ -628,7 +736,7 @@ export default function ProfitLoss() {
         {formattedValue}
       </span>
     );
-  }, [showPercentOfSales, compareToPreviousYear, calculatePercentOfSales, generatePreviousYearData]);
+  }, [showPercentOfSales, compareToPreviousYear, calculatePercentOfSales, generatePreviousYearData, getSelectedStoreNames]);
 
   // Cell renderer for account names with indentation and collapse/expand functionality
   const AccountNameCellRenderer = useCallback((params: ICellRendererParams) => {
@@ -637,11 +745,14 @@ export default function ProfitLoss() {
     
     // Check if this is a collapsible section
     const isCollapsibleSection = data.rowType === 'section' && 
-      ['REVENUE', 'COST_OF_SALES', 'OPERATING_EXPENSES', 'OTHER_INCOME', 'OTHER_EXPENSES'].includes(data.section);
+      ['REVENUE', 'COST_OF_SALES', 'FOOD_COSTS', 'LABOUR_COSTS', 'OPERATING_EXPENSES', 'OTHER_INCOME', 'OTHER_EXPENSES'].includes(data.section);
     
     // Don't show code for section headers, totals, or spacing rows
     const showCode = data.rowType === 'account' && data.code;
     const displayText = showCode ? `${data.code} - ${data.name}` : data.name;
+    
+    // Check if this is a "Total" row for right alignment
+    const isTotalRow = data.rowType === 'total' && data.name.startsWith('Total');
     
     if (isCollapsibleSection) {
       const isCollapsed = collapsedSections.has(data.section);
@@ -665,7 +776,11 @@ export default function ProfitLoss() {
     }
     
     return (
-      <div style={{ paddingLeft: `${paddingLeft}px` }}>
+      <div style={{ 
+        paddingLeft: `${paddingLeft}px`,
+        textAlign: isTotalRow ? 'right' : 'left',
+        paddingRight: isTotalRow ? '16px' : '0px'
+      }}>
         {displayText}
       </div>
     );
@@ -687,6 +802,17 @@ export default function ProfitLoss() {
     
     switch (data.rowType) {
       case 'section':
+        // Food and Labour costs subsections with lighter background
+        if (data.section === 'FOOD_COSTS' || data.section === 'LABOUR_COSTS') {
+          return { 
+            backgroundColor: '#f8f9fa', 
+            fontWeight: 'bold', 
+            fontSize: 15, 
+            color: '#1e293b',
+            borderTop: '1px solid #e5e7eb',
+            borderBottom: '1px solid #e5e7eb'
+          } as any;
+        }
         // Section headers with professional grey shading
         return { 
           backgroundColor: '#e9ecef', 
@@ -697,6 +823,15 @@ export default function ProfitLoss() {
           borderBottom: '1px solid #adb5bd'
         } as any;
       case 'total':
+        // Food and Labour costs totals with lighter background
+        if (data.section === 'FOOD_COSTS' || data.section === 'LABOUR_COSTS') {
+          return { 
+            backgroundColor: '#f8f9fa', 
+            fontWeight: 'bold', 
+            color: '#1e293b',
+            borderBottom: '1px solid #e5e7eb'
+          } as any;
+        }
         // Section totals with professional grey shading
         return { 
           backgroundColor: '#f1f3f4', 
@@ -725,6 +860,17 @@ export default function ProfitLoss() {
           borderTop: '2px solid #6c757d',
           borderBottom: '2px solid #6c757d'
         } as any;
+      case 'account':
+        // Food and Labour cost accounts with lighter background
+        if (data.section === 'FOOD_COSTS' || data.section === 'LABOUR_COSTS') {
+          return params.node.rowIndex! % 2 === 0 ? 
+            { backgroundColor: '#fdfdfd' } : 
+            { backgroundColor: '#f8f9fa' };
+        }
+        // Regular account rows with professional grey alternating shading
+        return params.node.rowIndex! % 2 === 0 ? 
+          { backgroundColor: '#f8f9fa' } : 
+          { backgroundColor: '#ffffff' };
       default:
         // Regular account rows with professional grey alternating shading
         return params.node.rowIndex! % 2 === 0 ? 
@@ -737,14 +883,29 @@ export default function ProfitLoss() {
   const PreviousYearCellRenderer = useCallback((params: ICellRendererParams) => {
     const data = params.data as ProfitLossRow;
     const colId = params.column?.getColId();
-    const monthIndex = monthKeys.findIndex(key => colId?.includes(key));
     
-    if (data.section === 'SPACING' || monthIndex === -1) return '';
+    if (data.section === 'SPACING') return '';
+    
+    // Handle store-specific PY columns
+    let monthIndex = -1;
+    
+    if (colId?.includes('_store_') && colId?.includes('_py')) {
+      // Extract month from store PY column
+      const monthKey = colId.split('_store_')[0];
+      monthIndex = monthKeys.indexOf(monthKey);
+    } else {
+      // Regular PY column
+      monthIndex = monthKeys.findIndex(key => colId?.includes(key));
+    }
+    
+    if (monthIndex === -1) return '';
     
     let pyValue = 0;
     if (data.rowType === 'total') {
       if (data.section === 'REVENUE') pyValue = generatePreviousYearData.revenue[monthIndex];
-      else if (data.section === 'COST_OF_SALES') pyValue = generatePreviousYearData.costOfSales[monthIndex];
+      else if (data.section === 'COST_OF_SALES') pyValue = generatePreviousYearData.foodCosts[monthIndex] + generatePreviousYearData.labourCosts[monthIndex];
+      else if (data.section === 'FOOD_COSTS') pyValue = generatePreviousYearData.foodCosts[monthIndex];
+      else if (data.section === 'LABOUR_COSTS') pyValue = generatePreviousYearData.labourCosts[monthIndex];
       else if (data.section === 'OPERATING_EXPENSES') pyValue = generatePreviousYearData.operatingExpenses[monthIndex];
       else if (data.section === 'OTHER_INCOME') pyValue = generatePreviousYearData.otherIncome[monthIndex];
       else if (data.section === 'OTHER_EXPENSES') pyValue = generatePreviousYearData.otherExpenses[monthIndex];
@@ -759,6 +920,12 @@ export default function ProfitLoss() {
       pyValue = currentValue * (0.85 + Math.random() * 0.3);
     }
     
+    // If this is a store-specific column, divide by store count
+    if (colId?.includes('_store_')) {
+      const storeCount = getSelectedStoreNames.length;
+      pyValue = pyValue / storeCount;
+    }
+    
     if (pyValue === 0) return '';
     
     return (
@@ -771,7 +938,7 @@ export default function ProfitLoss() {
         {formatCurrency(pyValue)}
       </span>
     );
-  }, [generatePreviousYearData]);
+  }, [generatePreviousYearData, getSelectedStoreNames]);
 
   // Total Column Cell Renderer
   const TotalCellRenderer = useCallback((params: ICellRendererParams) => {
@@ -828,8 +995,8 @@ export default function ProfitLoss() {
   }, [calculateRowAverage]);
 
   // Column definitions
-  const columnDefs: ColDef[] = useMemo(() => {
-    const cols: ColDef[] = [
+  const columnDefs: (ColDef | ColGroupDef)[] = useMemo(() => {
+    const cols: (ColDef | ColGroupDef)[] = [
       {
         headerName: "Account",
         field: "name",
@@ -843,39 +1010,90 @@ export default function ProfitLoss() {
       }
     ];
 
-    // Add month columns with optional PY columns
+    // Add month columns with store grouping
     months.forEach((month, index) => {
-      cols.push({
-        headerName: month,
-        field: monthKeys[index],
-        cellRenderer: CurrencyCellRenderer,
-        flex: 1,
-        minWidth: 100,
-        sortable: false,
-        filter: false,
-        cellStyle: { 
-          textAlign: 'right',
-          fontSize: 13,
-          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
-        }
-      });
+      const storeNames = getSelectedStoreNames;
+      const storeCount = storeNames.length;
+      
+      // Create column group for each month if multiple stores are selected
+      if (storeCount > 1) {
+        const groupChildren: ColDef[] = [];
+        
+        // Add a column for each selected store
+        storeNames.forEach((storeName, storeIndex) => {
+          groupChildren.push({
+            headerName: storeName,
+            field: `${monthKeys[index]}_store_${storeIndex}`,
+            cellRenderer: CurrencyCellRenderer,
+            flex: 1,
+            minWidth: 100,
+            sortable: false,
+            filter: false,
+            cellStyle: { 
+              textAlign: 'right',
+              fontSize: 13,
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+            }
+          });
 
-      // Add Previous Year column if enabled
-      if (compareToPreviousYear) {
+          // Add Previous Year column for each store if enabled
+          if (compareToPreviousYear) {
+            groupChildren.push({
+              headerName: 'PY',
+              field: `${monthKeys[index]}_store_${storeIndex}_py`,
+              cellRenderer: PreviousYearCellRenderer,
+              flex: 1,
+              minWidth: 80,
+              sortable: false,
+              filter: false,
+              cellStyle: { 
+                textAlign: 'right',
+                fontSize: 12,
+                fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+              }
+            });
+          }
+        });
+
+        // Add the grouped column
         cols.push({
-          headerName: 'PY',
-          field: `${monthKeys[index]}_py`,
-          cellRenderer: PreviousYearCellRenderer,
+          headerName: month,
+          children: groupChildren
+        } as ColGroupDef);
+      } else {
+        // Single store or "All Stores" - use original column structure
+        cols.push({
+          headerName: month,
+          field: monthKeys[index],
+          cellRenderer: CurrencyCellRenderer,
           flex: 1,
-          minWidth: 80,
+          minWidth: 100,
           sortable: false,
           filter: false,
           cellStyle: { 
             textAlign: 'right',
-            fontSize: 12,
+            fontSize: 13,
             fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
           }
         });
+
+        // Add Previous Year column if enabled
+        if (compareToPreviousYear) {
+          cols.push({
+            headerName: 'PY',
+            field: `${monthKeys[index]}_py`,
+            cellRenderer: PreviousYearCellRenderer,
+            flex: 1,
+            minWidth: 80,
+            sortable: false,
+            filter: false,
+            cellStyle: { 
+              textAlign: 'right',
+              fontSize: 12,
+              fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+            }
+          });
+        }
       }
     });
 
@@ -922,7 +1140,7 @@ export default function ProfitLoss() {
     }
 
     return cols;
-  }, [AccountNameCellRenderer, CurrencyCellRenderer, PreviousYearCellRenderer, TotalCellRenderer, AverageCellRenderer, compareToPreviousYear, showTotalColumn, showAverageColumn]);
+  }, [AccountNameCellRenderer, CurrencyCellRenderer, PreviousYearCellRenderer, TotalCellRenderer, AverageCellRenderer, compareToPreviousYear, showTotalColumn, showAverageColumn, getSelectedStoreNames]);
 
   const onGridReady = useCallback(() => {
     if (gridRef.current && gridRef.current.api) {
@@ -1047,6 +1265,15 @@ export default function ProfitLoss() {
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700">Average Column</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showStoreBreakdown}
+                onChange={(e) => setShowStoreBreakdown(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">Store Breakdown (Demo)</span>
             </label>
             <div className="ml-auto">
               <Button 
@@ -1207,6 +1434,29 @@ export default function ProfitLoss() {
           background: #94a3b8;
         }
         
+        /* Column Group Headers */
+        .modern-financial-grid .ag-header-group-cell {
+          background: #f8fafc;
+          border-bottom: 2px solid #cbd5e1;
+          font-weight: 700;
+          font-size: 14px;
+          color: #1e293b;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        
+        .modern-financial-grid .ag-header-group-cell-label {
+          justify-content: center;
+        }
+        
+        /* Store header styling */
+        .modern-financial-grid .ag-header-cell[col-id*="_store_"] {
+          background: #f1f5f9;
+          font-size: 11px;
+          font-weight: 500;
+          color: #475569;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 1024px) {
           .modern-financial-grid .ag-cell {
@@ -1216,6 +1466,10 @@ export default function ProfitLoss() {
           
           .modern-financial-grid .ag-header-cell {
             font-size: 11px;
+          }
+          
+          .modern-financial-grid .ag-header-group-cell {
+            font-size: 12px;
           }
         }
       `}</style>
