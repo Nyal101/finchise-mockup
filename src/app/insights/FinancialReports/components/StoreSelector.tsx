@@ -459,19 +459,17 @@ export default function StoreSelector({ selectedStoreIds, onSelectionChange, cla
                     onClick={handleSelectAll}
                     className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
-                    {selectedStoreIds.length === stores.length ? "Clear All" : "Select All"}
+                    Select All
                   </Button>
-                  {selectedStoreIds.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearSelection}
-                      className="border-red-300 text-red-600 hover:bg-red-50"
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Clear Selection
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearSelection}
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Unselect All
+                  </Button>
                 </div>
                 
                 {pendingSelection.length > 0 && (
