@@ -3,25 +3,26 @@
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Upload, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock,
-  FileText,
-  ArrowUpCircle,
-  ArrowLeftRight
+import {
+  ArrowLeft,
+  ArrowRight,
+  AlertTriangle,
+  Package,
+  Plus,
+  Upload,
+  FileText
 } from "lucide-react";
 import { JournalEntry } from "./types";
 import { ColDef, CellClickedEvent } from 'ag-grid-community';
 import AGGridWrapper from './components/AGGridWrapper';
 import { journalEntries } from "./journalData";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function JournalsContent() {
   const searchParams = useSearchParams();
@@ -32,7 +33,6 @@ function JournalsContent() {
   const amount = searchParams.get('amount');
   
   const [journalData] = React.useState<JournalEntry[]>(journalEntries);
-  const [searchTerm, setSearchTerm] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("all");
 
   // Custom cell renderers
@@ -52,18 +52,18 @@ function JournalsContent() {
     const getTypeIcon = (type: string) => {
       switch (type) {
         case "prepayment":
-          return <ArrowUpCircle className="h-4 w-4 text-blue-600" />;
+          return <ArrowRight className="h-4 w-4 text-blue-600" />;
         case "accrual":
-          return <div className="h-4 w-4 rounded-full bg-green-200" />;
-        case "stock-movement":
-          return <ArrowLeftRight className="h-4 w-4 text-orange-600" />;
+          return <ArrowLeft className="h-4 w-4 text-green-600" />;
+        case "stock":
+          return <Package className="h-4 w-4 text-gray-600" />;
         default:
           return <FileText className="h-4 w-4 text-gray-600" />;
       }
     };
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2">
         {getTypeIcon(type)}
         <span className="capitalize">{type.replace("-", " ")}</span>
       </div>
@@ -103,10 +103,9 @@ function JournalsContent() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-800 border-green-200";
-      case "complete": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "draft": return "bg-gray-100 text-gray-800 border-gray-200";
+      case "published": return "bg-green-100 text-green-800 border-green-200";
       case "review": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "archived": return "bg-gray-100 text-gray-800 border-gray-200";
       default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
@@ -123,6 +122,7 @@ function JournalsContent() {
       sortable: true,
       filter: true,
       floatingFilter: true,
+      cellClass: 'ag-cell-centered',
     },
     {
       headerName: "Type",
@@ -134,14 +134,27 @@ function JournalsContent() {
       sortable: true,
       filter: true,
       floatingFilter: true,
+      cellClass: 'ag-cell-centered',
     },
     {
       headerName: "Description",
       field: "description",
-      minWidth: 250,
+      minWidth: 300,
       sortable: true,
       filter: true,
       floatingFilter: true,
+      cellClass: 'ag-cell-centered',
+    },
+    {
+      headerName: "Company",
+      field: "company",
+      width: 160,
+      minWidth: 140,
+      maxWidth: 180,
+      sortable: true,
+      filter: true,
+      floatingFilter: true,
+      cellClass: 'ag-cell-centered',
     },
     {
       headerName: "Amount",
@@ -152,30 +165,7 @@ function JournalsContent() {
       maxWidth: 140,
       sortable: true,
       filter: 'agNumberColumnFilter',
-    },
-    {
-      headerName: "Paid Month",
-      field: "expensePaidMonth",
-      valueFormatter: (params) => {
-        return params.data.expensePaidMonth ? format(new Date(params.data.expensePaidMonth), 'MMM yyyy') : '';
-      },
-      width: 120,
-      minWidth: 100,
-      maxWidth: 140,
-      sortable: true,
-    },
-    {
-      headerName: "Recognition Period",
-      field: "recognitionPeriod",
-      valueFormatter: (params) => {
-        const start = params.data.periodStartDate ? format(new Date(params.data.periodStartDate), 'MMM yyyy') : '';
-        const end = params.data.periodEndDate ? format(new Date(params.data.periodEndDate), 'MMM yyyy') : '';
-        return start && end ? `${start} - ${end}` : '';
-      },
-      width: 180,
-      minWidth: 150,
-      maxWidth: 200,
-      sortable: true,
+      cellClass: 'ag-cell-centered',
     },
     {
       headerName: "Source",
@@ -187,24 +177,38 @@ function JournalsContent() {
       sortable: true,
       filter: true,
       floatingFilter: true,
+      cellClass: 'ag-cell-centered',
     }
   ], [StatusCellRenderer, SourceCellRenderer, TypeCellRenderer, AmountCellRenderer]);
 
-  // Filter data based on search and status
+  // Add CSS class for centered cells
+  const defaultColDef = React.useMemo(() => ({
+    resizable: true,
+    sortable: true,
+    filter: true,
+    cellClass: 'ag-cell-centered',
+  }), []);
+
+  // Filter data based on status only
   const filteredData = React.useMemo(() => {
     return journalData.filter(journal => {
-      const matchesSearch = 
-        journal.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        journal.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        journal.accountCode.toLowerCase().includes(searchTerm.toLowerCase());
-        
-      const matchesStatus = statusFilter === "all" || journal.status === statusFilter;
+      let matchesStatus = false;
+      if (statusFilter === "all") {
+        matchesStatus = true;
+      } else if (statusFilter === "published") {
+        matchesStatus = journal.status === "published";
+      } else if (statusFilter === "review") {
+        matchesStatus = journal.status === "review";
+      } else if (statusFilter === "archived") {
+        matchesStatus = journal.status === "archived";
+      }
+      
       const matchesType = !urlType || urlType === "all" || journal.type === urlType;
       const matchesStore = !store || store === "all" || journal.store === store;
       
-      return matchesSearch && matchesStatus && matchesType && matchesStore;
+      return matchesStatus && matchesType && matchesStore;
     });
-  }, [journalData, searchTerm, statusFilter, urlType, store]);
+  }, [journalData, statusFilter, urlType, store]);
 
   const onCellClicked = (event: CellClickedEvent) => {
     router.push(`/accounting/Journals/${event.data.id}`);
@@ -212,13 +216,23 @@ function JournalsContent() {
 
   // Quick status filter buttons
   const statusCounts = React.useMemo(() => {
-    const counts = { all: 0, draft: 0, review: 0, active: 0, complete: 0 };
+    const counts = { all: 0, review: 0, published: 0, archived: 0 };
     journalData.forEach(journal => {
       counts.all++;
-      counts[journal.status as keyof typeof counts]++;
+      if (journal.status === 'published') {
+        counts.published++;
+      } else if (journal.status === 'review') {
+        counts.review++;
+      } else if (journal.status === 'archived') {
+        counts.archived++;
+      }
     });
     return counts;
   }, [journalData]);
+
+  const handleNewJournal = (type: string) => {
+    router.push(`/accounting/Journals/new?type=${type}`);
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -253,21 +267,47 @@ function JournalsContent() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Manual Journals</h1>
-          <p className="text-gray-600 mt-1">Manage prepayments, accruals and stock movements</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-600">Manage prepayments, accruals and stock movements</p>
+            {statusCounts.review > 0 && (
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {statusCounts.review} need review
+              </Badge>
+            )}
+          </div>
         </div>
         <div className="flex gap-3">
           <Button variant="outline">
             <Upload className="h-4 w-4 mr-2" />
             Import Journals
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Journal Entry
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Journal Entry
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => handleNewJournal('prepayment')}>
+                <ArrowRight className="h-4 w-4 mr-2 text-blue-600" />
+                Prepayment
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNewJournal('accrual')}>
+                <ArrowLeft className="h-4 w-4 mr-2 text-green-600" />
+                Accrual
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNewJournal('stock')}>
+                <Package className="h-4 w-4 mr-2 text-gray-600" />
+                Stock Movement
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Status Filter Tabs with Search and Filters */}
+      {/* Status Filter Tabs */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
           {Object.entries(statusCounts).map(([status, count]) => (
@@ -284,68 +324,6 @@ function JournalsContent() {
             </button>
           ))}
         </div>
-        
-        <div className="flex gap-4 items-center">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="search"
-              placeholder="Search journals..."
-              className="pl-10 w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Advanced Filters
-        </Button>
-        </div>
-      </div>
-
-      {/* Compact Status Summary */}
-      <div className="bg-white rounded-lg border shadow-sm p-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
-              <FileText className="h-5 w-5 text-gray-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-600">{statusCounts.draft}</p>
-              <p className="text-sm text-gray-600">Draft</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-red-600">{statusCounts.review}</p>
-              <p className="text-sm text-gray-600">Needs Review</p>
-            </div>
-              </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
-              <Clock className="h-5 w-5 text-green-600" />
-              </div>
-            <div>
-              <p className="text-2xl font-bold text-green-600">{statusCounts.active}</p>
-              <p className="text-sm text-gray-600">Active</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-blue-600">{statusCounts.complete}</p>
-              <p className="text-sm text-gray-600">Complete</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* AG Grid */}
@@ -354,6 +332,7 @@ function JournalsContent() {
           columnDefs={columnDefs}
           rowData={filteredData}
           onCellClicked={onCellClicked}
+          defaultColDef={defaultColDef}
         />
       </div>
     </div>

@@ -10,6 +10,7 @@ interface JournalCalculationInput {
   scheduleType: ScheduleType;
   accountCode: string;
   monthlyAccountCode: string;
+  status: 'published' | 'review' | 'archived';  // Updated status types
 }
 
 interface MonthlyBreakdownWithBalances extends MonthlyBreakdown {
@@ -71,7 +72,7 @@ function calculateAmountForPeriod(
   runningTotal: number
 ): number {
   switch (scheduleType) {
-    case 'monthly & weekly':
+    case 'monthly (weekly split)':
       // Calculate based on days in period
       const totalDays = getDaysInPeriod(periodStartDate, periodEndDate);
       const amountPerDay = totalAmount / totalDays;
@@ -79,7 +80,7 @@ function calculateAmountForPeriod(
         ? totalAmount - runningTotal
         : Math.round(amountPerDay * period.days * 100) / 100;
 
-    case 'monthly':
+    case 'monthly (equal split)':
       // Split evenly across months
       const monthCount = differenceInMonths(periodEndDate, periodStartDate) + 1;
       const monthlyAmount = Math.round((totalAmount / monthCount) * 100) / 100;
@@ -102,6 +103,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
     scheduleType,
     accountCode,
     monthlyAccountCode,
+    status,  // Get status from input
   } = input;
 
   // Validate dates
@@ -116,10 +118,6 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
   // Determine journal type based on dates
   const type: JournalType = expensePaidMonth <= periodStartDate ? "prepayment" : "accrual";
 
-  // Get current month for status determination
-  const currentDate = new Date();
-  const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-  
   // Get the paid month in YYYY-MM format
   const paidMonthStr = `${expensePaidMonth.getFullYear()}-${String(expensePaidMonth.getMonth() + 1).padStart(2, '0')}`;
 
@@ -131,29 +129,33 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
 
   // 1. Add the reversing entry for paid month
   monthlyBreakdown.push({
+    id: `mb_${paidMonthStr}`,
     month: paidMonthStr,
     amount: totalAmount,
-    status: paidMonthStr <= currentMonth ? 'posted' : 'scheduled',
+    status: status, // Use journal's status
+    isReversing: true,
     prepayBalance: totalAmount,
     expenseBalance: 0,
     lineItems: type === 'prepayment' ? [
       {
         id: `li_rev_pre_a_${paidMonthStr}`,
-        accountCode: monthlyAccountCode,
+        accountCode: accountCode, // Prepayment account
         description: `Initial ${description}`,
         debitAmount: totalAmount,
         creditAmount: 0,
         store: 'all-stores',
-        taxRate: 'no-tax'
+        taxRate: 'no-tax',
+        date: paidMonthStr
       },
       {
         id: `li_rev_pre_b_${paidMonthStr}`,
-        accountCode: accountCode,
+        accountCode: monthlyAccountCode, // Transfer account
         description: 'To Prepayment',
         debitAmount: 0,
         creditAmount: totalAmount,
         store: 'all-stores',
-        taxRate: 'no-tax'
+        taxRate: 'no-tax',
+        date: paidMonthStr
       }
     ] : [
       {
@@ -163,7 +165,8 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
         debitAmount: totalAmount,
         creditAmount: 0,
         store: 'all-stores',
-        taxRate: 'no-tax'
+        taxRate: 'no-tax',
+        date: paidMonthStr
       },
       {
         id: `li_rev_accr_b_${paidMonthStr}`,
@@ -172,7 +175,8 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
         debitAmount: 0,
         creditAmount: totalAmount,
         store: 'all-stores',
-        taxRate: 'no-tax'
+        taxRate: 'no-tax',
+        date: paidMonthStr
       }
     ]
   });
@@ -195,14 +199,16 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
     // Update running totals
     runningExpenseTotal += amount;
 
-    const description_suffix = scheduleType === 'monthly & weekly' 
+    const description_suffix = scheduleType === 'monthly (weekly split)' 
       ? ` (${period.days} days)`
       : '';
 
     monthlyBreakdown.push({
+      id: `mb_${period.month}`,
       month: period.month,
       amount,
-      status: period.month <= currentMonth ? 'posted' : 'scheduled',
+      status: status, // Use journal's status for all entries
+      isReversing: false,
       prepayBalance: totalAmount - runningExpenseTotal,
       expenseBalance: runningExpenseTotal,
       lineItems: type === 'prepayment' ? [
@@ -213,7 +219,8 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           debitAmount: amount,
           creditAmount: 0,
           store: 'all-stores',
-          taxRate: 'no-tax'
+          taxRate: 'no-tax',
+          date: period.month
         },
         {
           id: `li_rec_pre_b_${period.month}`,
@@ -222,7 +229,8 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           debitAmount: 0,
           creditAmount: amount,
           store: 'all-stores',
-          taxRate: 'no-tax'
+          taxRate: 'no-tax',
+          date: period.month
         }
       ] : [
         {
@@ -232,7 +240,8 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           debitAmount: amount,
           creditAmount: 0,
           store: 'all-stores',
-          taxRate: 'no-tax'
+          taxRate: 'no-tax',
+          date: period.month
         },
         {
           id: `li_rec_accr_b_${period.month}`,
@@ -241,7 +250,8 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           debitAmount: 0,
           creditAmount: amount,
           store: 'all-stores',
-          taxRate: 'no-tax'
+          taxRate: 'no-tax',
+          date: period.month
         }
       ]
     });
@@ -249,6 +259,96 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
 
   return {
     type,
+    monthlyBreakdown
+  };
+}
+
+interface StockJournalInput {
+  description: string;
+  openingStockDate: Date;
+  openingStockValue: number;
+  closingStockDate: Date;
+  closingStockValue: number;
+  stockMovementAccountCode: string;
+  stockAccountCode: string;
+  store: string;
+  status: 'published' | 'review' | 'archived';
+}
+
+export function calculateStockJournal(input: StockJournalInput): JournalCalculationResult {
+  const {
+    description,
+    openingStockValue,
+    closingStockDate,
+    closingStockValue,
+    stockMovementAccountCode, // This will be 5050
+    stockAccountCode,        // This will be 1001
+    store,
+    status,
+  } = input;
+
+  const stockMovement = closingStockValue - openingStockValue;
+  const movementAmount = Math.abs(stockMovement);
+
+  // Format the closing date for the journal entry
+  const closingMonth = `${closingStockDate.getFullYear()}-${String(closingStockDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const monthlyBreakdown: MonthlyBreakdownWithBalances[] = [{
+    id: `mb_stock_${closingMonth}`,
+    month: closingMonth,
+    amount: movementAmount,
+    status: status,
+    prepayBalance: 0,
+    expenseBalance: 0,
+    lineItems: stockMovement < 0 ? [
+      // Stock Decrease (negative difference)
+      {
+        id: `li_stock_dec_a_${closingMonth}`,
+        accountCode: stockMovementAccountCode, // 5050
+        description: `Stock Movement - ${description}`,
+        debitAmount: movementAmount,
+        creditAmount: 0,
+        store: store,
+        taxRate: 'no-tax',
+        date: closingMonth
+      },
+      {
+        id: `li_stock_dec_b_${closingMonth}`,
+        accountCode: stockAccountCode, // 1001
+        description: `Stock Decrease - ${description}`,
+        debitAmount: 0,
+        creditAmount: movementAmount,
+        store: store,
+        taxRate: 'no-tax',
+        date: closingMonth
+      }
+    ] : [
+      // Stock Increase (positive difference)
+      {
+        id: `li_stock_inc_a_${closingMonth}`,
+        accountCode: stockAccountCode, // 1001
+        description: `Stock Increase - ${description}`,
+        debitAmount: movementAmount,
+        creditAmount: 0,
+        store: store,
+        taxRate: 'no-tax',
+        date: closingMonth
+      },
+      {
+        id: `li_stock_inc_b_${closingMonth}`,
+        accountCode: stockMovementAccountCode, // 5050
+        description: `Stock Movement - ${description}`,
+        debitAmount: 0,
+        creditAmount: movementAmount,
+        store: store,
+        taxRate: 'no-tax',
+        date: closingMonth
+      }
+    ]
+  }];
+
+  return {
+    type: 'stock',
     monthlyBreakdown
   };
 } 
