@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
-import { CalendarIcon, Search, Clock, BarChart3, Settings } from "lucide-react";
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, startOfQuarter, endOfQuarter } from "date-fns";
+import React, { useState, useMemo } from "react";
+import { CalendarIcon, Search, Clock, BarChart3, Settings, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, startOfQuarter, endOfQuarter, differenceInMonths } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+
 
 interface DateRange {
   from: Date;
@@ -47,6 +47,11 @@ const commonFormats = [
   { label: "Calendar year to last month by month", category: "Multi-period" }
 ];
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 export default function DateSelector({ onDateRangeChange, onCompareChange, className }: DateSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,7 +62,46 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
   const [periodStart, setPeriodStart] = useState<Date>(startOfMonth(new Date()));
   const [periodEnd, setPeriodEnd] = useState<Date>(endOfMonth(new Date()));
   const [periodDuration, setPeriodDuration] = useState("1 month");
-  
+
+  // Add state for the year selection
+  const [startYear, setStartYear] = useState(new Date().getFullYear());
+  const [endYear, setEndYear] = useState(new Date().getFullYear());
+
+  // Remove the calendar mode state since we're always using single mode with disabled dates
+  const handlePeriodDurationChange = (duration: string) => {
+    const now = new Date();
+    let newStart: Date;
+    let newEnd: Date;
+
+    switch (duration) {
+      case "1 month":
+        newStart = startOfMonth(now);
+        newEnd = endOfMonth(now);
+        break;
+      case "3 months":
+        newStart = startOfMonth(subMonths(now, 2));
+        newEnd = endOfMonth(now);
+        break;
+      case "6 months":
+        newStart = startOfMonth(subMonths(now, 5));
+        newEnd = endOfMonth(now);
+        break;
+      case "1 year":
+        newStart = startOfMonth(subMonths(now, 11));
+        newEnd = endOfMonth(now);
+        break;
+      default:
+        newStart = startOfMonth(now);
+        newEnd = endOfMonth(now);
+    }
+
+    setPeriodDuration(duration);
+    setPeriodStart(newStart);
+    setPeriodEnd(newEnd);
+  };
+
+
+
   // Compare options state
   const [compareOptions, setCompareOptions] = useState<CompareOptions>({
     toPreviousPeriod: false,
@@ -122,9 +166,47 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
     onCompareChange?.(newOptions);
   };
 
+  // Function to check if selected date range is valid for the current period duration
+  const dateRangeValidation = useMemo(() => {
+    const monthsDifference = differenceInMonths(periodEnd, periodStart);
+    let requiredMonths: number;
+    let message: string = "";
+    let isValid: boolean = true;
+
+    switch (periodDuration) {
+      case "1 month":
+        requiredMonths = 0;
+        break;
+      case "3 months":
+        requiredMonths = 2; // 2 months difference = 3 months total
+        break;
+      case "6 months":
+        requiredMonths = 5; // 5 months difference = 6 months total
+        break;
+      case "1 year":
+        requiredMonths = 11; // 11 months difference = 12 months total
+        break;
+      default:
+        requiredMonths = 0;
+    }
+
+    if (monthsDifference < requiredMonths) {
+      isValid = false;
+      const requiredPeriod = periodDuration.toLowerCase();
+      message = `Selected date range is too short. ${periodDuration} view requires at least ${requiredPeriod} of data.`;
+    }
+
+    return {
+      isValid,
+      message
+    };
+  }, [periodStart, periodEnd, periodDuration]);
+
   const handleApplyChanges = () => {
-    onDateRangeChange?.({ from: periodStart, to: periodEnd });
-    setIsOpen(false);
+    if (dateRangeValidation.isValid) {
+      onDateRangeChange?.({ from: periodStart, to: periodEnd });
+      setIsOpen(false);
+    }
   };
 
   const handleCancel = () => {
@@ -147,6 +229,88 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
     return acc;
   }, {} as Record<string, typeof filteredFormats>);
 
+  const handleMonthYearSelect = (month: number, year: number, isStart: boolean) => {
+    const newDate = new Date(year, month, 1);
+    if (isStart) {
+      const startDate = startOfMonth(newDate);
+      setPeriodStart(startDate);
+      // If end date is before new start date, adjust it
+      if (periodEnd < startDate) {
+        setPeriodEnd(endOfMonth(startDate));
+        setEndYear(year);
+      }
+    } else {
+      const endDate = endOfMonth(newDate);
+      setPeriodEnd(endDate);
+      // If start date is after new end date, adjust it
+      if (periodStart > endDate) {
+        setPeriodStart(startOfMonth(endDate));
+        setStartYear(year);
+      }
+    }
+  };
+
+  // Function to generate month buttons
+  const renderMonthPicker = (isStart: boolean) => {
+    const currentDate = isStart ? periodStart : periodEnd;
+    const currentYear = isStart ? startYear : endYear;
+    const setYear = isStart ? setStartYear : setEndYear;
+    
+    return (
+      <div className="p-3">
+        {/* Year selector */}
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setYear(currentYear - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium">{currentYear}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setYear(currentYear + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Month grid */}
+        <div className="grid grid-cols-3 gap-2">
+          {MONTHS.map((month, index) => {
+            const isSelected = 
+              currentDate.getMonth() === index && 
+              currentDate.getFullYear() === currentYear;
+            
+            // For start date, disable months after end date
+            const isDisabled = isStart 
+              ? new Date(currentYear, index) > periodEnd
+              : new Date(currentYear, index) < periodStart;
+
+            return (
+              <Button
+                key={month}
+                variant={isSelected ? "default" : "ghost"}
+                size="sm"
+                className={`
+                  w-full h-9 text-xs
+                  ${isSelected ? 'bg-blue-600 text-white' : 'text-gray-700'}
+                  ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}
+                `}
+                disabled={isDisabled}
+                onClick={() => handleMonthYearSelect(index, currentYear, isStart)}
+              >
+                {month.slice(0, 3)}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -165,13 +329,9 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
       <PopoverContent className="w-[800px] p-0" align="start">
         <div className="bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-white">Date Range & Comparison Settings</h3>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-slate-300">Live Data</span>
-              </div>
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center">
+              <h3 className="text-xl font-semibold text-gray-900">Date Range & Comparison Settings</h3>
             </div>
           </div>
 
@@ -281,7 +441,7 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <label className="block text-sm font-semibold text-gray-900">
-                      Period Start Date
+                      Period Start Month
                     </label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -290,23 +450,20 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
                           className="w-full justify-start text-left font-normal h-12 border-gray-300 hover:border-gray-400"
                         >
                           <CalendarIcon className="mr-3 h-4 w-4 text-gray-500" />
-                          <span className="text-gray-900">{format(periodStart, "MMMM dd, yyyy")}</span>
+                          <span className="text-gray-900">
+                            {format(periodStart, "MMMM yyyy")}
+                          </span>
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={periodStart}
-                          onSelect={(date) => date && setPeriodStart(date)}
-                          initialFocus
-                        />
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        {renderMonthPicker(true)}
                       </PopoverContent>
                     </Popover>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <label className="block text-sm font-semibold text-gray-900">
-                      Period End Date
+                      Period End Month
                     </label>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -315,38 +472,48 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
                           className="w-full justify-start text-left font-normal h-12 border-gray-300 hover:border-gray-400"
                         >
                           <CalendarIcon className="mr-3 h-4 w-4 text-gray-500" />
-                          <span className="text-gray-900">{format(periodEnd, "MMMM dd, yyyy")}</span>
+                          <span className="text-gray-900">
+                            {format(periodEnd, "MMMM yyyy")}
+                          </span>
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={periodEnd}
-                          onSelect={(date) => date && setPeriodEnd(date)}
-                          initialFocus
-                        />
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        {renderMonthPicker(false)}
                       </PopoverContent>
                     </Popover>
                   </div>
                 </div>
                 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Period Duration</span>
+                <div className="space-y-3">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Period Duration</span>
+                      </div>
+                      <Select 
+                        value={periodDuration} 
+                        onValueChange={handlePeriodDurationChange}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1 month">1 Month</SelectItem>
+                          <SelectItem value="3 months">3 Months</SelectItem>
+                          <SelectItem value="6 months">6 Months</SelectItem>
+                          <SelectItem value="1 year">1 Year</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Select value={periodDuration} onValueChange={setPeriodDuration}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1 month">1 Month</SelectItem>
-                        <SelectItem value="3 months">3 Months</SelectItem>
-                        <SelectItem value="6 months">6 Months</SelectItem>
-                        <SelectItem value="1 year">1 Year</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    
+                    {/* Validation message moved here */}
+                    {!dateRangeValidation.isValid && (
+                      <div className="mt-3 flex items-start gap-2 text-amber-600 bg-amber-50 rounded-md p-3 border border-amber-200">
+                        <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">{dateRangeValidation.message}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -519,8 +686,13 @@ export default function DateSelector({ onDateRangeChange, onCompareChange, class
                 Cancel
               </Button>
               <Button 
-                onClick={handleApplyChanges} 
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                onClick={handleApplyChanges}
+                disabled={!dateRangeValidation.isValid}
+                className={`px-6 py-2 ${
+                  dateRangeValidation.isValid 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                    : 'bg-blue-300 cursor-not-allowed text-white'
+                } shadow-sm`}
               >
                 Apply Changes
               </Button>
