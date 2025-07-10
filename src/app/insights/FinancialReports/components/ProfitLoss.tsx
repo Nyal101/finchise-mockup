@@ -10,6 +10,7 @@ import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import { ColDef, ICellRendererParams, RowClassParams } from 'ag-grid-community';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 // Register modules immediately
 if (typeof window !== 'undefined') {
@@ -144,6 +145,9 @@ interface ProfitLossRow {
 
 export default function ProfitLoss() {
   const [isClient, setIsClient] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
   const gridRef = React.useRef<AgGridReact>(null);
   
   // State to track which sections are collapsed - all sections collapsed by default
@@ -169,6 +173,12 @@ export default function ProfitLoss() {
 
   // State for store selection
   const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>([]);
+
+  // State for toggle options
+  const [showTotalColumn, setShowTotalColumn] = useState(false);
+  const [compareToPreviousYear, setCompareToPreviousYear] = useState(false);
+  const [showPercentOfSales, setShowPercentOfSales] = useState(false);
+  const [showAverageColumn, setShowAverageColumn] = useState(false);
 
   // Function to toggle section collapse
   const toggleSectionCollapse = useCallback((sectionName: string) => {
@@ -201,6 +211,41 @@ export default function ProfitLoss() {
     console.log('Selected stores changed:', storeIds);
   };
 
+  // Function to format date with ordinal suffix
+  const formatDateWithOrdinal = (date: Date) => {
+    const day = date.getDate();
+    const suffix = ["th", "st", "nd", "rd"][day % 10 > 3 ? 0 : (day % 100 - day % 10 !== 10 ? day % 10 : 0)];
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).replace(/\d+/, day + suffix);
+  };
+
+  // Function to handle sync with Xero
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncDialogOpen(true);
+    setSyncProgress(0);
+
+    // Simulate sync progress
+    const interval = setInterval(() => {
+      setSyncProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsSyncing(false);
+            setSyncDialogOpen(false);
+          }, 500);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 300);
+  };
+
   React.useEffect(() => {
     setIsClient(true);
     ModuleRegistry.registerModules([AllCommunityModule]);
@@ -216,6 +261,50 @@ export default function ProfitLoss() {
   const otherExpensesTotals = monthKeys.map(month => calculateTotal(csvData.otherExpenses, month));
   const totalOtherProfits = monthKeys.map((month, index) => otherIncomeTotals[index] - otherExpensesTotals[index]);
   const netProfits = monthKeys.map((month, index) => operatingProfits[index] + totalOtherProfits[index]);
+
+  // Generate mock previous year data (random variations of current data)
+  const generatePreviousYearData = useMemo(() => {
+    const pyRevenueTotals = revenueTotals.map(val => val * (0.85 + Math.random() * 0.3));
+    const pyCosTotals = cosTotals.map(val => val * (0.85 + Math.random() * 0.3));
+    const pyGrossProfits = pyRevenueTotals.map((rev, index) => rev - pyCosTotals[index]);
+    const pyExpenseTotals = expenseTotals.map(val => val * (0.85 + Math.random() * 0.3));
+    const pyOperatingProfits = pyGrossProfits.map((gp, index) => gp - pyExpenseTotals[index]);
+    const pyOtherIncomeTotals = otherIncomeTotals.map(val => val * (0.85 + Math.random() * 0.3));
+    const pyOtherExpensesTotals = otherExpensesTotals.map(val => val * (0.85 + Math.random() * 0.3));
+    const pyTotalOtherProfits = pyOtherIncomeTotals.map((inc, index) => inc - pyOtherExpensesTotals[index]);
+    const pyNetProfits = pyOperatingProfits.map((op, index) => op + pyTotalOtherProfits[index]);
+    
+    return {
+      revenue: pyRevenueTotals,
+      costOfSales: pyCosTotals,
+      grossProfits: pyGrossProfits,
+      operatingExpenses: pyExpenseTotals,
+      operatingProfits: pyOperatingProfits,
+      otherIncome: pyOtherIncomeTotals,
+      otherExpenses: pyOtherExpensesTotals,
+      totalOtherProfits: pyTotalOtherProfits,
+      netProfits: pyNetProfits
+    };
+  }, [revenueTotals, cosTotals, expenseTotals, otherIncomeTotals, otherExpensesTotals]);
+
+  // Calculate row totals for Total Column
+  const calculateRowTotal = useCallback((row: ProfitLossRow) => {
+    return monthKeys.reduce((sum, monthKey) => sum + (Number(row[monthKey]) || 0), 0);
+  }, []);
+
+  // Calculate row average for Average Column
+  const calculateRowAverage = useCallback((row: ProfitLossRow) => {
+    const nonZeroValues = monthKeys.map(key => Number(row[key]) || 0).filter(val => val !== 0);
+    if (nonZeroValues.length === 0) return 0;
+    return nonZeroValues.reduce((sum, val) => sum + val, 0) / nonZeroValues.length;
+  }, []);
+
+  // Calculate percentage of sales
+  const calculatePercentOfSales = useCallback((value: number, monthIndex: number) => {
+    const revenue = revenueTotals[monthIndex];
+    if (revenue === 0) return 0;
+    return (value / revenue) * 100;
+  }, [revenueTotals]);
 
   // Transform data for AG Grid
   const rowData: ProfitLossRow[] = useMemo(() => {
@@ -478,6 +567,7 @@ export default function ProfitLoss() {
   const CurrencyCellRenderer = useCallback((params: ICellRendererParams) => {
     const value = params.value;
     const data = params.data as ProfitLossRow;
+    const colId = params.column?.getColId();
     
     // Don't show currency for spacing rows
     if (data.section === 'SPACING') return '';
@@ -485,8 +575,60 @@ export default function ProfitLoss() {
     // Don't show £0 for zero values
     if (typeof value !== 'number' || value === 0) return '';
     
-    return formatCurrency(value);
-  }, []);
+    // Get month index for percentage calculation
+    const monthIndex = monthKeys.indexOf(colId || '');
+    const isValidMonth = monthIndex !== -1;
+    
+    // Determine text color based on profit/loss and comparisons
+    let textColor = '#374151';
+    if (data.section === 'NET_PROFIT') {
+      textColor = value >= 0 ? '#059669' : '#dc2626'; // Green for profit, red for loss
+    } else if (['GROSS_PROFIT', 'OPERATING_PROFIT', 'OTHER_PROFIT'].includes(data.section)) {
+      textColor = value >= 0 ? '#059669' : '#dc2626';
+    }
+    
+    // Add comparison color for total rows when comparing to previous year
+    if (compareToPreviousYear && data.rowType === 'total' && isValidMonth) {
+      let pyValue = 0;
+      if (data.section === 'REVENUE') pyValue = generatePreviousYearData.revenue[monthIndex];
+      else if (data.section === 'COST_OF_SALES') pyValue = generatePreviousYearData.costOfSales[monthIndex];
+      else if (data.section === 'OPERATING_EXPENSES') pyValue = generatePreviousYearData.operatingExpenses[monthIndex];
+      else if (data.section === 'OTHER_INCOME') pyValue = generatePreviousYearData.otherIncome[monthIndex];
+      else if (data.section === 'OTHER_EXPENSES') pyValue = generatePreviousYearData.otherExpenses[monthIndex];
+      
+      if (pyValue !== 0) {
+        const isImprovement = value > pyValue;
+        textColor = isImprovement ? '#059669' : '#dc2626';
+      }
+    }
+    
+    const formattedValue = formatCurrency(value);
+    
+    if (showPercentOfSales && isValidMonth && data.rowType !== 'section') {
+      const percentage = calculatePercentOfSales(value, monthIndex);
+      return (
+        <div className="flex flex-col">
+          <span style={{ color: textColor, fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '13px', fontWeight: '500' }}>
+            {formattedValue}
+          </span>
+          <span style={{ fontSize: '10px', color: '#6b7280', fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace' }}>
+            {Math.abs(percentage) < 0.1 ? '0.0%' : `${percentage.toFixed(1)}%`}
+          </span>
+        </div>
+      );
+    }
+    
+    return (
+      <span style={{ 
+        color: textColor, 
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', 
+        fontSize: '13px', 
+        fontWeight: '500' 
+      }}>
+        {formattedValue}
+      </span>
+    );
+  }, [showPercentOfSales, compareToPreviousYear, calculatePercentOfSales, generatePreviousYearData]);
 
   // Cell renderer for account names with indentation and collapse/expand functionality
   const AccountNameCellRenderer = useCallback((params: ICellRendererParams) => {
@@ -496,6 +638,10 @@ export default function ProfitLoss() {
     // Check if this is a collapsible section
     const isCollapsibleSection = data.rowType === 'section' && 
       ['REVENUE', 'COST_OF_SALES', 'OPERATING_EXPENSES', 'OTHER_INCOME', 'OTHER_EXPENSES'].includes(data.section);
+    
+    // Don't show code for section headers, totals, or spacing rows
+    const showCode = data.rowType === 'account' && data.code;
+    const displayText = showCode ? `${data.code} - ${data.name}` : data.name;
     
     if (isCollapsibleSection) {
       const isCollapsed = collapsedSections.has(data.section);
@@ -513,110 +659,270 @@ export default function ProfitLoss() {
           <span style={{ fontSize: '12px', color: '#666' }}>
             {isCollapsed ? '▶' : '▼'}
           </span>
-          {data.name}
+          {displayText}
         </div>
       );
     }
     
     return (
       <div style={{ paddingLeft: `${paddingLeft}px` }}>
-        {data.name}
+        {displayText}
       </div>
     );
   }, [collapsedSections, toggleSectionCollapse]);
 
-  // Row styling function
+  // Row styling function with simplified sectioning
   const getRowStyle = useCallback((params: RowClassParams) => {
     const data = params.data as ProfitLossRow;
     
+    // Handle spacing rows
+    if (data.section === 'SPACING') {
+      return {
+        backgroundColor: '#ffffff',
+        borderTop: '2px solid #e5e7eb',
+        borderBottom: '1px solid #e5e7eb',
+        height: '40px' // Half the default row height
+      } as any;
+    }
+    
     switch (data.rowType) {
       case 'section':
-        switch (data.section) {
-          case 'REVENUE':
-            return { backgroundColor: '#dcfce7', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
-          case 'COST_OF_SALES':
-            return { backgroundColor: '#fed7aa', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
-          case 'OPERATING_EXPENSES':
-            return { backgroundColor: '#fecaca', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
-          case 'OTHER_INCOME':
-            return { backgroundColor: '#dbeafe', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
-          case 'OTHER_EXPENSES':
-            return { backgroundColor: '#eff6ff', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
-          default:
-            return { backgroundColor: '#f9fafb', fontWeight: 'bold', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
-        }
+        // Section headers with professional grey shading
+        return { 
+          backgroundColor: '#e9ecef', 
+          fontWeight: 'bold', 
+          fontSize: 16, 
+          color: '#1e293b',
+          borderTop: '2px solid #6c757d',
+          borderBottom: '1px solid #adb5bd'
+        } as any;
       case 'total':
-        switch (data.section) {
-          case 'REVENUE':
-            return { backgroundColor: '#f0fdf4', fontWeight: 'bold', color: '#166534' } as any;
-          case 'COST_OF_SALES':
-            return { backgroundColor: '#fff7ed', fontWeight: 'bold', color: '#c2410c' } as any;
-          case 'OPERATING_EXPENSES':
-            return { backgroundColor: '#fef2f2', fontWeight: 'bold', color: '#991b1b' } as any;
-          case 'OTHER_INCOME':
-            return { backgroundColor: '#eff6ff', fontWeight: 'bold', color: '#1e40af' } as any;
-          case 'OTHER_EXPENSES':
-            return { backgroundColor: '#eff6ff', fontWeight: 'bold', color: '#1e40af' } as any;
-          default:
-            return { backgroundColor: '#e5e7eb', fontWeight: 'bold' } as any;
-        }
+        // Section totals with professional grey shading
+        return { 
+          backgroundColor: '#f1f3f4', 
+          fontWeight: 'bold', 
+          color: '#1e293b',
+          borderBottom: '2px solid #6c757d'
+        } as any;
       case 'calculation':
-        if (data.section === 'GROSS_PROFIT') {
-          return { backgroundColor: '#6b7280', fontWeight: 'bold', color: '#ffffff', fontSize: 16 } as any;
-        } else if (data.section === 'OPERATING_PROFIT') {
-          return { backgroundColor: '#6b7280', fontWeight: 'bold', color: '#ffffff', fontSize: 16 } as any;
-        } else if (data.section === 'OTHER_PROFIT') {
-          return { backgroundColor: '#6b7280', fontWeight: 'bold', color: '#ffffff', fontSize: 18, textDecoration: 'underline', textTransform: 'uppercase' } as any;
-        } else if (data.section === 'NET_PROFIT') {
-          return { backgroundColor: '#1f2937', fontWeight: 'bold', color: '#ffffff', fontSize: 18 } as any;
+        if (data.section === 'NET_PROFIT') {
+          // Net Profit with lighter background for visibility
+          return { 
+            backgroundColor: '#D3D3D3', // Indigo-600
+            fontWeight: 'bold', 
+            color: '#ffffff', 
+            fontSize: 16,
+            borderTop: '2px solid #1f2937', // 
+            borderBottom: '2px solid #D3D3D3' // 
+          } as any;
         }
-        return { backgroundColor: '#f3f4f6', fontWeight: 'bold' } as any;
+        // All other profit calculations with professional grey
+        return { 
+          backgroundColor: '#e9ecef', 
+          fontWeight: 'bold', 
+          color: '#1e293b', 
+          fontSize: 15,
+          borderTop: '2px solid #6c757d',
+          borderBottom: '2px solid #6c757d'
+        } as any;
       default:
-        return params.node.rowIndex! % 2 === 0 ? { backgroundColor: '#ffffff' } : { backgroundColor: '#f9fafb' };
+        // Regular account rows with professional grey alternating shading
+        return params.node.rowIndex! % 2 === 0 ? 
+          { backgroundColor: '#f8f9fa' } : 
+          { backgroundColor: '#ffffff' };
     }
   }, []);
 
+  // Previous Year Cell Renderer
+  const PreviousYearCellRenderer = useCallback((params: ICellRendererParams) => {
+    const data = params.data as ProfitLossRow;
+    const colId = params.column?.getColId();
+    const monthIndex = monthKeys.findIndex(key => colId?.includes(key));
+    
+    if (data.section === 'SPACING' || monthIndex === -1) return '';
+    
+    let pyValue = 0;
+    if (data.rowType === 'total') {
+      if (data.section === 'REVENUE') pyValue = generatePreviousYearData.revenue[monthIndex];
+      else if (data.section === 'COST_OF_SALES') pyValue = generatePreviousYearData.costOfSales[monthIndex];
+      else if (data.section === 'OPERATING_EXPENSES') pyValue = generatePreviousYearData.operatingExpenses[monthIndex];
+      else if (data.section === 'OTHER_INCOME') pyValue = generatePreviousYearData.otherIncome[monthIndex];
+      else if (data.section === 'OTHER_EXPENSES') pyValue = generatePreviousYearData.otherExpenses[monthIndex];
+    } else if (data.rowType === 'calculation') {
+      if (data.section === 'GROSS_PROFIT') pyValue = generatePreviousYearData.grossProfits[monthIndex];
+      else if (data.section === 'OPERATING_PROFIT') pyValue = generatePreviousYearData.operatingProfits[monthIndex];
+      else if (data.section === 'OTHER_PROFIT') pyValue = generatePreviousYearData.totalOtherProfits[monthIndex];
+      else if (data.section === 'NET_PROFIT') pyValue = generatePreviousYearData.netProfits[monthIndex];
+    } else if (data.rowType === 'account') {
+      // Generate random variation for individual accounts
+      const currentValue = Number(data[monthKeys[monthIndex]]) || 0;
+      pyValue = currentValue * (0.85 + Math.random() * 0.3);
+    }
+    
+    if (pyValue === 0) return '';
+    
+    return (
+      <span style={{ 
+        color: '#6b7280', 
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', 
+        fontSize: '12px', 
+        fontWeight: '400' 
+      }}>
+        {formatCurrency(pyValue)}
+      </span>
+    );
+  }, [generatePreviousYearData]);
+
+  // Total Column Cell Renderer
+  const TotalCellRenderer = useCallback((params: ICellRendererParams) => {
+    const data = params.data as ProfitLossRow;
+    
+    if (data.section === 'SPACING') return '';
+    
+    const total = calculateRowTotal(data);
+    if (total === 0) return '';
+    
+    // Determine text color
+    let textColor = '#374151';
+    if (['NET_PROFIT', 'GROSS_PROFIT', 'OPERATING_PROFIT', 'OTHER_PROFIT'].includes(data.section)) {
+      textColor = total >= 0 ? '#059669' : '#dc2626';
+    }
+    
+    return (
+      <span style={{ 
+        color: textColor, 
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', 
+        fontSize: '13px', 
+        fontWeight: '600' 
+      }}>
+        {formatCurrency(total)}
+      </span>
+    );
+  }, [calculateRowTotal]);
+
+  // Average Column Cell Renderer
+  const AverageCellRenderer = useCallback((params: ICellRendererParams) => {
+    const data = params.data as ProfitLossRow;
+    
+    if (data.section === 'SPACING') return '';
+    
+    const average = calculateRowAverage(data);
+    if (average === 0) return '';
+    
+    // Determine text color
+    let textColor = '#374151';
+    if (['NET_PROFIT', 'GROSS_PROFIT', 'OPERATING_PROFIT', 'OTHER_PROFIT'].includes(data.section)) {
+      textColor = average >= 0 ? '#059669' : '#dc2626';
+    }
+    
+    return (
+      <span style={{ 
+        color: textColor, 
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', 
+        fontSize: '13px', 
+        fontWeight: '600' 
+      }}>
+        {formatCurrency(average)}
+      </span>
+    );
+  }, [calculateRowAverage]);
+
   // Column definitions
-  const columnDefs: ColDef[] = useMemo(() => [
-    {
-      headerName: "Code",
-      field: "code",
-      width: 100,
-      minWidth: 80,
-      maxWidth: 120,
-      sortable: false,
-      filter: false,
-      pinned: 'left',
-      cellStyle: { fontSize: 12, color: '#6b7280' } as any
-    },
-    {
-      headerName: "Account Name",
-      field: "name",
-      cellRenderer: AccountNameCellRenderer,
-      width: 250,
-      minWidth: 200,
-      maxWidth: 300,
-      sortable: false,
-      filter: false,
-      pinned: 'left',
-      cellStyle: { fontSize: 14 }
-    },
-    ...months.map((month, index) => ({
-      headerName: month,
-      field: monthKeys[index],
-      cellRenderer: CurrencyCellRenderer,
-      width: 100,
-      minWidth: 90,
-      maxWidth: 120,
-      sortable: false,
-      filter: false,
-      cellStyle: { 
-        textAlign: 'right',
-        fontSize: 13,
-        fontFamily: 'monospace'
+  const columnDefs: ColDef[] = useMemo(() => {
+    const cols: ColDef[] = [
+      {
+        headerName: "Account",
+        field: "name",
+        cellRenderer: AccountNameCellRenderer,
+        flex: 2,
+        minWidth: 250,
+        sortable: false,
+        filter: false,
+        pinned: 'left',
+        cellStyle: { fontSize: 14 }
       }
-    }))
-  ], [AccountNameCellRenderer, CurrencyCellRenderer]);
+    ];
+
+    // Add month columns with optional PY columns
+    months.forEach((month, index) => {
+      cols.push({
+        headerName: month,
+        field: monthKeys[index],
+        cellRenderer: CurrencyCellRenderer,
+        flex: 1,
+        minWidth: 100,
+        sortable: false,
+        filter: false,
+        cellStyle: { 
+          textAlign: 'right',
+          fontSize: 13,
+          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+        }
+      });
+
+      // Add Previous Year column if enabled
+      if (compareToPreviousYear) {
+        cols.push({
+          headerName: 'PY',
+          field: `${monthKeys[index]}_py`,
+          cellRenderer: PreviousYearCellRenderer,
+          flex: 1,
+          minWidth: 80,
+          sortable: false,
+          filter: false,
+          cellStyle: { 
+            textAlign: 'right',
+            fontSize: 12,
+            fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+          }
+        });
+      }
+    });
+
+    // Add Total column if enabled
+    if (showTotalColumn) {
+      cols.push({
+        headerName: 'Total',
+        field: 'total',
+        cellRenderer: TotalCellRenderer,
+        flex: 1,
+        minWidth: 120,
+        sortable: false,
+        filter: false,
+        pinned: 'right',
+        cellStyle: { 
+          textAlign: 'right',
+          fontSize: 13,
+          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+          backgroundColor: '#f9fafb',
+          borderLeft: '2px solid #e5e7eb'
+        }
+      });
+    }
+
+    // Add Average column if enabled
+    if (showAverageColumn) {
+      cols.push({
+        headerName: 'Average',
+        field: 'average',
+        cellRenderer: AverageCellRenderer,
+        flex: 1,
+        minWidth: 120,
+        sortable: false,
+        filter: false,
+        pinned: 'right',
+        cellStyle: { 
+          textAlign: 'right',
+          fontSize: 13,
+          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+          backgroundColor: '#f1f5f9',
+          borderLeft: '2px solid #e5e7eb'
+        }
+      });
+    }
+
+    return cols;
+  }, [AccountNameCellRenderer, CurrencyCellRenderer, PreviousYearCellRenderer, TotalCellRenderer, AverageCellRenderer, compareToPreviousYear, showTotalColumn, showAverageColumn]);
 
   const onGridReady = useCallback(() => {
     if (gridRef.current && gridRef.current.api) {
@@ -636,312 +942,281 @@ export default function ProfitLoss() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 flex flex-col">
-      
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Main Content Container - 80% width */}
+      <div className="flex-1 overflow-hidden flex flex-col gap-6 w-4/5 mx-auto py-6">
+        {/* Header */}
+        <div className="flex-shrink-0 pb-4 border-b border-gray-200">
+          <h1 className="text-3xl font-bold text-gray-900">Profit & Loss Statement</h1>
+        </div>
 
-      {/* Main Content Layout - Reduced Height */}
-      <div className="grid grid-cols-3 gap-6 p-6 pt-8" style={{ height: 'calc(105vh - 120px)' }}>
-        {/* P&L Grid - 2/3 width */}
-        <div className="col-span-2 flex flex-col min-h-0">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden flex flex-col h-full">
-            {/* Grid Header */}
-            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-6 py-4 border-b border-gray-200/20 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  Profit & Loss:
-                </h2>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <StoreSelector 
-                      selectedStoreIds={selectedStoreIds}
-                      onSelectionChange={handleStoreSelectionChange}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DateSelector 
-                      onDateRangeChange={handleDateRangeChange}
-                      onCompareChange={handleCompareChange}
-                    />
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                  >
-                    Export
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-gray-300">Live Data</span>
-                  </div>
-                </div>
+        {/* Filter Section */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Filters:</span>
               </div>
+              <StoreSelector 
+                selectedStoreIds={selectedStoreIds}
+                onSelectionChange={handleStoreSelectionChange}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              />
+              <DateSelector 
+                onDateRangeChange={handleDateRangeChange}
+                onCompareChange={handleCompareChange}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              />
             </div>
-            
-            <div className="ag-theme-alpine-dark modern-financial-grid flex-1" style={{ width: '100%' }}>
-                <AgGridReact
-                  ref={gridRef}
-                  columnDefs={columnDefs}
-                  rowData={rowData}
-                  onGridReady={onGridReady}
-                  domLayout="normal"
-                  defaultColDef={{
-                    resizable: true,
-                    sortable: false,
-                    filter: false,
-                  }}
-                  suppressHorizontalScroll={false}
-                  rowHeight={40}
-                  headerHeight={50}
-                  suppressMenuHide={true}
-                  getRowStyle={getRowStyle}
-                  suppressRowClickSelection={true}
-                  suppressCellFocus={true}
-                  animateRows={true}
-                  enableCellTextSelection={false}
-                  suppressRowDeselection={true}
-
-                />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <span>Last synced: {formatDateWithOrdinal(new Date())}</span>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="text-xs border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                {isSyncing ? 'Syncing...' : 'Sync with Xero'}
+              </Button>
             </div>
           </div>
 
-                  {/* Right Side - Analytics Dashboard */}
-        <div className="col-span-1 flex flex-col gap-6 min-h-0">
-          {/* Key Metrics Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden flex flex-col">
-            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-6 py-4 flex-shrink-0">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-                Key Metrics
-              </h3>
+          {/* Sync Dialog */}
+          <Dialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Syncing with Xero
+                </h3>
+                <div className="space-y-4">
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-in-out"
+                      style={{ width: `${syncProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 text-center">
+                    {syncProgress < 100 ? 'Syncing financial data...' : 'Sync complete!'}
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          {/* Toggle Options */}
+          <div className="flex items-center gap-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">View Options:</span>
             </div>
-            <div className="p-6 space-y-4 flex-1">
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                <div>
-                  <p className="text-sm font-medium text-green-700">Net Profit</p>
-                  <p className="text-2xl font-bold text-green-900">£{(netProfits[netProfits.length - 1] || 0).toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                  </svg>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
-                <div>
-                  <p className="text-sm font-medium text-blue-700">Revenue</p>
-                  <p className="text-2xl font-bold text-blue-900">£{(revenueTotals[revenueTotals.length - 1] || 0).toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
-                <div>
-                  <p className="text-sm font-medium text-purple-700">Gross Profit</p>
-                  <p className="text-2xl font-bold text-purple-900">£{(grossProfits[grossProfits.length - 1] || 0).toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-              </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showTotalColumn}
+                onChange={(e) => setShowTotalColumn(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">Total Column</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={compareToPreviousYear}
+                onChange={(e) => setCompareToPreviousYear(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">Compare to Previous Year</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showPercentOfSales}
+                onChange={(e) => setShowPercentOfSales(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">% of Sales</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showAverageColumn}
+                onChange={(e) => setShowAverageColumn(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">Average Column</span>
+            </label>
+            <div className="ml-auto">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Export
+              </Button>
             </div>
           </div>
-
-          {/* Visualization Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden flex flex-col flex-1">
-            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-6 py-4 flex-shrink-0">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                </svg>
-                Analytics
-              </h3>
-            </div>
-            <div className="p-6 flex-1 flex items-center justify-center">
-              <div className="text-center text-gray-500">
-                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center">
-                  <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                  </svg>
-                </div>
-                <p className="text-sm font-medium text-gray-700">Interactive Charts</p>
-                <p className="text-xs text-gray-500 mt-1">Coming Soon</p>
-              </div>
-            </div>
+        </div>
+          
+                {/* Table Container */}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col flex-1">
+          <div className="ag-theme-alpine modern-financial-grid flex-1" style={{ width: '100%', height: '100%' }}>
+            <AgGridReact
+              ref={gridRef}
+              columnDefs={columnDefs}
+              rowData={rowData}
+              onGridReady={onGridReady}
+              domLayout="normal"
+              defaultColDef={{
+                resizable: true,
+                sortable: false,
+                filter: false,
+              }}
+              suppressHorizontalScroll={false}
+              rowHeight={showPercentOfSales ? 60 : 40}
+              headerHeight={50}
+              suppressMenuHide={true}
+              getRowStyle={getRowStyle}
+              suppressRowClickSelection={true}
+              suppressCellFocus={true}
+              animateRows={true}
+              enableCellTextSelection={false}
+              suppressRowDeselection={true}
+            />
           </div>
         </div>
       </div>
 
-      {/* Ultra-Modern AG Grid Styling */}
+      {/* Professional Financial Grid Styling */}
       <style jsx global>{`
-        /* Modern Financial Grid Theme */
-        .modern-financial-grid.ag-theme-alpine-dark {
-          --ag-background-color: #ffffff;
-          --ag-odd-row-background-color: #fafbfc;
-          --ag-header-background-color: #f8fafc;
-          --ag-header-foreground-color: #374151;
-          --ag-border-color: #e5e7eb;
-          --ag-row-hover-color: #f1f5f9;
-          --ag-selected-row-background-color: #dbeafe;
-          --ag-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        /* Modern Professional Financial Grid Theme */
+        .modern-financial-grid.ag-theme-alpine {
+          --ag-background-color: #f8f9fa;
+          --ag-odd-row-background-color: #f1f3f4;
+          --ag-header-background-color: #ffffff;
+          --ag-header-foreground-color: #1e293b;
+          --ag-border-color: #e2e8f0;
+          --ag-row-hover-color: #e9ecef;
+          --ag-font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
           --ag-font-size: 14px;
-          --ag-font-weight: 500;
-          border-radius: 0;
           border: none;
-          box-shadow: none;
+          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
         }
         
         /* Header Styling */
         .modern-financial-grid .ag-header {
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          border-bottom: 2px solid #e2e8f0;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+          background: #ffffff;
+          border-bottom: 2px solid #cbd5e1;
+          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
         }
         
         .modern-financial-grid .ag-header-cell {
-          font-weight: 700;
+          font-weight: 600;
           font-size: 13px;
-          color: #374151;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          border-right: 1px solid #e5e7eb;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          color: #1e293b;
+          border-right: 1px solid #cbd5e1;
           background: transparent;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
         
-        .modern-financial-grid .ag-header-cell:hover {
-          background: rgba(226, 232, 240, 0.5);
-        }
-        
-        /* Pinned Column Headers */
-        .modern-financial-grid .ag-pinned-left-header .ag-header-cell {
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          color: #374151;
-          font-weight: 700;
-          border-right: 1px solid #e5e7eb;
-        }
-        
-        .modern-financial-grid .ag-pinned-left-header .ag-header-cell:hover {
-          background: rgba(226, 232, 240, 0.5);
+        .modern-financial-grid .ag-header-cell-label {
+          justify-content: center;
         }
         
         /* Row Styling */
         .modern-financial-grid .ag-row {
           border-bottom: 1px solid #f1f5f9;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: background-color 0.15s ease;
         }
         
         .modern-financial-grid .ag-row:hover {
-          background: rgba(248, 250, 252, 0.8);
+          background-color: #f8fafc;
+        }
+        
+        /* Simplified Section Borders */
+        .modern-financial-grid .ag-row.net-profit {
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
         /* Cell Styling */
         .modern-financial-grid .ag-cell {
-          padding: 12px 16px;
-          line-height: 1.6;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          padding: 12px 14px;
           border-right: 1px solid #f1f5f9;
+          display: flex;
+          align-items: center;
         }
         
         .modern-financial-grid .ag-cell:focus {
           outline: none;
-          border: none;
+          box-shadow: inset 0 0 0 1px #3b82f6;
         }
         
-        /* Pinned Column Cells - Dynamic Background Based on Row Type */
+        /* Pinned Column Cells */
         .modern-financial-grid .ag-pinned-left-cols-container .ag-cell {
-          color: #374151;
+          color: #1e293b;
           font-weight: 500;
-          border-right: 1px solid #f1f5f9;
+          border-right: 2px solid #cbd5e1;
+          background: inherit;
+          font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
         }
         
-        .modern-financial-grid .ag-row:hover .ag-pinned-left-cols-container .ag-cell {
-          background: rgba(248, 250, 252, 0.8);
-        }
-        
-        /* Scrollbar Styling */
-        .modern-financial-grid .ag-body-horizontal-scroll {
-          background: #f8fafc;
-          border-top: 1px solid #e5e7eb;
-        }
-        
-        .modern-financial-grid .ag-body-horizontal-scroll-viewport {
-          background: #ffffff;
-        }
-        
-        .modern-financial-grid .ag-horizontal-left-spacer,
-        .modern-financial-grid .ag-horizontal-right-spacer {
-          background: #f8fafc;
-          border-right: 1px solid #e5e7eb;
-        }
-        
-        /* Loading States */
-        .modern-financial-grid .ag-overlay-loading-wrapper {
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(10px);
-        }
-        
-        /* Typography Enhancements */
-        .modern-financial-grid .ag-cell {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 500;
-          letter-spacing: 0.25px;
-        }
-        
-        .modern-financial-grid .ag-pinned-left-cols-container .ag-cell {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        .modern-financial-grid .ag-pinned-right-cols-container .ag-cell {
+          background: inherit;
+          border-left: 2px solid #cbd5e1;
           font-weight: 600;
-          letter-spacing: 0.5px;
         }
         
-        /* Responsive Design */
+        /* Typography for financial data */
+        .modern-financial-grid .ag-cell {
+          font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+          font-weight: 400;
+        }
+        
+        /* Financial number styling */
+        .modern-financial-grid .ag-cell[col-id*="may"], 
+        .modern-financial-grid .ag-cell[col-id*="jun"], 
+        .modern-financial-grid .ag-cell[col-id*="jul"], 
+        .modern-financial-grid .ag-cell[col-id*="aug"], 
+        .modern-financial-grid .ag-cell[col-id*="sep"], 
+        .modern-financial-grid .ag-cell[col-id*="oct"], 
+        .modern-financial-grid .ag-cell[col-id*="nov"], 
+        .modern-financial-grid .ag-cell[col-id*="dec"],
+        .modern-financial-grid .ag-cell[col-id*="total"] {
+          justify-content: flex-end;
+          font-variant-numeric: tabular-nums;
+        }
+        
+        /* Scrollbar styling */
+        .modern-financial-grid .ag-body-horizontal-scroll-viewport::-webkit-scrollbar {
+          height: 8px;
+        }
+        
+        .modern-financial-grid .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-track {
+          background: #f1f5f9;
+        }
+        
+        .modern-financial-grid .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+        
+        .modern-financial-grid .ag-body-horizontal-scroll-viewport::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+        
+        /* Responsive adjustments */
         @media (max-width: 1024px) {
           .modern-financial-grid .ag-cell {
-            padding: 10px 12px;
-            font-size: 13px;
+            padding: 8px 10px;
+            font-size: 12px;
           }
           
           .modern-financial-grid .ag-header-cell {
-            font-size: 12px;
+            font-size: 11px;
           }
-        }
-        
-        /* Accessibility Improvements */
-        .modern-financial-grid .ag-cell:focus-visible {
-          outline: 2px solid #3b82f6;
-          outline-offset: -2px;
-        }
-        
-        .modern-financial-grid .ag-header-cell:focus-visible {
-          outline: 2px solid #3b82f6;
-          outline-offset: -2px;
-        }
-        
-        /* Performance Optimizations */
-        .modern-financial-grid .ag-cell,
-        .modern-financial-grid .ag-header-cell {
-          will-change: transform, box-shadow, background;
-        }
-        
-        .modern-financial-grid .ag-row {
-          contain: layout style paint;
         }
       `}</style>
     </div>
