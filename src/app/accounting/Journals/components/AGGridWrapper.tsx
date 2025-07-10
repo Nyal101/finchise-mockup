@@ -17,9 +17,15 @@ interface AGGridWrapperProps {
   columnDefs: ColDef[];
   rowData: JournalEntry[];
   onCellClicked: (event: CellClickedEvent) => void;
+  defaultColDef?: {
+    resizable?: boolean;
+    sortable?: boolean;
+    filter?: boolean;
+    cellClass?: string;
+  };
 }
 
-export default function AGGridWrapper({ columnDefs, rowData, onCellClicked }: AGGridWrapperProps) {
+export default function AGGridWrapper({ columnDefs, rowData, onCellClicked, defaultColDef }: AGGridWrapperProps) {
   const [isClient, setIsClient] = React.useState(false);
   const gridRef = React.useRef<AgGridReact>(null);
 
@@ -70,6 +76,7 @@ export default function AGGridWrapper({ columnDefs, rowData, onCellClicked }: AG
           resizable: true,
           sortable: false,
           filter: false,
+          ...defaultColDef
         }}
         suppressColumnVirtualisation={true}
         suppressHorizontalScroll={false}
