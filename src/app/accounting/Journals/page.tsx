@@ -103,10 +103,9 @@ function JournalsContent() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active": return "bg-green-100 text-green-800 border-green-200";
-      case "complete": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "draft": return "bg-gray-100 text-gray-800 border-gray-200";
+      case "published": return "bg-green-100 text-green-800 border-green-200";
       case "review": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "archived": return "bg-gray-100 text-gray-800 border-gray-200";
       default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
@@ -138,7 +137,17 @@ function JournalsContent() {
     {
       headerName: "Description",
       field: "description",
-      minWidth: 250,
+      minWidth: 200,
+      sortable: true,
+      filter: true,
+      floatingFilter: true,
+    },
+    {
+      headerName: "Company",
+      field: "company",
+      width: 140,
+      minWidth: 120,
+      maxWidth: 160,
       sortable: true,
       filter: true,
       floatingFilter: true,
@@ -198,7 +207,18 @@ function JournalsContent() {
         journal.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
         journal.accountCode.toLowerCase().includes(searchTerm.toLowerCase());
         
-      const matchesStatus = statusFilter === "all" || journal.status === statusFilter;
+      // Map display status to internal status for filtering
+      let matchesStatus = false;
+      if (statusFilter === "all") {
+        matchesStatus = true;
+      } else if (statusFilter === "published") {
+        matchesStatus = journal.status === "published";
+      } else if (statusFilter === "review") {
+        matchesStatus = journal.status === "review";
+      } else if (statusFilter === "archived") {
+        matchesStatus = journal.status === "archived";
+      }
+      
       const matchesType = !urlType || urlType === "all" || journal.type === urlType;
       const matchesStore = !store || store === "all" || journal.store === store;
       
@@ -212,10 +232,17 @@ function JournalsContent() {
 
   // Quick status filter buttons
   const statusCounts = React.useMemo(() => {
-    const counts = { all: 0, draft: 0, review: 0, active: 0, complete: 0 };
+    const counts = { all: 0, review: 0, published: 0, archived: 0 };
     journalData.forEach(journal => {
       counts.all++;
-      counts[journal.status as keyof typeof counts]++;
+      // Map old statuses to new ones for display
+      if (journal.status === 'posted') {
+        counts.published++;
+      } else if (journal.status === 'review') {
+        counts.review++;
+      } else if (journal.status === 'archived') {
+        counts.archived++;
+      }
     });
     return counts;
   }, [journalData]);
@@ -311,8 +338,18 @@ function JournalsContent() {
               <FileText className="h-5 w-5 text-gray-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-600">{statusCounts.draft}</p>
-              <p className="text-sm text-gray-600">Draft</p>
+              <p className="text-2xl font-bold text-gray-600">{statusCounts.review}</p>
+              <p className="text-sm text-gray-600">Needs Review</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
+              <Clock className="h-5 w-5 text-green-600" />
+              </div>
+            <div>
+              <p className="text-2xl font-bold text-green-600">{statusCounts.published}</p>
+              <p className="text-sm text-gray-600">Published</p>
             </div>
           </div>
           
@@ -324,16 +361,6 @@ function JournalsContent() {
               <p className="text-2xl font-bold text-red-600">{statusCounts.review}</p>
               <p className="text-sm text-gray-600">Needs Review</p>
             </div>
-              </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
-              <Clock className="h-5 w-5 text-green-600" />
-              </div>
-            <div>
-              <p className="text-2xl font-bold text-green-600">{statusCounts.active}</p>
-              <p className="text-sm text-gray-600">Active</p>
-            </div>
           </div>
           
           <div className="flex items-center gap-3">
@@ -341,8 +368,8 @@ function JournalsContent() {
               <CheckCircle className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-blue-600">{statusCounts.complete}</p>
-              <p className="text-sm text-gray-600">Complete</p>
+              <p className="text-2xl font-bold text-blue-600">{statusCounts.archived}</p>
+              <p className="text-sm text-gray-600">Archived</p>
             </div>
           </div>
         </div>

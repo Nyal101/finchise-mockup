@@ -1,55 +1,69 @@
 // Types for Journal entries
-export type JournalType = "prepayment" | "accrual";
+export type JournalType = "prepayment" | "accrual" | "stock";
 
 export type JournalStatus = "draft" | "review" | "active" | "complete";
 
 export type JournalSource = "bill" | "invoice" | "manual";
 
-export type ScheduleType = "monthly & weekly" | "monthly";
+export type ScheduleType = 'monthly (weekly split)' | 'monthly (equal split)';
 
-export interface JournalLineItem {
+export interface JournalDocument {
   id: string;
-  accountCode: string;
-  description: string;
-  debitAmount: number;
-  creditAmount: number;
-  store: string;
-  taxRate: string; // e.g. "20% (VAT on Income)", "No Tax", etc.
-}
-
-export interface MonthlyBreakdown {
-  month: string; // Format: "YYYY-MM"
-  amount: number;
-  status: "scheduled" | "posted" | string;
-  lineItems: JournalLineItem[];
-}
-
-export type SourceDocument = {
-  id: string;
-  type: "bill" | "invoice" | "manual";
+  type: JournalSource;
   reference: string;
   url: string;
   description: string;
-};
+}
+
+export interface JournalLineItem {
+  id: string;
+  description: string;
+  accountCode: string;
+  debitAmount: number;
+  creditAmount: number;
+  store: string;
+  taxRate: string;
+  date: string;
+}
+
+export interface MonthlyBreakdown {
+  id: string;
+  month: string;  // Format: "YYYY-MM"
+  status: 'published' | 'review' | 'archived';
+  description?: string;
+  lineItems: JournalLineItem[];
+  prepayBalance: number;
+  expenseBalance: number;
+  amount: number;
+}
 
 export interface JournalEntry {
   id: string;
-  type: 'prepayment' | 'accrual';
+  type: JournalType;
   title: string;
   description: string;
+  company: string;
   accountCode: string;
   monthlyAccountCode: string;
   category: string;
   totalAmount: number;
-  expensePaidMonth: Date; // New: month expense was paid
-  periodStartDate: Date; // New: recognition period start
-  periodEndDate: Date;   // New: recognition period end
+  expensePaidMonth?: Date; // Optional for stock journals
+  periodStartDate?: Date; // Optional for stock journals
+  periodEndDate?: Date;   // Optional for stock journals
   store: string;
-  status: JournalStatus;
+  status: 'published' | 'review' | 'archived';
   createdDate: Date;
-  sourceDocuments: SourceDocument[];
-  scheduleType: ScheduleType;
+  sourceDocuments: JournalDocument[];
+  scheduleType?: ScheduleType; // Optional for stock journals
   monthlyBreakdown?: MonthlyBreakdown[];
+  
+  // Stock-specific fields
+  openingStockDate?: Date;
+  openingStockValue?: number;
+  closingStockDate?: Date;
+  closingStockValue?: number;
+  stockMovementAccountCode?: string;
+  stockAccountCode?: string;
 }
 
 export interface PrepaymentAccrualEntry {
