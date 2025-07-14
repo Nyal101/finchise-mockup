@@ -89,8 +89,12 @@ function calculateAmountForPeriod(
         : Math.round(amountPerDay * period.days * 100) / 100;
 
     case 'weekly':
-      // This case will be handled in the new weekly calculation function
-      return 0;
+      // Split evenly across weeks based on days in each week
+      const totalWeekDays = getDaysInPeriod(periodStartDate, periodEndDate);
+      const amountPerWeekDay = totalAmount / totalWeekDays;
+      return index === totalPeriods - 1
+        ? totalAmount - runningTotal
+        : Math.round(amountPerWeekDay * period.days * 100) / 100;
 
     default:
       return 0;

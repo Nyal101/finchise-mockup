@@ -327,11 +327,11 @@ export default function JournalDetailsPage() {
                                 <div className="relative">
                                   <ArrowRight className="h-5 w-5 stroke-2" />
                                   <ArrowLeft className="h-4 w-4 stroke-2 absolute -top-0.5 -right-0.5" />
-                                </div>
+                  </div>
                               ) : (
                                 <Package className="h-5 w-5 stroke-2" />
                               )}
-                            </div>
+                  </div>
                             
                             <div>
                               <div className="font-medium text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -346,10 +346,10 @@ export default function JournalDetailsPage() {
                                 )}
                                 <span className="text-gray-300">•</span>
                                 <span className={`font-medium ${j.totalAmount < 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                                  {formatCurrency(j.totalAmount)}
+                    {formatCurrency(j.totalAmount)}
                                 </span>
                   </div>
-                  </div>
+                </div>
                   </div>
                 </div>
 
@@ -360,7 +360,7 @@ export default function JournalDetailsPage() {
                               : 'bg-yellow-50 text-yellow-700'}`}
                           >
                             {j.status === 'published'}
-                            {j.status}
+                    {j.status}
                           </div>
                 </div>
               </div>
@@ -471,10 +471,10 @@ export default function JournalDetailsPage() {
                         ) : (
                           <ChevronLeft className="h-5 w-5" />
                         )}
-                      </Button>
+                          </Button>
                     </div>
                   )}
-                </div>
+                    </div>
 
                 {/* Render appropriate journal details component based on type */}
                 {(journal.type === 'prepayment' || journal.type === 'mixed') && (
@@ -486,8 +486,8 @@ export default function JournalDetailsPage() {
                 {journal.type === 'stock' && (
                   <StockJournalDetails journal={journal} onUpdate={handleJournalUpdate} />
                 )}
-              </div>
-            </div>
+                    </div>
+                  </div>
 
             {/* Journal Breakdown - Show monthly for monthly schedule, weekly for weekly schedule */}
             {(journal.type === 'stock' || monthlyBreakdown.length > 0 || weeklyBreakdown.length > 0) && (
@@ -507,9 +507,9 @@ export default function JournalDetailsPage() {
                       <div className="flex items-center gap-1">
                           <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                           <span>Review</span>
-                        </div>
                       </div>
                     </div>
+                  </div>
                     {journal.type !== 'stock' && (
                   <div className="text-xs text-muted-foreground">
                     Scroll horizontally to view all {journal.scheduleType === 'weekly' ? 'weeks' : 'months'} →
@@ -521,7 +521,7 @@ export default function JournalDetailsPage() {
                   {/* Breakdown Cards - Monthly or Weekly */}
                   {journal.scheduleType === 'weekly' && weeklyBreakdown.length > 0 ? (
                     // Weekly breakdown display
-                    <div className="overflow-x-auto">
+                  <div className="overflow-x-auto">
                       <div className="flex gap-3 p-3" style={{ minWidth: `${weeklyBreakdown.length * 260}px` }}>
                         {weeklyBreakdown
                           .sort((a, b) => {
@@ -530,84 +530,84 @@ export default function JournalDetailsPage() {
                             if (!a.isReversing && b.isReversing) return 1;
                             return new Date(a.week).getTime() - new Date(b.week).getTime();
                           })
-                          .map((breakdown) => {
+                        .map((breakdown) => {
                             const weekDate = new Date(breakdown.week);
                             const isSelected = selectedWeek === breakdown.week;
 
-                            return (
+                          return (
                               <div key={breakdown.week} className="w-[260px]">
-                                <div
-                                  className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
+                              <div
+                                className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
                                     breakdown.status === 'published'
-                                      ? 'border-green-500 bg-green-50'
+                                    ? 'border-green-500 bg-green-50'
                                       : 'border-yellow-500 bg-yellow-50'
-                                  } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                                } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
                                   onClick={() => handleWeekSelect(breakdown.week)}
-                                >
-                                  <div className="flex items-center justify-between mb-1">
+                              >
+                                <div className="flex items-center justify-between mb-1">
                                     <span className="font-semibold text-base flex items-center gap-1">
                                       {breakdown.weekLabel}
                                     </span>
-                                    <div className="flex items-center gap-2">
-                                      <Badge
-                                        variant="outline"
-                                        className={
+                                  <div className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={
                                           breakdown.status === 'published'
-                                            ? 'bg-green-100 text-green-800 border-green-200'
+                                          ? 'bg-green-100 text-green-800 border-green-200'
                                             : 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                        }
-                                      >
-                                        {breakdown.status}
-                                      </Badge>
+                                      }
+                                    >
+                                      {breakdown.status}
+                                    </Badge>
                                       {breakdown.isReversing && (
                                         <span title="Reversing entry">
                                           <RotateCcw className="h-4 w-4 text-purple-600" />
                                         </span>
                                       )}
-                                      {isSelected ? (
-                                        <ChevronUp className="h-4 w-4 text-blue-500" />
-                                      ) : (
-                                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                                      )}
-                                    </div>
+                                    {isSelected ? (
+                                      <ChevronUp className="h-4 w-4 text-blue-500" />
+                                    ) : (
+                                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    )}
                                   </div>
+                                </div>
                                   <div className="text-xs text-muted-foreground mb-2">
                                     {breakdown.isReversing ? (
                                       format(weekDate, "MMM dd, yyyy")
                                     ) : (
                                       `${format(weekDate, "MMM dd")} - ${format(new Date(breakdown.weekEndDate), "MMM dd, yyyy")}`
                                     )}
-                                  </div>
-                                  {journal.type === 'prepayment' && (
-                                    <>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Prepay Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
-                                      </div>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Expense Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
-                                      </div>
-                                    </>
-                                  )}
-                                  {journal.type === 'accrual' && (
-                                    <>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Accrual Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
-                                      </div>
-                                      <div className="flex justify-between text-muted-foreground">
-                                        <span>Expense Bal</span>
-                                        <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
-                                      </div>
-                                    </>
-                                  )}
                                 </div>
+                                {journal.type === 'prepayment' && (
+                                  <>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Prepay Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Expense Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                    </div>
+                                  </>
+                                )}
+                                {journal.type === 'accrual' && (
+                                  <>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Accrual Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-muted-foreground">
+                                      <span>Expense Bal</span>
+                                      <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
-                            );
-                          })}
-                      </div>
+                            </div>
+                          );
+                        })}
                     </div>
+                  </div>
                   ) : (
                     // Monthly breakdown display
                     <div className={journal.type === 'stock' ? 'p-3' : 'overflow-x-auto'}>
@@ -619,7 +619,7 @@ export default function JournalDetailsPage() {
                             const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
                             const isSelected = selectedMonth === breakdown.month;
 
-                            return (
+                    return (
                               <div key={breakdown.month} className={journal.type === 'stock' ? 'w-full' : 'w-[260px]'}>
                                 <div
                                   className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
@@ -689,8 +689,8 @@ export default function JournalDetailsPage() {
                                     </div>
                                   </>
                                 )}
-                              </div>
-                            </div>
+                          </div>
+                        </div>
                           );
                         })}
                       </div>
@@ -718,7 +718,8 @@ export default function JournalDetailsPage() {
                     // Convert weekly breakdown to monthly breakdown format for JournalLineItems
                     const monthlyBreakdownForWeek = {
                       ...breakdown,
-                      month: breakdown.week // Use week date as month for compatibility
+                      month: breakdown.week, // Use week date as month for compatibility
+                      amount: breakdown.prepayBalance + breakdown.expenseBalance // Calculate total amount
                     };
 
                     return (

@@ -46,16 +46,19 @@ export interface WeeklyBreakdown {
   week: string;  // Format: "YYYY-MM-DD" (week start date)
   weekLabel: string;  // Format: "Week 1", "Week 2", etc.
   weekEndDate: string;  // Format: "YYYY-MM-DD"
+  amount: number;
   status: 'published' | 'review' | 'archived';
   description?: string;
   lineItems: JournalLineItem[];
-  prepayBalance: number;
-  expenseBalance: number;
-  amount: number;
   /**
    * Indicates this entry is the reversing journal entry created in the paid month.
    */
   isReversing?: boolean;
+}
+
+export interface WeeklyBreakdownWithBalances extends WeeklyBreakdown {
+  prepayBalance: number;
+  expenseBalance: number;
 }
 
 export interface StoreAllocation {
@@ -132,4 +135,4 @@ export interface PrepaymentAccrualEntry {
   store: string;
   status: "draft" | "review" | "active" | "complete";
   createdDate: Date;
-} 
+}
