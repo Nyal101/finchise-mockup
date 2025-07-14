@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   Package,
   Plus,
-  Upload,
   FileText
 } from "lucide-react";
 import { JournalEntry } from "./types";
@@ -278,10 +277,6 @@ function JournalsContent() {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Import Journals
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button>

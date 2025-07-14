@@ -5,7 +5,7 @@ export type JournalStatus = "draft" | "review" | "active" | "complete";
 
 export type JournalSource = "bill" | "invoice" | "manual";
 
-export type ScheduleType = 'monthly (weekly split)' | 'monthly (equal split)';
+export type ScheduleType = 'monthly' | 'weekly';
 
 export interface JournalDocument {
   id: string;
@@ -29,6 +29,23 @@ export interface JournalLineItem {
 export interface MonthlyBreakdown {
   id: string;
   month: string;  // Format: "YYYY-MM"
+  status: 'published' | 'review' | 'archived';
+  description?: string;
+  lineItems: JournalLineItem[];
+  prepayBalance: number;
+  expenseBalance: number;
+  amount: number;
+  /**
+   * Indicates this entry is the reversing journal entry created in the paid month.
+   */
+  isReversing?: boolean;
+}
+
+export interface WeeklyBreakdown {
+  id: string;
+  week: string;  // Format: "YYYY-MM-DD" (week start date)
+  weekLabel: string;  // Format: "Week 1", "Week 2", etc.
+  weekEndDate: string;  // Format: "YYYY-MM-DD"
   status: 'published' | 'review' | 'archived';
   description?: string;
   lineItems: JournalLineItem[];
@@ -75,6 +92,10 @@ export interface JournalEntry {
    * Optional cached monthly breakdown (used by UI when editing in memory)
    */
   monthlyBreakdown?: MonthlyBreakdown[];
+  /**
+   * Optional cached weekly breakdown (used by UI when editing in memory)
+   */
+  weeklyBreakdown?: WeeklyBreakdown[];
   source: "bill" | "invoice" | "stock-entry";
 }
 

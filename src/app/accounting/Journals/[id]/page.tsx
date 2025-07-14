@@ -41,6 +41,7 @@ export default function JournalDetailsPage() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [selectedDocumentId, setSelectedDocumentId] = React.useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = React.useState<string | null>(null);
   const [showDocuments, setShowDocuments] = React.useState(false);
   
   // Reset journal data when ID changes
@@ -58,22 +59,13 @@ export default function JournalDetailsPage() {
     if (j) {
       setJournalData({ 
         ...j, 
-        scheduleType: j.scheduleType || 'monthly (weekly split)', 
+        scheduleType: j.scheduleType || 'monthly', 
         monthlyBreakdown: j.monthlyBreakdown || [] 
       });
       setSelectedMonth(null);
+      setSelectedWeek(null);
     }
   }, [params.id]);
-
-  // Reset selected month if it's not in the current journal's breakdown
-  React.useEffect(() => {
-    if (journalData && selectedMonth) {
-      const monthExists = monthlyBreakdown.some(b => b.month === selectedMonth);
-      if (!monthExists) {
-        setSelectedMonth(null);
-      }
-    }
-  }, [journalData, selectedMonth]);
 
   // Set initial selected document
   useEffect(() => {
@@ -83,16 +75,16 @@ export default function JournalDetailsPage() {
     }
   }, [journal, selectedDocumentId]);
 
-  // Calculate monthly breakdown using the appropriate calculation function
-  const monthlyBreakdown = React.useMemo(() => {
-    if (!journal) return [];
+  // Calculate breakdown using the appropriate calculation function
+  const { monthlyBreakdown, weeklyBreakdown } = React.useMemo(() => {
+    if (!journal) return { monthlyBreakdown: [], weeklyBreakdown: [] };
     
     if (journal.type === 'stock') {
       // For stock journals, use the stock calculation
       if (!journal.openingStockDate || !journal.closingStockDate || 
           journal.openingStockValue === undefined || journal.closingStockValue === undefined ||
           !journal.stockMovementAccountCode || !journal.stockAccountCode) {
-        return [];
+        return { monthlyBreakdown: [], weeklyBreakdown: [] };
       }
       
       const result = calculateStockJournal({
@@ -107,11 +99,11 @@ export default function JournalDetailsPage() {
         status: journal.status as 'published' | 'review' | 'archived',
       });
 
-      return result.monthlyBreakdown;
+      return { monthlyBreakdown: result.monthlyBreakdown, weeklyBreakdown: [] };
     } else {
       // For prepayment/accrual journals, use the existing calculation
       if (!journal.periodStartDate || !journal.periodEndDate || !journal.expensePaidMonth || !journal.scheduleType) {
-        return [];
+        return { monthlyBreakdown: [], weeklyBreakdown: [] };
       }
     
     const result = calculateJournal({
@@ -123,17 +115,37 @@ export default function JournalDetailsPage() {
       scheduleType: journal.scheduleType,
       accountCode: journal.accountCode,
       monthlyAccountCode: journal.monthlyAccountCode,
-        status: journal.status as 'published' | 'review' | 'archived',
+      store: journal.store,
+      status: journal.status as 'published' | 'review' | 'archived',
     });
 
     if (result.error) {
       console.error(result.error);
-      return [];
+      return { monthlyBreakdown: [], weeklyBreakdown: [] };
     }
 
-    return result.monthlyBreakdown;
+    return { 
+      monthlyBreakdown: result.monthlyBreakdown, 
+      weeklyBreakdown: result.weeklyBreakdown || []
+    };
     }
   }, [journal]);
+
+  // Reset selected month/week if it's not in the current journal's breakdown
+  React.useEffect(() => {
+    if (journalData && selectedMonth) {
+      const monthExists = monthlyBreakdown.some(b => b.month === selectedMonth);
+      if (!monthExists) {
+        setSelectedMonth(null);
+      }
+    }
+    if (journalData && selectedWeek) {
+      const weekExists = weeklyBreakdown.some(b => b.week === selectedWeek);
+      if (!weekExists) {
+        setSelectedWeek(null);
+      }
+    }
+  }, [journalData, selectedMonth, selectedWeek, monthlyBreakdown, weeklyBreakdown]);
 
   // Filter journals for the list
   const filteredJournals = React.useMemo(() => {
@@ -158,6 +170,13 @@ export default function JournalDetailsPage() {
   // Handle month selection
   const handleMonthSelect = (month: string) => {
     setSelectedMonth(prevMonth => prevMonth === month ? null : month);
+    setSelectedWeek(null); // Clear week selection when month is selected
+  };
+
+  // Handle week selection
+  const handleWeekSelect = (week: string) => {
+    setSelectedWeek(prevWeek => prevWeek === week ? null : week);
+    setSelectedMonth(null); // Clear month selection when week is selected
   };
 
   // State for managing journal operations
@@ -470,14 +489,15 @@ export default function JournalDetailsPage() {
               </div>
             </div>
 
-            {/* Monthly Breakdown - Only show for non-stock journals or stock journals with breakdown */}
-            {(journal.type !== 'stock' || monthlyBreakdown.length > 0) && (
+            {/* Journal Breakdown - Show monthly for monthly schedule, weekly for weekly schedule */}
+            {(journal.type === 'stock' || monthlyBreakdown.length > 0 || weeklyBreakdown.length > 0) && (
             <div className="px-4">
               <div className="border rounded-lg overflow-hidden">
                 <div className="bg-white p-3 border-b flex items-center justify-between">
                   <div className="flex items-center gap-4 text-sm">
                       <h3 className="font-semibold">
-                        {journal.type === 'stock' ? 'Journal Entry' : 'Monthly Breakdown'}
+                        {journal.type === 'stock' ? 'Journal Entry' : 
+                         journal.scheduleType === 'weekly' ? 'Weekly Breakdown' : 'Monthly Breakdown'}
                       </h3>
                     <div className="flex items-center gap-4 text-xs">
                       <div className="flex items-center gap-1">
@@ -492,32 +512,123 @@ export default function JournalDetailsPage() {
                     </div>
                     {journal.type !== 'stock' && (
                   <div className="text-xs text-muted-foreground">
-                    Scroll horizontally to view all months →
+                    Scroll horizontally to view all {journal.scheduleType === 'weekly' ? 'weeks' : 'months'} →
                   </div>
                     )}
                 </div>
                 
                 <div className="bg-gray-50/50">
-                  {/* Monthly Cards */}
+                  {/* Breakdown Cards - Monthly or Weekly */}
+                  {journal.scheduleType === 'weekly' && weeklyBreakdown.length > 0 ? (
+                    // Weekly breakdown display
+                    <div className="overflow-x-auto">
+                      <div className="flex gap-3 p-3" style={{ minWidth: `${weeklyBreakdown.length * 260}px` }}>
+                        {weeklyBreakdown
+                          .sort((a, b) => {
+                            // Sort reversing entries first, then by date
+                            if (a.isReversing && !b.isReversing) return -1;
+                            if (!a.isReversing && b.isReversing) return 1;
+                            return new Date(a.week).getTime() - new Date(b.week).getTime();
+                          })
+                          .map((breakdown) => {
+                            const weekDate = new Date(breakdown.week);
+                            const isSelected = selectedWeek === breakdown.week;
+
+                            return (
+                              <div key={breakdown.week} className="w-[260px]">
+                                <div
+                                  className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
+                                    breakdown.status === 'published'
+                                      ? 'border-green-500 bg-green-50'
+                                      : 'border-yellow-500 bg-yellow-50'
+                                  } ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                                  onClick={() => handleWeekSelect(breakdown.week)}
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="font-semibold text-base flex items-center gap-1">
+                                      {breakdown.weekLabel}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <Badge
+                                        variant="outline"
+                                        className={
+                                          breakdown.status === 'published'
+                                            ? 'bg-green-100 text-green-800 border-green-200'
+                                            : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                        }
+                                      >
+                                        {breakdown.status}
+                                      </Badge>
+                                      {breakdown.isReversing && (
+                                        <span title="Reversing entry">
+                                          <RotateCcw className="h-4 w-4 text-purple-600" />
+                                        </span>
+                                      )}
+                                      {isSelected ? (
+                                        <ChevronUp className="h-4 w-4 text-blue-500" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mb-2">
+                                    {breakdown.isReversing ? (
+                                      format(weekDate, "MMM dd, yyyy")
+                                    ) : (
+                                      `${format(weekDate, "MMM dd")} - ${format(new Date(breakdown.weekEndDate), "MMM dd, yyyy")}`
+                                    )}
+                                  </div>
+                                  {journal.type === 'prepayment' && (
+                                    <>
+                                      <div className="flex justify-between text-muted-foreground">
+                                        <span>Prepay Bal</span>
+                                        <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                      </div>
+                                      <div className="flex justify-between text-muted-foreground">
+                                        <span>Expense Bal</span>
+                                        <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                      </div>
+                                    </>
+                                  )}
+                                  {journal.type === 'accrual' && (
+                                    <>
+                                      <div className="flex justify-between text-muted-foreground">
+                                        <span>Accrual Bal</span>
+                                        <span className="font-mono">{formatCurrency(breakdown.prepayBalance)}</span>
+                                      </div>
+                                      <div className="flex justify-between text-muted-foreground">
+                                        <span>Expense Bal</span>
+                                        <span className="font-mono">{formatCurrency(breakdown.expenseBalance)}</span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  ) : (
+                    // Monthly breakdown display
                     <div className={journal.type === 'stock' ? 'p-3' : 'overflow-x-auto'}>
                       <div className={journal.type === 'stock' ? '' : `flex gap-3 p-3`} style={journal.type !== 'stock' ? { minWidth: `${monthlyBreakdown.length * 260}px` } : {}}>
-                      {monthlyBreakdown
-                        .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
-                        .map((breakdown) => {
-                          const monthDate = new Date(breakdown.month + "-01");
-                          const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
-                          const isSelected = selectedMonth === breakdown.month;
+                        {monthlyBreakdown
+                          .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
+                          .map((breakdown) => {
+                            const monthDate = new Date(breakdown.month + "-01");
+                            const isCurrentMonth = format(new Date(), "yyyy-MM") === breakdown.month;
+                            const isSelected = selectedMonth === breakdown.month;
 
-                          return (
+                            return (
                               <div key={breakdown.month} className={journal.type === 'stock' ? 'w-full' : 'w-[260px]'}>
-                              <div
-                                className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
-                                  breakdown.status === 'published'
-                                    ? 'border-green-500 bg-green-50'
-                                    : 'border-yellow-500 bg-yellow-50'
-                                } ${isCurrentMonth && !isSelected ? 'ring-2 ring-blue-300' : ''} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+                                <div
+                                  className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
+                                    breakdown.status === 'published'
+                                      ? 'border-green-500 bg-green-50'
+                                      : 'border-yellow-500 bg-yellow-50'
+                                  } ${isCurrentMonth && !isSelected ? 'ring-2 ring-blue-300' : ''} ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
                                   onClick={() => handleMonthSelect(breakdown.month)}
-                              >
+                                >
                                 <div className="flex items-center justify-between mb-1">
                                   <span className="font-semibold text-base flex items-center gap-1">
                                     {isCurrentMonth && (
@@ -582,10 +693,11 @@ export default function JournalDetailsPage() {
                             </div>
                           );
                         })}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                    {/* Line Items Section */}
+                  {/* Line Items Section */}
                   {selectedMonth && (() => {
                     const breakdown = monthlyBreakdown.find(b => b.month === selectedMonth);
                     if (!breakdown) return null;
@@ -595,6 +707,25 @@ export default function JournalDetailsPage() {
                           key={`${params.id}-${selectedMonth}`}
                           selectedMonth={selectedMonth}
                           breakdown={breakdown}
+                        />
+                    );
+                  })()}
+                  
+                  {selectedWeek && (() => {
+                    const breakdown = weeklyBreakdown.find(b => b.week === selectedWeek);
+                    if (!breakdown) return null;
+
+                    // Convert weekly breakdown to monthly breakdown format for JournalLineItems
+                    const monthlyBreakdownForWeek = {
+                      ...breakdown,
+                      month: breakdown.week // Use week date as month for compatibility
+                    };
+
+                    return (
+                        <JournalLineItems
+                          key={`${params.id}-${selectedWeek}`}
+                          selectedMonth={selectedWeek}
+                          breakdown={monthlyBreakdownForWeek}
                         />
                     );
                   })()}

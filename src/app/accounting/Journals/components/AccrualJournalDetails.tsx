@@ -32,6 +32,9 @@ const accountDescriptions: Record<string, string> = {
 // Available companies
 const companies = ["Domino's Pizza", "Costa Coffee", "GDK Ltd"];
 
+// Available stores
+const stores = ["Kings Hill", "Manchester", "London", "Birmingham", "Leeds"];
+
 // Combobox for searching account codes
 function AccountCodeCombobox({
   value,
@@ -94,7 +97,7 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      <div className="grid grid-cols-[1fr_3fr] gap-4">
+      <div className="grid grid-cols-[1fr_1fr_2fr] gap-4">
         <div>
           <label className="text-sm font-medium text-muted-foreground">Company</label>
           <Select
@@ -109,6 +112,25 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
               {companies.map(company => (
                 <SelectItem key={company} value={company}>
                   {company}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-muted-foreground">Store</label>
+          <Select
+            value={journal.store}
+            onValueChange={value => onUpdate({ store: value })}
+            disabled={isDisabled}
+          >
+            <SelectTrigger className="w-full mt-1">
+              <SelectValue placeholder="Select store" />
+            </SelectTrigger>
+            <SelectContent>
+              {stores.map(store => (
+                <SelectItem key={store} value={store}>
+                  {store}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -251,7 +273,7 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
         <div>
           <label className="text-sm font-medium text-muted-foreground">Schedule Type</label>
           <Select
-            value={journal.scheduleType || 'monthly (weekly split)'}
+            value={journal.scheduleType || 'monthly'}
             onValueChange={value => onUpdate({ scheduleType: value as ScheduleType })}
             disabled={isDisabled}
           >
@@ -259,8 +281,8 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
               <SelectValue placeholder="Select schedule type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="monthly (weekly split)">Monthly (weekly split)</SelectItem>
-              <SelectItem value="monthly (equal split)">Monthly (equal split)</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
             </SelectContent>
           </Select>
         </div>
