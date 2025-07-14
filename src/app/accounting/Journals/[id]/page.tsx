@@ -117,6 +117,7 @@ export default function JournalDetailsPage() {
       monthlyAccountCode: journal.monthlyAccountCode,
       store: journal.store,
       status: journal.status as 'published' | 'review' | 'archived',
+      storeAllocations: journal.storeAllocations,
     });
 
     if (result.error) {
@@ -315,12 +316,18 @@ export default function JournalDetailsPage() {
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center
                               ${j.type === 'prepayment' ? 'bg-blue-50 text-blue-600' :
                                 j.type === 'accrual' ? 'bg-green-50 text-green-600' :
+                                j.type === 'mixed' ? 'bg-purple-50 text-purple-600' :
                                 'bg-gray-50 text-gray-600'}`}
                             >
                               {j.type === 'prepayment' ? (
                                 <ArrowRight className="h-5 w-5 stroke-2" />
                               ) : j.type === 'accrual' ? (
                                 <ArrowLeft className="h-5 w-5 stroke-2" />
+                              ) : j.type === 'mixed' ? (
+                                <div className="relative">
+                                  <ArrowRight className="h-5 w-5 stroke-2" />
+                                  <ArrowLeft className="h-4 w-4 stroke-2 absolute -top-0.5 -right-0.5" />
+                                </div>
                               ) : (
                                 <Package className="h-5 w-5 stroke-2" />
                               )}
@@ -347,20 +354,13 @@ export default function JournalDetailsPage() {
                 </div>
 
                         <div className="flex flex-col items-end gap-1.5 min-w-[100px]">
-                          <div className={`text-xs font-medium px-2 py-1 rounded-full
-                            ${j.type === 'prepayment' ? 'bg-blue-50 text-blue-700' :
-                              j.type === 'accrual' ? 'bg-green-50 text-green-700' :
-                              'bg-gray-50 text-gray-700'}`}
-                          >
-                            {j.type}
-                          </div>
                           <div className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1
                             ${j.status === 'published' 
                               ? 'bg-green-50 text-green-700' 
                               : 'bg-yellow-50 text-yellow-700'}`}
                           >
-                            {j.status === 'published' ? '✓' : '⚠️'}
-                    {j.status}
+                            {j.status === 'published'}
+                            {j.status}
                           </div>
                 </div>
               </div>
@@ -477,7 +477,7 @@ export default function JournalDetailsPage() {
                 </div>
 
                 {/* Render appropriate journal details component based on type */}
-                {journal.type === 'prepayment' && (
+                {(journal.type === 'prepayment' || journal.type === 'mixed') && (
                   <PrepaymentJournalDetails journal={journal} onUpdate={handleJournalUpdate} />
                 )}
                 {journal.type === 'accrual' && (

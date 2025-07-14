@@ -1,4 +1,4 @@
-import { MonthlyBreakdown, WeeklyBreakdown, JournalType, ScheduleType } from "../types";
+import { MonthlyBreakdown, WeeklyBreakdown, JournalType, ScheduleType, StoreAllocation } from "../types";
 import { startOfMonth, endOfMonth, eachMonthOfInterval, eachWeekOfInterval, isSameMonth } from "date-fns";
 
 interface JournalCalculationInput {
@@ -12,6 +12,7 @@ interface JournalCalculationInput {
   monthlyAccountCode: string;
   store: string;
   status: 'published' | 'review' | 'archived';  // Updated status types
+  storeAllocations?: StoreAllocation[];  // New optional field for multi-store support
 }
 
 interface MonthlyBreakdownWithBalances extends MonthlyBreakdown {
@@ -29,11 +30,6 @@ interface JournalCalculationResult {
 interface WeeklyBreakdownWithBalances extends WeeklyBreakdown {
   prepayBalance: number;
   expenseBalance: number;
-}
-
-function isSameMonth(date1: Date, date2: Date): boolean {
-  return date1.getFullYear() === date2.getFullYear() && 
-         date1.getMonth() === date2.getMonth();
 }
 
 function getDaysInPeriod(start: Date, end: Date): number {
@@ -102,7 +98,12 @@ function calculateAmountForPeriod(
 }
 
 export function calculateJournal(input: JournalCalculationInput): JournalCalculationResult {
-  const { scheduleType } = input;
+  const { scheduleType, storeAllocations } = input;
+
+  // If storeAllocations are provided, process each allocation separately and combine results
+  if (storeAllocations && storeAllocations.length > 0) {
+    return calculateMultiStoreJournal(input);
+  }
 
   // Route to appropriate calculation function based on schedule type
   switch (scheduleType) {
@@ -117,6 +118,200 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
         error: `Unknown schedule type: ${scheduleType}`
       };
   }
+}
+
+function calculateMultiStoreJournal(input: JournalCalculationInput): JournalCalculationResult {
+  const { storeAllocations, scheduleType } = input;
+
+  if (!storeAllocations || storeAllocations.length === 0) {
+    return {
+      type: 'prepayment',
+      monthlyBreakdown: [],
+      error: 'No store allocations provided'
+    };
+  }
+
+  // Determine journal type by checking all allocations
+  let hasPrepayment = false;
+  let hasAccrual = false;
+
+  for (const allocation of storeAllocations) {
+    const isPrepayment = allocation.expensePaidMonth < allocation.periodStartDate;
+    const isAccrual = allocation.expensePaidMonth > allocation.periodEndDate;
+    
+    if (isPrepayment || (!isPrepayment && !isAccrual)) {
+      // Either clear prepayment or paid during period (treated as prepayment by midpoint rule)
+      const periodMidpoint = new Date((allocation.periodStartDate.getTime() + allocation.periodEndDate.getTime()) / 2);
+      if (isPrepayment || allocation.expensePaidMonth <= periodMidpoint) {
+        hasPrepayment = true;
+      } else {
+        hasAccrual = true;
+      }
+    } else {
+      hasAccrual = true;
+    }
+  }
+
+  // Determine final journal type
+  let type: JournalType;
+  if (hasPrepayment && hasAccrual) {
+    type = "mixed";
+  } else if (hasPrepayment) {
+    type = "prepayment";
+  } else {
+    type = "accrual";
+  }
+
+  // Process each store allocation separately
+  const allResults: JournalCalculationResult[] = [];
+  
+  for (const allocation of storeAllocations) {
+    const allocationInput: JournalCalculationInput = {
+      ...input,
+      totalAmount: allocation.totalAmount,
+      expensePaidMonth: allocation.expensePaidMonth,
+      periodStartDate: allocation.periodStartDate,
+      periodEndDate: allocation.periodEndDate,
+      store: allocation.store,
+      accountCode: allocation.accountCode,
+      monthlyAccountCode: allocation.monthlyAccountCode,
+      storeAllocations: undefined // Clear to avoid infinite recursion
+    };
+
+    const result = calculateJournal(allocationInput);
+    if (result.error) {
+      return {
+        type,
+        monthlyBreakdown: [],
+        weeklyBreakdown: [],
+        error: `Error in ${allocation.store} allocation: ${result.error}`
+      };
+    }
+    allResults.push(result);
+  }
+
+  // Combine results from all allocations
+  return combineJournalResults(allResults, scheduleType);
+}
+
+function combineJournalResults(results: JournalCalculationResult[], scheduleType: ScheduleType): JournalCalculationResult {
+  if (results.length === 0) {
+    return {
+      type: 'prepayment',
+      monthlyBreakdown: [],
+      weeklyBreakdown: []
+    };
+  }
+
+  const type = results[0].type;
+  const combinedMonthlyBreakdown: MonthlyBreakdownWithBalances[] = [];
+  const combinedWeeklyBreakdown: WeeklyBreakdownWithBalances[] = [];
+
+  if (scheduleType === 'monthly') {
+    // Group monthly breakdowns by month
+    const monthlyGroups = new Map<string, MonthlyBreakdownWithBalances[]>();
+    
+    for (const result of results) {
+      for (const breakdown of result.monthlyBreakdown) {
+        if (!monthlyGroups.has(breakdown.month)) {
+          monthlyGroups.set(breakdown.month, []);
+        }
+        monthlyGroups.get(breakdown.month)!.push(breakdown);
+      }
+    }
+
+    // Combine breakdowns for each month
+    for (const [month, breakdowns] of monthlyGroups) {
+      const combined = combineMonthlyBreakdowns(breakdowns, month);
+      combinedMonthlyBreakdown.push(combined);
+    }
+  } else if (scheduleType === 'weekly') {
+    // Group weekly breakdowns by week
+    const weeklyGroups = new Map<string, WeeklyBreakdownWithBalances[]>();
+    
+    for (const result of results) {
+      if (result.weeklyBreakdown) {
+        for (const breakdown of result.weeklyBreakdown) {
+          if (!weeklyGroups.has(breakdown.week)) {
+            weeklyGroups.set(breakdown.week, []);
+          }
+          weeklyGroups.get(breakdown.week)!.push(breakdown);
+        }
+      }
+    }
+
+    // Combine breakdowns for each week
+    for (const [week, breakdowns] of weeklyGroups) {
+      const combined = combineWeeklyBreakdowns(breakdowns, week);
+      combinedWeeklyBreakdown.push(combined);
+    }
+  }
+
+  return {
+    type,
+    monthlyBreakdown: combinedMonthlyBreakdown,
+    weeklyBreakdown: combinedWeeklyBreakdown
+  };
+}
+
+function combineMonthlyBreakdowns(breakdowns: MonthlyBreakdownWithBalances[], month: string): MonthlyBreakdownWithBalances {
+  const firstBreakdown = breakdowns[0];
+  const combinedLineItems = breakdowns.flatMap(b => b.lineItems);
+  
+  // Calculate combined totals
+  const totalAmount = breakdowns.reduce((sum, b) => sum + b.amount, 0);
+  const totalPrepayBalance = breakdowns.reduce((sum, b) => sum + b.prepayBalance, 0);
+  const totalExpenseBalance = breakdowns.reduce((sum, b) => sum + b.expenseBalance, 0);
+  
+  // Create combined description
+  const storeNames = breakdowns.map(b => b.lineItems[0]?.store).filter(Boolean);
+  const uniqueStores = [...new Set(storeNames)];
+  const combinedDescription = uniqueStores.length > 1 
+    ? `Multi-store: ${uniqueStores.join(', ')}`
+    : firstBreakdown.description;
+
+  return {
+    id: `combined_${month}`,
+    month,
+    amount: totalAmount,
+    status: firstBreakdown.status,
+    isReversing: firstBreakdown.isReversing,
+    prepayBalance: totalPrepayBalance,
+    expenseBalance: totalExpenseBalance,
+    description: combinedDescription,
+    lineItems: combinedLineItems
+  };
+}
+
+function combineWeeklyBreakdowns(breakdowns: WeeklyBreakdownWithBalances[], week: string): WeeklyBreakdownWithBalances {
+  const firstBreakdown = breakdowns[0];
+  const combinedLineItems = breakdowns.flatMap(b => b.lineItems);
+  
+  // Calculate combined totals
+  const totalAmount = breakdowns.reduce((sum, b) => sum + b.amount, 0);
+  const totalPrepayBalance = breakdowns.reduce((sum, b) => sum + b.prepayBalance, 0);
+  const totalExpenseBalance = breakdowns.reduce((sum, b) => sum + b.expenseBalance, 0);
+  
+  // Create combined description
+  const storeNames = breakdowns.map(b => b.lineItems[0]?.store).filter(Boolean);
+  const uniqueStores = [...new Set(storeNames)];
+  const combinedDescription = uniqueStores.length > 1 
+    ? `Multi-store: ${uniqueStores.join(', ')}`
+    : firstBreakdown.description;
+
+  return {
+    id: `combined_${week}`,
+    week,
+    weekLabel: firstBreakdown.weekLabel,
+    weekEndDate: firstBreakdown.weekEndDate,
+    amount: totalAmount,
+    status: firstBreakdown.status,
+    isReversing: firstBreakdown.isReversing,
+    prepayBalance: totalPrepayBalance,
+    expenseBalance: totalExpenseBalance,
+    description: combinedDescription,
+    lineItems: combinedLineItems
+  };
 }
 
 function calculateMonthlyJournal(input: JournalCalculationInput): JournalCalculationResult {
@@ -664,4 +859,4 @@ export function calculateStockJournal(input: StockJournalInput): JournalCalculat
     type: 'stock',
     monthlyBreakdown
   };
-} 
+}

@@ -1,5 +1,5 @@
 // Types for Journal entries
-export type JournalType = "prepayment" | "accrual" | "stock";
+export type JournalType = "prepayment" | "accrual" | "stock" | "mixed";
 
 export type JournalStatus = "draft" | "review" | "active" | "complete";
 
@@ -58,9 +58,20 @@ export interface WeeklyBreakdown {
   isReversing?: boolean;
 }
 
+export interface StoreAllocation {
+  id: string;
+  store: string;
+  totalAmount: number;
+  expensePaidMonth: Date;
+  periodStartDate: Date;
+  periodEndDate: Date;
+  accountCode: string;  // Prepayment/Accrual account code
+  monthlyAccountCode: string;  // Transfer account code
+}
+
 export interface JournalEntry {
   id: string;
-  type: "prepayment" | "accrual" | "stock";
+  type: "prepayment" | "accrual" | "stock" | "mixed";
   title: string;
   description: string;
   company: string;
@@ -96,6 +107,10 @@ export interface JournalEntry {
    * Optional cached weekly breakdown (used by UI when editing in memory)
    */
   weeklyBreakdown?: WeeklyBreakdown[];
+  /**
+   * Store allocations for prepayment and accrual journals
+   */
+  storeAllocations?: StoreAllocation[];
   source: "bill" | "invoice" | "stock-entry";
 }
 
