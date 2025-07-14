@@ -1,11 +1,11 @@
 // Types for Journal entries
-export type JournalType = "prepayment" | "accrual" | "stock";
+export type JournalType = "prepayment" | "accrual" | "stock" | "mixed";
 
 export type JournalStatus = "draft" | "review" | "active" | "complete";
 
 export type JournalSource = "bill" | "invoice" | "manual";
 
-export type ScheduleType = 'monthly (weekly split)' | 'monthly (equal split)';
+export type ScheduleType = 'monthly' | 'weekly';
 
 export interface JournalDocument {
   id: string;
@@ -41,9 +41,40 @@ export interface MonthlyBreakdown {
   isReversing?: boolean;
 }
 
+export interface WeeklyBreakdown {
+  id: string;
+  week: string;  // Format: "YYYY-MM-DD" (week start date)
+  weekLabel: string;  // Format: "Week 1", "Week 2", etc.
+  weekEndDate: string;  // Format: "YYYY-MM-DD"
+  amount: number;
+  status: 'published' | 'review' | 'archived';
+  description?: string;
+  lineItems: JournalLineItem[];
+  /**
+   * Indicates this entry is the reversing journal entry created in the paid month.
+   */
+  isReversing?: boolean;
+}
+
+export interface WeeklyBreakdownWithBalances extends WeeklyBreakdown {
+  prepayBalance: number;
+  expenseBalance: number;
+}
+
+export interface StoreAllocation {
+  id: string;
+  store: string;
+  totalAmount: number;
+  expensePaidMonth: Date;
+  periodStartDate: Date;
+  periodEndDate: Date;
+  accountCode: string;  // Prepayment/Accrual account code
+  monthlyAccountCode: string;  // Transfer account code
+}
+
 export interface JournalEntry {
   id: string;
-  type: "prepayment" | "accrual" | "stock";
+  type: "prepayment" | "accrual" | "stock" | "mixed";
   title: string;
   description: string;
   company: string;
@@ -75,6 +106,14 @@ export interface JournalEntry {
    * Optional cached monthly breakdown (used by UI when editing in memory)
    */
   monthlyBreakdown?: MonthlyBreakdown[];
+  /**
+   * Optional cached weekly breakdown (used by UI when editing in memory)
+   */
+  weeklyBreakdown?: WeeklyBreakdown[];
+  /**
+   * Store allocations for prepayment and accrual journals
+   */
+  storeAllocations?: StoreAllocation[];
   source: "bill" | "invoice" | "stock-entry";
 }
 
@@ -96,4 +135,4 @@ export interface PrepaymentAccrualEntry {
   store: string;
   status: "draft" | "review" | "active" | "complete";
   createdDate: Date;
-} 
+}

@@ -15,7 +15,7 @@ export const journalEntries: JournalEntry[] = [
     periodStartDate: new Date("2025-07-01"), // Recognize July 2025-June 2026
     periodEndDate: new Date("2026-06-30"),
     store: "Kings Hill",
-    status: "published",
+    status: "review",
     createdDate: new Date("2025-06-15"),
     sourceDocuments: [
       {
@@ -33,7 +33,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Insurance Certificate"
       }
     ],
-    scheduleType: "monthly (weekly split)",
+    scheduleType: "weekly",
     source: "bill",
   },
   {
@@ -61,7 +61,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Utility Estimate"
       }
     ],
-    scheduleType: "monthly (weekly split)",
+    scheduleType: "weekly",
     source: "invoice",
   },
   {
@@ -96,7 +96,7 @@ export const journalEntries: JournalEntry[] = [
         description: "License Agreement"
       }
     ],
-    scheduleType: "monthly (equal split)",
+    scheduleType: "monthly",
     source: "bill",
   },
   {
@@ -124,7 +124,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Bonus Calculation Sheet"
       }
     ],
-    scheduleType: "monthly (weekly split)",
+    scheduleType: "weekly",
     source: "invoice",
   },
   {
@@ -159,7 +159,7 @@ export const journalEntries: JournalEntry[] = [
         description: "Project Plan"
       }
     ],
-    scheduleType: "monthly (equal split)",
+    scheduleType: "monthly",
     source: "invoice",
   },
   {
@@ -239,7 +239,7 @@ export const journalEntries: JournalEntry[] = [
     closingStockDate: new Date("2025-06-14"),
     closingStockValue: 45400.00,
     store: "London",
-    status: "published",
+    status: "review",
     createdDate: new Date("2025-06-14"),
     sourceDocuments: [
       {
@@ -269,7 +269,7 @@ export const journalEntries: JournalEntry[] = [
     closingStockDate: new Date("2025-06-21"),
     closingStockValue: 46900.00,
     store: "London",
-    status: "published",
+    status: "review",
     createdDate: new Date("2025-06-21"),
     sourceDocuments: [
       {
@@ -299,7 +299,7 @@ export const journalEntries: JournalEntry[] = [
     closingStockDate: new Date("2025-06-28"),
     closingStockValue: 46200.00,
     store: "London",
-    status: "published",
+    status: "review",
     createdDate: new Date("2025-06-28"),
     sourceDocuments: [
       {
@@ -329,7 +329,7 @@ export const journalEntries: JournalEntry[] = [
     closingStockDate: new Date("2025-06-30"),
     closingStockValue: 46500.00,
     store: "London",
-    status: "published",
+    status: "review",
     createdDate: new Date("2025-06-30"),
     sourceDocuments: [
       {

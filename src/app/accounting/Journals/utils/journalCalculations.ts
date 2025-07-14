@@ -1,5 +1,5 @@
-import { MonthlyBreakdown, JournalType, ScheduleType } from "../types";
-import { startOfMonth, endOfMonth, eachMonthOfInterval, differenceInMonths } from "date-fns";
+import { MonthlyBreakdown, WeeklyBreakdown, JournalType, ScheduleType, StoreAllocation } from "../types";
+import { startOfMonth, endOfMonth, eachMonthOfInterval, eachWeekOfInterval, isSameMonth } from "date-fns";
 
 interface JournalCalculationInput {
   description: string;
@@ -10,7 +10,9 @@ interface JournalCalculationInput {
   scheduleType: ScheduleType;
   accountCode: string;
   monthlyAccountCode: string;
+  store: string;
   status: 'published' | 'review' | 'archived';  // Updated status types
+  storeAllocations?: StoreAllocation[];  // New optional field for multi-store support
 }
 
 interface MonthlyBreakdownWithBalances extends MonthlyBreakdown {
@@ -21,16 +23,22 @@ interface MonthlyBreakdownWithBalances extends MonthlyBreakdown {
 interface JournalCalculationResult {
   type: JournalType;
   monthlyBreakdown: MonthlyBreakdownWithBalances[];
+  weeklyBreakdown?: WeeklyBreakdownWithBalances[];
   error?: string;
 }
 
-function isSameMonth(date1: Date, date2: Date): boolean {
-  return date1.getFullYear() === date2.getFullYear() && 
-         date1.getMonth() === date2.getMonth();
+interface WeeklyBreakdownWithBalances extends WeeklyBreakdown {
+  prepayBalance: number;
+  expenseBalance: number;
 }
 
 function getDaysInPeriod(start: Date, end: Date): number {
-  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  // Calculate the number of days between start and end (inclusive)
+  const diffInMs = end.getTime() - start.getTime();
+  const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+  
+  // Round to handle time zone differences, then add 1 to include both start and end dates
+  return Math.round(diffInDays) + 1;
 }
 
 function getMonthlyPeriods(start: Date, end: Date): { month: string; startDate: Date; endDate: Date; days: number }[] {
@@ -72,21 +80,21 @@ function calculateAmountForPeriod(
   runningTotal: number
 ): number {
   switch (scheduleType) {
-    case 'monthly (weekly split)':
-      // Calculate based on days in period
+    case 'monthly':
+      // Split evenly across months based on days in each month
       const totalDays = getDaysInPeriod(periodStartDate, periodEndDate);
       const amountPerDay = totalAmount / totalDays;
       return index === totalPeriods - 1
         ? totalAmount - runningTotal
         : Math.round(amountPerDay * period.days * 100) / 100;
 
-    case 'monthly (equal split)':
-      // Split evenly across months
-      const monthCount = differenceInMonths(periodEndDate, periodStartDate) + 1;
-      const monthlyAmount = Math.round((totalAmount / monthCount) * 100) / 100;
+    case 'weekly':
+      // Split evenly across weeks based on days in each week
+      const totalWeekDays = getDaysInPeriod(periodStartDate, periodEndDate);
+      const amountPerWeekDay = totalAmount / totalWeekDays;
       return index === totalPeriods - 1
         ? totalAmount - runningTotal
-        : monthlyAmount;
+        : Math.round(amountPerWeekDay * period.days * 100) / 100;
 
     default:
       return 0;
@@ -94,6 +102,223 @@ function calculateAmountForPeriod(
 }
 
 export function calculateJournal(input: JournalCalculationInput): JournalCalculationResult {
+  const { scheduleType, storeAllocations } = input;
+
+  // If storeAllocations are provided, process each allocation separately and combine results
+  if (storeAllocations && storeAllocations.length > 0) {
+    return calculateMultiStoreJournal(input);
+  }
+
+  // Route to appropriate calculation function based on schedule type
+  switch (scheduleType) {
+    case 'monthly':
+      return calculateMonthlyJournal(input);
+    case 'weekly':
+      return calculateWeeklyJournal(input);
+    default:
+      return {
+        type: 'prepayment',
+        monthlyBreakdown: [],
+        error: `Unknown schedule type: ${scheduleType}`
+      };
+  }
+}
+
+function calculateMultiStoreJournal(input: JournalCalculationInput): JournalCalculationResult {
+  const { storeAllocations, scheduleType } = input;
+
+  if (!storeAllocations || storeAllocations.length === 0) {
+    return {
+      type: 'prepayment',
+      monthlyBreakdown: [],
+      error: 'No store allocations provided'
+    };
+  }
+
+  // Determine journal type by checking all allocations
+  let hasPrepayment = false;
+  let hasAccrual = false;
+
+  for (const allocation of storeAllocations) {
+    const isPrepayment = allocation.expensePaidMonth < allocation.periodStartDate;
+    const isAccrual = allocation.expensePaidMonth > allocation.periodEndDate;
+    
+    if (isPrepayment || (!isPrepayment && !isAccrual)) {
+      // Either clear prepayment or paid during period (treated as prepayment by midpoint rule)
+      const periodMidpoint = new Date((allocation.periodStartDate.getTime() + allocation.periodEndDate.getTime()) / 2);
+      if (isPrepayment || allocation.expensePaidMonth <= periodMidpoint) {
+        hasPrepayment = true;
+      } else {
+        hasAccrual = true;
+      }
+    } else {
+      hasAccrual = true;
+    }
+  }
+
+  // Determine final journal type
+  let type: JournalType;
+  if (hasPrepayment && hasAccrual) {
+    type = "mixed";
+  } else if (hasPrepayment) {
+    type = "prepayment";
+  } else {
+    type = "accrual";
+  }
+
+  // Process each store allocation separately
+  const allResults: JournalCalculationResult[] = [];
+  
+  for (const allocation of storeAllocations) {
+    const allocationInput: JournalCalculationInput = {
+      ...input,
+      totalAmount: allocation.totalAmount,
+      expensePaidMonth: allocation.expensePaidMonth,
+      periodStartDate: allocation.periodStartDate,
+      periodEndDate: allocation.periodEndDate,
+      store: allocation.store,
+      accountCode: allocation.accountCode,
+      monthlyAccountCode: allocation.monthlyAccountCode,
+      storeAllocations: undefined // Clear to avoid infinite recursion
+    };
+
+    const result = calculateJournal(allocationInput);
+    if (result.error) {
+      return {
+        type,
+        monthlyBreakdown: [],
+        weeklyBreakdown: [],
+        error: `Error in ${allocation.store} allocation: ${result.error}`
+      };
+    }
+    allResults.push(result);
+  }
+
+  // Combine results from all allocations
+  return combineJournalResults(allResults, scheduleType);
+}
+
+function combineJournalResults(results: JournalCalculationResult[], scheduleType: ScheduleType): JournalCalculationResult {
+  if (results.length === 0) {
+    return {
+      type: 'prepayment',
+      monthlyBreakdown: [],
+      weeklyBreakdown: []
+    };
+  }
+
+  const type = results[0].type;
+  const combinedMonthlyBreakdown: MonthlyBreakdownWithBalances[] = [];
+  const combinedWeeklyBreakdown: WeeklyBreakdownWithBalances[] = [];
+
+  if (scheduleType === 'monthly') {
+    // Group monthly breakdowns by month
+    const monthlyGroups = new Map<string, MonthlyBreakdownWithBalances[]>();
+    
+    for (const result of results) {
+      for (const breakdown of result.monthlyBreakdown) {
+        if (!monthlyGroups.has(breakdown.month)) {
+          monthlyGroups.set(breakdown.month, []);
+        }
+        monthlyGroups.get(breakdown.month)!.push(breakdown);
+      }
+    }
+
+    // Combine breakdowns for each month
+    for (const [month, breakdowns] of monthlyGroups) {
+      const combined = combineMonthlyBreakdowns(breakdowns, month);
+      combinedMonthlyBreakdown.push(combined);
+    }
+  } else if (scheduleType === 'weekly') {
+    // Group weekly breakdowns by week
+    const weeklyGroups = new Map<string, WeeklyBreakdownWithBalances[]>();
+    
+    for (const result of results) {
+      if (result.weeklyBreakdown) {
+        for (const breakdown of result.weeklyBreakdown) {
+          if (!weeklyGroups.has(breakdown.week)) {
+            weeklyGroups.set(breakdown.week, []);
+          }
+          weeklyGroups.get(breakdown.week)!.push(breakdown);
+        }
+      }
+    }
+
+    // Combine breakdowns for each week
+    for (const [week, breakdowns] of weeklyGroups) {
+      const combined = combineWeeklyBreakdowns(breakdowns, week);
+      combinedWeeklyBreakdown.push(combined);
+    }
+  }
+
+  return {
+    type,
+    monthlyBreakdown: combinedMonthlyBreakdown,
+    weeklyBreakdown: combinedWeeklyBreakdown
+  };
+}
+
+function combineMonthlyBreakdowns(breakdowns: MonthlyBreakdownWithBalances[], month: string): MonthlyBreakdownWithBalances {
+  const firstBreakdown = breakdowns[0];
+  const combinedLineItems = breakdowns.flatMap(b => b.lineItems);
+  
+  // Calculate combined totals
+  const totalAmount = breakdowns.reduce((sum, b) => sum + b.amount, 0);
+  const totalPrepayBalance = breakdowns.reduce((sum, b) => sum + b.prepayBalance, 0);
+  const totalExpenseBalance = breakdowns.reduce((sum, b) => sum + b.expenseBalance, 0);
+  
+  // Create combined description
+  const storeNames = breakdowns.map(b => b.lineItems[0]?.store).filter(Boolean);
+  const uniqueStores = [...new Set(storeNames)];
+  const combinedDescription = uniqueStores.length > 1 
+    ? `Multi-store: ${uniqueStores.join(', ')}`
+    : firstBreakdown.description;
+
+  return {
+    id: `combined_${month}`,
+    month,
+    amount: totalAmount,
+    status: firstBreakdown.status,
+    isReversing: firstBreakdown.isReversing,
+    prepayBalance: totalPrepayBalance,
+    expenseBalance: totalExpenseBalance,
+    description: combinedDescription,
+    lineItems: combinedLineItems
+  };
+}
+
+function combineWeeklyBreakdowns(breakdowns: WeeklyBreakdownWithBalances[], week: string): WeeklyBreakdownWithBalances {
+  const firstBreakdown = breakdowns[0];
+  const combinedLineItems = breakdowns.flatMap(b => b.lineItems);
+  
+  // Calculate combined totals
+  const totalAmount = breakdowns.reduce((sum, b) => sum + b.amount, 0);
+  const totalPrepayBalance = breakdowns.reduce((sum, b) => sum + b.prepayBalance, 0);
+  const totalExpenseBalance = breakdowns.reduce((sum, b) => sum + b.expenseBalance, 0);
+  
+  // Create combined description
+  const storeNames = breakdowns.map(b => b.lineItems[0]?.store).filter(Boolean);
+  const uniqueStores = [...new Set(storeNames)];
+  const combinedDescription = uniqueStores.length > 1 
+    ? `Multi-store: ${uniqueStores.join(', ')}`
+    : firstBreakdown.description;
+
+  return {
+    id: `combined_${week}`,
+    week,
+    weekLabel: firstBreakdown.weekLabel,
+    weekEndDate: firstBreakdown.weekEndDate,
+    amount: totalAmount,
+    status: firstBreakdown.status,
+    isReversing: firstBreakdown.isReversing,
+    prepayBalance: totalPrepayBalance,
+    expenseBalance: totalExpenseBalance,
+    description: combinedDescription,
+    lineItems: combinedLineItems
+  };
+}
+
+function calculateMonthlyJournal(input: JournalCalculationInput): JournalCalculationResult {
   const {
     description,
     totalAmount,
@@ -103,7 +328,8 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
     scheduleType,
     accountCode,
     monthlyAccountCode,
-    status,  // Get status from input
+    store,
+    status,
   } = input;
 
   // Validate dates
@@ -143,7 +369,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
         description: `Initial ${description}`,
         debitAmount: totalAmount,
         creditAmount: 0,
-        store: 'all-stores',
+        store: store,
         taxRate: 'no-tax',
         date: paidMonthStr
       },
@@ -153,7 +379,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
         description: 'To Prepayment',
         debitAmount: 0,
         creditAmount: totalAmount,
-        store: 'all-stores',
+        store: store,
         taxRate: 'no-tax',
         date: paidMonthStr
       }
@@ -164,7 +390,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
         description: `Initial ${description}`,
         debitAmount: totalAmount,
         creditAmount: 0,
-        store: 'all-stores',
+        store: store,
         taxRate: 'no-tax',
         date: paidMonthStr
       },
@@ -174,7 +400,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
         description: 'From Expense',
         debitAmount: 0,
         creditAmount: totalAmount,
-        store: 'all-stores',
+        store: store,
         taxRate: 'no-tax',
         date: paidMonthStr
       }
@@ -199,7 +425,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
     // Update running totals
     runningExpenseTotal += amount;
 
-    const description_suffix = scheduleType === 'monthly (weekly split)' 
+    const description_suffix = scheduleType === 'monthly' 
       ? ` (${period.days} days)`
       : '';
 
@@ -218,7 +444,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           description: `Recognize ${description}${description_suffix}`,
           debitAmount: amount,
           creditAmount: 0,
-          store: 'all-stores',
+          store: store,
           taxRate: 'no-tax',
           date: period.month
         },
@@ -228,7 +454,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           description: 'Reduce Prepayment',
           debitAmount: 0,
           creditAmount: amount,
-          store: 'all-stores',
+          store: store,
           taxRate: 'no-tax',
           date: period.month
         }
@@ -239,7 +465,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           description: `Recognize ${description}${description_suffix}`,
           debitAmount: amount,
           creditAmount: 0,
-          store: 'all-stores',
+          store: store,
           taxRate: 'no-tax',
           date: period.month
         },
@@ -249,7 +475,7 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
           description: 'Reduce Accrual',
           debitAmount: 0,
           creditAmount: amount,
-          store: 'all-stores',
+          store: store,
           taxRate: 'no-tax',
           date: period.month
         }
@@ -260,6 +486,292 @@ export function calculateJournal(input: JournalCalculationInput): JournalCalcula
   return {
     type,
     monthlyBreakdown
+  };
+}
+
+function getWeeklyPeriods(start: Date, end: Date): { startDate: Date; endDate: Date; days: number }[] {
+  // Get all Monday-Sunday weeks in the period
+  const weeks = eachWeekOfInterval(
+    { start, end },
+    { weekStartsOn: 1 } // Monday = 1
+  );
+  
+  return weeks.map((weekStart) => {
+    // Calculate week end as 6 days after week start (for a 7-day week)
+    const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+    
+    // Clamp to actual start/end dates
+    const actualStart = weekStart < start ? start : weekStart;
+    const actualEnd = weekEnd > end ? end : weekEnd;
+    
+    const days = getDaysInPeriod(actualStart, actualEnd);
+    
+    return {
+      startDate: actualStart,
+      endDate: actualEnd,
+      days
+    };
+  });
+}
+
+function splitWeekAcrossMonths(weekStart: Date, weekEnd: Date, dailyRate: number, weekIndex: number): {
+  startDate: Date;
+  endDate: Date;
+  amount: number;
+  days: number;
+  weekLabel: string;
+  isPartA: boolean;
+}[] {
+  const result: {
+    startDate: Date;
+    endDate: Date;
+    amount: number;
+    days: number;
+    weekLabel: string;
+    isPartA: boolean;
+  }[] = [];
+  
+  // Check if week spans multiple months
+  if (isSameMonth(weekStart, weekEnd)) {
+    // Week is entirely within one month
+    const days = getDaysInPeriod(weekStart, weekEnd);
+    const amount = Math.round(dailyRate * days * 100) / 100;
+    
+    result.push({
+      startDate: weekStart,
+      endDate: weekEnd,
+      amount,
+      days,
+      weekLabel: `Week ${weekIndex + 1}`,
+      isPartA: false
+    });
+  } else {
+    // Week spans multiple months - split it
+    const firstMonthEnd = endOfMonth(weekStart);
+    const secondMonthStart = startOfMonth(weekEnd);
+    
+    // First month portion
+    const firstMonthDays = getDaysInPeriod(weekStart, firstMonthEnd);
+    const firstMonthAmount = Math.round(dailyRate * firstMonthDays * 100) / 100;
+    
+    // Second month portion
+    const secondMonthDays = getDaysInPeriod(secondMonthStart, weekEnd);
+    const secondMonthAmount = Math.round(dailyRate * secondMonthDays * 100) / 100;
+    
+    result.push({
+      startDate: weekStart,
+      endDate: firstMonthEnd,
+      amount: firstMonthAmount,
+      days: firstMonthDays,
+      weekLabel: `Week ${weekIndex + 1}A`,
+      isPartA: true
+    });
+    
+    result.push({
+      startDate: secondMonthStart,
+      endDate: weekEnd,
+      amount: secondMonthAmount,
+      days: secondMonthDays,
+      weekLabel: `Week ${weekIndex + 1}B`,
+      isPartA: false
+    });
+  }
+  
+  return result;
+}
+
+
+function calculateWeeklyJournal(input: JournalCalculationInput): JournalCalculationResult {
+  const {
+    description,
+    totalAmount,
+    expensePaidMonth,
+    periodStartDate,
+    periodEndDate,
+    accountCode,
+    monthlyAccountCode,
+    store,
+    status,
+  } = input;
+
+  // Validate dates
+  if (isSameMonth(expensePaidMonth, periodStartDate)) {
+    return {
+      type: expensePaidMonth <= periodStartDate ? "prepayment" : "accrual",
+      monthlyBreakdown: [],
+      weeklyBreakdown: [],
+      error: "Expense paid month cannot be in the same month as the recognition start date"
+    };
+  }
+
+  // Determine journal type based on dates
+  const type: JournalType = expensePaidMonth <= periodStartDate ? "prepayment" : "accrual";
+
+  // Get the paid month in YYYY-MM format
+  const paidMonthStr = `${expensePaidMonth.getFullYear()}-${String(expensePaidMonth.getMonth() + 1).padStart(2, '0')}`;
+
+  // Get weekly periods
+  const weeklyPeriods = getWeeklyPeriods(periodStartDate, periodEndDate);
+  
+  // Calculate total days in the recognition period
+  const totalDays = getDaysInPeriod(periodStartDate, periodEndDate);
+  
+  // Calculate daily rate
+  const dailyRate = totalAmount / totalDays;
+  
+  // Create the monthly breakdown array (empty for weekly schedules)
+  const monthlyBreakdown: MonthlyBreakdownWithBalances[] = [];
+  
+  // Create the weekly breakdown array
+  const weeklyBreakdown: WeeklyBreakdownWithBalances[] = [];
+
+  // 1. Add the reversing entry for paid month to weekly breakdown
+  weeklyBreakdown.push({
+    id: `wb_${paidMonthStr}`,
+    week: paidMonthStr,
+    weekLabel: 'Initial Entry',
+    weekEndDate: paidMonthStr,
+    amount: totalAmount,
+    status: status,
+    isReversing: true,
+    prepayBalance: totalAmount,
+    expenseBalance: 0,
+    description: `Initial ${description}`,
+    lineItems: type === 'prepayment' ? [
+      {
+        id: `li_rev_pre_a_${paidMonthStr}`,
+        accountCode: accountCode,
+        description: `Initial ${description}`,
+        debitAmount: totalAmount,
+        creditAmount: 0,
+        store: store,
+        taxRate: 'no-tax',
+        date: paidMonthStr
+      },
+      {
+        id: `li_rev_pre_b_${paidMonthStr}`,
+        accountCode: monthlyAccountCode,
+        description: 'To Prepayment',
+        debitAmount: 0,
+        creditAmount: totalAmount,
+        store: store,
+        taxRate: 'no-tax',
+        date: paidMonthStr
+      }
+    ] : [
+      {
+        id: `li_rev_accr_a_${paidMonthStr}`,
+        accountCode: accountCode,
+        description: `Initial ${description}`,
+        debitAmount: totalAmount,
+        creditAmount: 0,
+        store: store,
+        taxRate: 'no-tax',
+        date: paidMonthStr
+      },
+      {
+        id: `li_rev_accr_b_${paidMonthStr}`,
+        accountCode: monthlyAccountCode,
+        description: 'From Expense',
+        debitAmount: 0,
+        creditAmount: totalAmount,
+        store: store,
+        taxRate: 'no-tax',
+        date: paidMonthStr
+      }
+    ]
+  });
+
+  // 2. Process each week and create separate weekly breakdown entries
+  let runningExpenseTotal = 0;
+  let totalCalculatedAmount = 0;
+  
+  weeklyPeriods.forEach((week, weekIndex) => {
+    // Split the week across months if necessary
+    const weekParts = splitWeekAcrossMonths(week.startDate, week.endDate, dailyRate, weekIndex);
+    
+    weekParts.forEach((part, partIndex) => {
+      let actualAmount = part.amount;
+      
+      // For the very last part of the very last week, adjust to ensure exact total
+      if (weekIndex === weeklyPeriods.length - 1 && partIndex === weekParts.length - 1) {
+        actualAmount = totalAmount - totalCalculatedAmount;
+      }
+      
+      runningExpenseTotal += actualAmount;
+      totalCalculatedAmount += actualAmount;
+      
+      // Format dates for the week part
+      const weekStartStr = `${part.startDate.getFullYear()}-${String(part.startDate.getMonth() + 1).padStart(2, '0')}-${String(part.startDate.getDate()).padStart(2, '0')}`;
+      const weekEndStr = `${part.endDate.getFullYear()}-${String(part.endDate.getMonth() + 1).padStart(2, '0')}-${String(part.endDate.getDate()).padStart(2, '0')}`;
+      
+      const dateRange = `${part.startDate.getDate()}/${part.startDate.getMonth() + 1}-${part.endDate.getDate()}/${part.endDate.getMonth() + 1}`;
+      
+      // Create weekly breakdown entry
+      const weeklyEntry: WeeklyBreakdownWithBalances = {
+        id: `wb_${weekStartStr}_${partIndex}`,
+        week: weekStartStr,
+        weekLabel: part.weekLabel,
+        weekEndDate: weekEndStr,
+        amount: actualAmount,
+        status: status,
+        isReversing: false,
+        prepayBalance: totalAmount - runningExpenseTotal,
+        expenseBalance: runningExpenseTotal,
+        description: `${description} - ${part.weekLabel} (${dateRange}) - ${part.days} days`,
+        lineItems: type === 'prepayment' ? [
+          {
+            id: `li_rec_pre_a_${weekStartStr}_${partIndex}`,
+            accountCode: monthlyAccountCode,
+            description: `Recognize ${description} - ${part.weekLabel} (${dateRange}) - ${part.days} days`,
+            debitAmount: actualAmount,
+            creditAmount: 0,
+            store: store,
+            taxRate: 'no-tax',
+            date: weekStartStr
+          },
+          {
+            id: `li_rec_pre_b_${weekStartStr}_${partIndex}`,
+            accountCode: accountCode,
+            description: 'Reduce Prepayment',
+            debitAmount: 0,
+            creditAmount: actualAmount,
+            store: store,
+            taxRate: 'no-tax',
+            date: weekStartStr
+          }
+        ] : [
+          {
+            id: `li_rec_accr_a_${weekStartStr}_${partIndex}`,
+            accountCode: monthlyAccountCode,
+            description: `Recognize ${description} - ${part.weekLabel} (${dateRange}) - ${part.days} days`,
+            debitAmount: actualAmount,
+            creditAmount: 0,
+            store: store,
+            taxRate: 'no-tax',
+            date: weekStartStr
+          },
+          {
+            id: `li_rec_accr_b_${weekStartStr}_${partIndex}`,
+            accountCode: accountCode,
+            description: 'Reduce Accrual',
+            debitAmount: 0,
+            creditAmount: actualAmount,
+            store: store,
+            taxRate: 'no-tax',
+            date: weekStartStr
+          }
+        ]
+      };
+      
+      weeklyBreakdown.push(weeklyEntry);
+    });
+  });
+
+  return {
+    type,
+    monthlyBreakdown,
+    weeklyBreakdown
   };
 }
 
@@ -351,4 +863,4 @@ export function calculateStockJournal(input: StockJournalInput): JournalCalculat
     type: 'stock',
     monthlyBreakdown
   };
-} 
+}
