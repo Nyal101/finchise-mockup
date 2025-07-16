@@ -145,7 +145,12 @@ export function JournalLineItems({
   const [breakdown, setBreakdown] = React.useState(initialBreakdown);
   const gridRef = React.useRef<AgGridReact>(null);
   const [postingDate, setPostingDate] = React.useState(() => {
-    return parse(selectedMonth + "-01", "yyyy-MM-dd", new Date());
+    // Handle both monthly format (YYYY-MM) and weekly format (YYYY-MM-DD)
+    if (selectedMonth.length === 10) { // Weekly format: YYYY-MM-DD
+      return parse(selectedMonth, "yyyy-MM-dd", new Date());
+    } else { // Monthly format: YYYY-MM
+      return parse(selectedMonth + "-01", "yyyy-MM-dd", new Date());
+    }
   });
 
   // Reset local state when initial data changes
@@ -153,7 +158,12 @@ export function JournalLineItems({
     setBreakdown(initialBreakdown);
     setDescription(initialBreakdown.description || '');
     setIsEditMode(false);
-    setPostingDate(parse(selectedMonth + "-01", "yyyy-MM-dd", new Date()));
+    // Handle both monthly format (YYYY-MM) and weekly format (YYYY-MM-DD)
+    if (selectedMonth.length === 10) { // Weekly format: YYYY-MM-DD
+      setPostingDate(parse(selectedMonth, "yyyy-MM-dd", new Date()));
+    } else { // Monthly format: YYYY-MM
+      setPostingDate(parse(selectedMonth + "-01", "yyyy-MM-dd", new Date()));
+    }
   }, [initialBreakdown, selectedMonth]);
 
   React.useEffect(() => {

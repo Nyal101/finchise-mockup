@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -16,7 +16,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronDown } from "lucide-react";
 import { Command, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { JournalEntry, ScheduleType } from "../types";
+import { JournalEntry, ScheduleType, StoreAllocation } from "../types";
 
 // Map of account codes to descriptive names
 const accountDescriptions: Record<string, string> = {
@@ -29,8 +29,23 @@ const accountDescriptions: Record<string, string> = {
   "7101": "Property - Business Rates",
 };
 
+// Default account codes for different allocation types
+const defaultAccountCodes = {
+  prepayment: {
+    accountCode: "1400", // Prepayments
+    monthlyAccountCode: "6500" // Insurance Expense (common transfer account)
+  },
+  accrual: {
+    accountCode: "2200", // Accruals
+    monthlyAccountCode: "7100" // Staff Costs (common transfer account)
+  }
+};
+
 // Available companies
 const companies = ["Domino's Pizza", "Costa Coffee", "GDK Ltd"];
+
+// Available stores
+const stores = ["Kings Hill", "Manchester", "London", "Birmingham", "Leeds"];
 
 // Combobox for searching account codes
 function AccountCodeCombobox({
@@ -91,10 +106,228 @@ interface PrepaymentJournalDetailsProps {
 
 export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJournalDetailsProps) {
   const isDisabled = journal.status === 'published';
+  const [isMultiStoreMode, setIsMultiStoreMode] = React.useState(false);
+  const [localStoreAllocations, setLocalStoreAllocations] = React.useState<StoreAllocation[]>([]);
+
+  // Initialize store allocations on mount and when journal changes
+  React.useEffect(() => {
+    const initialAllocations = journal.storeAllocations || [{
+      id: '1',
+      store: journal.store || '',
+      totalAmount: journal.totalAmount || 0,
+      expensePaidMonth: journal.expensePaidMonth || new Date(),
+      periodStartDate: journal.periodStartDate || new Date(),
+      periodEndDate: journal.periodEndDate || new Date(),
+      accountCode: journal.accountCode || '',
+      monthlyAccountCode: journal.monthlyAccountCode || '',
+    }];
+    setLocalStoreAllocations(initialAllocations);
+    setIsMultiStoreMode(initialAllocations.length > 1);
+  }, [journal]);
+
+  // Auto-update journal type when dates change (for single store mode)
+  React.useEffect(() => {
+    if (!isMultiStoreMode && journal.expensePaidMonth && journal.periodStartDate && journal.periodEndDate) {
+      const tempAllocation = {
+        id: 'temp',
+        store: journal.store || '',
+        totalAmount: journal.totalAmount || 0,
+        expensePaidMonth: journal.expensePaidMonth,
+        periodStartDate: journal.periodStartDate,
+        periodEndDate: journal.periodEndDate,
+        accountCode: journal.accountCode || '',
+        monthlyAccountCode: journal.monthlyAccountCode || '',
+      };
+      
+      const allocationType = getAllocationType(tempAllocation);
+      let detectedType: "prepayment" | "accrual" | "mixed";
+      
+      if (allocationType === 'prepayment') {
+        detectedType = "prepayment";
+      } else if (allocationType === 'accrual') {
+        detectedType = "accrual";
+      } else {
+        detectedType = "prepayment"; // Default fallback
+      }
+      
+      if (journal.type !== detectedType) {
+        onUpdate({ type: detectedType });
+      }
+    }
+  }, [journal.expensePaidMonth, journal.periodStartDate, journal.periodEndDate, journal.type, journal.store, journal.totalAmount, journal.accountCode, journal.monthlyAccountCode, isMultiStoreMode, onUpdate]);
+
+  // Auto-update journal type when store allocations change (for multi-store mode)
+  React.useEffect(() => {
+    if (isMultiStoreMode && localStoreAllocations.length > 0) {
+      let hasPrepayment = false;
+      let hasAccrual = false;
+
+      for (const allocation of localStoreAllocations) {
+        const allocationType = getAllocationType(allocation);
+        if (allocationType === 'prepayment') {
+          hasPrepayment = true;
+        } else if (allocationType === 'accrual') {
+          hasAccrual = true;
+        }
+      }
+
+      let detectedType: "prepayment" | "accrual" | "mixed";
+      if (hasPrepayment && hasAccrual) {
+        detectedType = "mixed";
+      } else if (hasPrepayment) {
+        detectedType = "prepayment";
+      } else {
+        detectedType = "accrual";
+      }
+
+      if (journal.type !== detectedType) {
+        onUpdate({ type: detectedType });
+      }
+    }
+  }, [localStoreAllocations, journal.type, isMultiStoreMode, onUpdate]);
+
+  const updateStoreAllocations = (allocations: StoreAllocation[]) => {
+    setLocalStoreAllocations(allocations);
+    
+    // Auto-detect journal type based on allocations
+    let hasPrepayment = false;
+    let hasAccrual = false;
+
+    for (const allocation of allocations) {
+      const allocationType = getAllocationType(allocation);
+      if (allocationType === 'prepayment') {
+        hasPrepayment = true;
+      } else if (allocationType === 'accrual') {
+        hasAccrual = true;
+      }
+    }
+
+    let detectedType: "prepayment" | "accrual" | "mixed";
+    if (hasPrepayment && hasAccrual) {
+      detectedType = "mixed";
+    } else if (hasPrepayment) {
+      detectedType = "prepayment";
+    } else {
+      detectedType = "accrual";
+    }
+
+    onUpdate({ 
+      storeAllocations: allocations,
+      type: detectedType,
+      // Also update the legacy fields for backwards compatibility
+      totalAmount: allocations.reduce((sum, allocation) => sum + allocation.totalAmount, 0),
+      store: allocations.length > 0 ? allocations[0].store : '',
+      expensePaidMonth: allocations.length > 0 ? allocations[0].expensePaidMonth : new Date(),
+      periodStartDate: allocations.length > 0 ? allocations[0].periodStartDate : new Date(),
+      periodEndDate: allocations.length > 0 ? allocations[0].periodEndDate : new Date(),
+    });
+  };
+
+  const addStoreAllocation = () => {
+    const newAllocation: StoreAllocation = {
+      id: Date.now().toString(),
+      store: '',
+      totalAmount: 0,
+      expensePaidMonth: new Date(),
+      periodStartDate: new Date(),
+      periodEndDate: new Date(),
+      accountCode: journal.accountCode || '',
+      monthlyAccountCode: journal.monthlyAccountCode || '',
+    };
+    updateStoreAllocations([...localStoreAllocations, newAllocation]);
+  };
+
+  const removeStoreAllocation = (id: string) => {
+    if (localStoreAllocations.length > 1) {
+      updateStoreAllocations(localStoreAllocations.filter(allocation => allocation.id !== id));
+    }
+  };
+
+  const updateStoreAllocation = (id: string, updates: Partial<StoreAllocation>) => {
+    const updatedAllocations = localStoreAllocations.map(allocation => {
+      if (allocation.id === id) {
+        const updatedAllocation = { ...allocation, ...updates };
+        
+        // Check if allocation type has changed and auto-update account codes
+        const oldType = getAllocationType(allocation);
+        const newType = getAllocationType(updatedAllocation);
+        
+        if (oldType !== newType && (newType === 'prepayment' || newType === 'accrual')) {
+          // Auto-update account codes based on new type
+          const defaultCodes = defaultAccountCodes[newType];
+          updatedAllocation.accountCode = defaultCodes.accountCode;
+          updatedAllocation.monthlyAccountCode = defaultCodes.monthlyAccountCode;
+        }
+        
+        return updatedAllocation;
+      }
+      return allocation;
+    });
+    updateStoreAllocations(updatedAllocations);
+  };
+
+  const enableMultiStoreMode = () => {
+    setIsMultiStoreMode(true);
+    // Create initial store allocations from current journal data
+    const initialAllocations = [
+      {
+        id: '1',
+        store: journal.store || '',
+        totalAmount: journal.totalAmount || 0,
+        expensePaidMonth: journal.expensePaidMonth || new Date(),
+        periodStartDate: journal.periodStartDate || new Date(),
+        periodEndDate: journal.periodEndDate || new Date(),
+        accountCode: journal.accountCode || '',
+        monthlyAccountCode: journal.monthlyAccountCode || '',
+      }
+    ];
+    updateStoreAllocations(initialAllocations);
+  };
+
+  // Helper function to determine allocation type based on dates
+  const getAllocationType = (allocation: StoreAllocation) => {
+    const paidMonth = allocation.expensePaidMonth;
+    const startDate = allocation.periodStartDate;
+    const endDate = allocation.periodEndDate;
+
+    if (!paidMonth || !startDate || !endDate) {
+      return null;
+    }
+
+    // Simple comparison: paid before start = prepayment, paid after end = accrual
+    const isPrepayment = paidMonth < startDate;
+    const isAccrual = paidMonth > endDate;
+    
+    if (isPrepayment && isAccrual) {
+      // This shouldn't happen in normal scenarios, but handle edge cases
+      return 'both';
+    } else if (isPrepayment) {
+      return 'prepayment';
+    } else if (isAccrual) {
+      return 'accrual';
+    } else {
+      // Paid during the recognition period - determine based on position
+      const periodMidpoint = new Date((startDate.getTime() + endDate.getTime()) / 2);
+      return paidMonth <= periodMidpoint ? 'prepayment' : 'accrual';
+    }
+  };
+
+  const getTypeIndicator = (type: string | null) => {
+    switch (type) {
+      case 'prepayment':
+        return { text: 'Prepayment', color: 'text-blue-600 bg-blue-50 border-blue-200' };
+      case 'accrual':
+        return { text: 'Accrual', color: 'text-green-600 bg-green-50 border-green-200' };
+      case 'both':
+        return { text: 'Prepayment & Accrual', color: 'text-purple-600 bg-purple-50 border-purple-200' };
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      <div className="grid grid-cols-[1fr_3fr] gap-4">
+      <div className="grid grid-cols-[1fr_2fr] gap-4">
         <div>
           <label className="text-sm font-medium text-muted-foreground">Company</label>
           <Select
@@ -126,107 +359,6 @@ export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJourna
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">Total Amount</label>
-          <Input
-            type="number"
-            value={journal.totalAmount ?? ''}
-            onChange={e => onUpdate({ totalAmount: parseFloat(e.target.value || '0') })}
-            className="mt-1"
-            step="0.01"
-            disabled={isDisabled}
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">Expense Paid Month</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full mt-1 justify-start text-left font-normal"
-                disabled={isDisabled}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {journal.expensePaidMonth ? format(journal.expensePaidMonth, 'MMM yyyy') : <span>Month</span>}
-              </Button>
-            </PopoverTrigger>
-            {!isDisabled && (
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={journal.expensePaidMonth}
-                  defaultMonth={journal.expensePaidMonth}
-                  onSelect={(date) => {
-                    if (date) onUpdate({ expensePaidMonth: date });
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            )}
-          </Popover>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">Recognition Start Date</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full mt-1 justify-start text-left font-normal"
-                disabled={isDisabled}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {journal.periodStartDate ? format(journal.periodStartDate, 'dd MMM yyyy') : <span>Start</span>}
-              </Button>
-            </PopoverTrigger>
-            {!isDisabled && (
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={journal.periodStartDate}
-                  defaultMonth={journal.periodStartDate}
-                  onSelect={(date) => {
-                    if (date) onUpdate({ periodStartDate: date });
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            )}
-          </Popover>
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-muted-foreground">Recognition End Date</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full mt-1 justify-start text-left font-normal"
-                disabled={isDisabled}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {journal.periodEndDate ? format(journal.periodEndDate, 'dd MMM yyyy') : <span>End</span>}
-              </Button>
-            </PopoverTrigger>
-            {!isDisabled && (
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={journal.periodEndDate}
-                  defaultMonth={journal.periodEndDate}
-                  onSelect={(date) => {
-                    if (date) onUpdate({ periodEndDate: date });
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            )}
-          </Popover>
-        </div>
-      </div>
-
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="text-sm font-medium text-muted-foreground">Prepayment Account</label>
@@ -251,7 +383,7 @@ export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJourna
         <div>
           <label className="text-sm font-medium text-muted-foreground">Schedule Type</label>
           <Select
-            value={journal.scheduleType || 'monthly (weekly split)'}
+            value={journal.scheduleType || 'monthly'}
             onValueChange={value => onUpdate({ scheduleType: value as ScheduleType })}
             disabled={isDisabled}
           >
@@ -259,12 +391,357 @@ export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJourna
               <SelectValue placeholder="Select schedule type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="monthly (weekly split)">Monthly (weekly split)</SelectItem>
-              <SelectItem value="monthly (equal split)">Monthly (equal split)</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {/* Store Details Section */}
+      {!isMultiStoreMode ? (
+        // Single store mode
+        <div className="grid grid-cols-4 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Store</label>
+            <Select
+              value={journal.store}
+              onValueChange={value => onUpdate({ store: value })}
+              disabled={isDisabled}
+            >
+              <SelectTrigger className="w-full mt-1">
+                <SelectValue placeholder="Select store" />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map(store => (
+                  <SelectItem key={store} value={store}>
+                    {store}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Total Amount</label>
+            <Input
+              type="number"
+              value={journal.totalAmount}
+              onChange={e => onUpdate({ totalAmount: parseFloat(e.target.value || '0') })}
+              className="mt-1"
+              step="0.01"
+              disabled={isDisabled}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Expense Paid Month</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full mt-1 justify-start text-left font-normal"
+                  disabled={isDisabled}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {journal.expensePaidMonth ? format(journal.expensePaidMonth, 'MMM yyyy') : <span>Pick a month</span>}
+                </Button>
+              </PopoverTrigger>
+              {!isDisabled && (
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={journal.expensePaidMonth}
+                    defaultMonth={journal.expensePaidMonth}
+                    onSelect={(date) => {
+                      if (date) onUpdate({ expensePaidMonth: date });
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              )}
+            </Popover>
+          </div>
+          <div className="flex items-end">
+            {!isDisabled && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={enableMultiStoreMode}
+                className="h-10 text-xs"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Allocate to Multiple Stores
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        // Multi-store mode
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium">Store Allocations</h3>
+            {!isDisabled && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addStoreAllocation}
+                className="h-8"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Store
+              </Button>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {localStoreAllocations.map((allocation) => (
+              <div key={allocation.id} className="grid grid-cols-8 gap-2 p-2 border rounded bg-gray-50">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Store</label>
+                  <Select
+                    value={allocation.store}
+                    onValueChange={value => updateStoreAllocation(allocation.id, { store: value })}
+                    disabled={isDisabled}
+                  >
+                    <SelectTrigger className="w-full mt-1 h-8 text-xs">
+                      <SelectValue placeholder="Select store" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stores.map(store => (
+                        <SelectItem key={store} value={store}>
+                          {store}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Amount</label>
+                  <Input
+                    type="number"
+                    value={allocation.totalAmount}
+                    onChange={e => updateStoreAllocation(allocation.id, { totalAmount: parseFloat(e.target.value || '0') })}
+                    className="mt-1 h-8 text-xs"
+                    step="0.01"
+                    disabled={isDisabled}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Paid Month</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full mt-1 h-8 justify-start text-left font-normal text-xs"
+                        disabled={isDisabled}
+                      >
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {allocation.expensePaidMonth ? format(allocation.expensePaidMonth, 'MMM yy') : <span>Month</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    {!isDisabled && (
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={allocation.expensePaidMonth}
+                          defaultMonth={allocation.expensePaidMonth}
+                          onSelect={(date) => {
+                            if (date) updateStoreAllocation(allocation.id, { expensePaidMonth: date });
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    )}
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Start Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full mt-1 h-8 justify-start text-left font-normal text-xs"
+                        disabled={isDisabled}
+                      >
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {allocation.periodStartDate ? format(allocation.periodStartDate, 'dd MMM yyyy') : <span>Start</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    {!isDisabled && (
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={allocation.periodStartDate}
+                          defaultMonth={allocation.periodStartDate}
+                          onSelect={(date) => {
+                            if (date) updateStoreAllocation(allocation.id, { periodStartDate: date });
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    )}
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">End Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full mt-1 h-8 justify-start text-left font-normal text-xs"
+                        disabled={isDisabled}
+                      >
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {allocation.periodEndDate ? format(allocation.periodEndDate, 'dd MMM yyyy') : <span>End</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    {!isDisabled && (
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={allocation.periodEndDate}
+                          defaultMonth={allocation.periodEndDate}
+                          onSelect={(date) => {
+                            if (date) updateStoreAllocation(allocation.id, { periodEndDate: date });
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    )}
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Prepay Account</label>
+                  <AccountCodeCombobox
+                    value={allocation.accountCode}
+                    onChange={(val) => updateStoreAllocation(allocation.id, { accountCode: val })}
+                    options={Object.keys(accountDescriptions)}
+                    className="mt-1"
+                    disabled={isDisabled}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Transfer Account</label>
+                  <AccountCodeCombobox
+                    value={allocation.monthlyAccountCode}
+                    onChange={(val) => updateStoreAllocation(allocation.id, { monthlyAccountCode: val })}
+                    options={Object.keys(accountDescriptions)}
+                    className="mt-1"
+                    disabled={isDisabled}
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  {!isDisabled && localStoreAllocations.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeStoreAllocation(allocation.id)}
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Type indicators for each allocation */}
+          <div className="mt-3 space-y-2">
+            {localStoreAllocations.map((allocation) => {
+              const allocationType = getAllocationType(allocation);
+              const indicator = getTypeIndicator(allocationType);
+              
+              if (!indicator) return null;
+              
+              return (
+                <div key={`${allocation.id}-indicator`} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    {allocation.store || 'Unassigned Store'}:
+                  </span>
+                  <span className={`px-2 py-1 rounded-full border text-xs font-medium ${indicator.color}`}>
+                    {indicator.text}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 pt-3 border-t">
+            <div className="text-sm font-medium text-muted-foreground">
+              Total Amount: £{localStoreAllocations.reduce((sum, allocation) => sum + allocation.totalAmount, 0).toFixed(2)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recognition Period Section - Only show in single store mode */}
+      {!isMultiStoreMode && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Recognition Start Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full mt-1 justify-start text-left font-normal"
+                  disabled={isDisabled}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {journal.periodStartDate ? format(journal.periodStartDate, 'dd MMM yyyy') : <span>Pick start date</span>}
+                </Button>
+              </PopoverTrigger>
+              {!isDisabled && (
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={journal.periodStartDate}
+                    defaultMonth={journal.periodStartDate}
+                    onSelect={(date) => {
+                      if (date) onUpdate({ periodStartDate: date });
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              )}
+            </Popover>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">Recognition End Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full mt-1 justify-start text-left font-normal"
+                  disabled={isDisabled}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {journal.periodEndDate ? format(journal.periodEndDate, 'dd MMM yyyy') : <span>Pick end date</span>}
+                </Button>
+              </PopoverTrigger>
+              {!isDisabled && (
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={journal.periodEndDate}
+                    defaultMonth={journal.periodEndDate}
+                    onSelect={(date) => {
+                      if (date) onUpdate({ periodEndDate: date });
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              )}
+            </Popover>
+          </div>
+        </div>
+      )}
     </div>
   );
-} 
+}

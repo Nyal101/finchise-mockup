@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   Package,
   Plus,
-  Upload,
   FileText
 } from "lucide-react";
 import { JournalEntry } from "./types";
@@ -57,6 +56,13 @@ function JournalsContent() {
           return <ArrowLeft className="h-4 w-4 text-green-600" />;
         case "stock":
           return <Package className="h-4 w-4 text-gray-600" />;
+        case "mixed":
+          return (
+            <div className="relative">
+              <ArrowRight className="h-4 w-4 text-blue-600" />
+              <ArrowLeft className="h-3 w-3 text-green-600 absolute -top-0.5 -right-0.5" />
+            </div>
+          );
         default:
           return <FileText className="h-4 w-4 text-gray-600" />;
       }
@@ -278,10 +284,6 @@ function JournalsContent() {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" />
-            Import Journals
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button>
