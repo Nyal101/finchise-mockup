@@ -333,18 +333,6 @@ export default function StoreManagementPage() {
     "ROMFORD", "BRENTWOOD", "GRAYS", "WICKFORD", "SOUTHEND"
   ]
 
-  // Available accounting software options
-  const accountingSoftwareOptions = [
-    "Xero",
-    "QuickBooks", 
-    "Sage",
-    "FreeAgent",
-    "Wave",
-    "Kashflow"
-  ]
-
-
-  
   // Available colors for groups
   const groupColors = [
     "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", 
@@ -665,7 +653,7 @@ export default function StoreManagementPage() {
                 Add New Store
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
+            <DialogContent className="sm:max-w-[900px] max-h-[75vh]">
               <DialogHeader>
                 <DialogTitle>Add New Store</DialogTitle>
                 <DialogDescription>
@@ -674,10 +662,10 @@ export default function StoreManagementPage() {
               </DialogHeader>
               
               <div className="grid grid-cols-2 gap-6 py-4">
-                {/* Left Column - Store Information */}
+                {/* Left Column - Store Information & Company */}
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Store Information</h3>
+                    <h3 className="text-base font-semibold text-gray-900 border-b pb-2">Store Information</h3>
                     <div className="space-y-3">
                       <div className="grid gap-1">
                         <Label className="text-sm font-medium text-gray-700">Store Name</Label>
@@ -697,7 +685,7 @@ export default function StoreManagementPage() {
                         <Label className="text-sm font-medium text-gray-700">Store Address</Label>
                         <Textarea
                           placeholder="Enter store address"
-                          className="min-h-[60px] resize-none"
+                          className="min-h-[50px] resize-none"
                         />
                       </div>
                       <div className="grid gap-1">
@@ -709,10 +697,10 @@ export default function StoreManagementPage() {
                       </div>
                     </div>
                   </div>
-
+                  
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Company & Accounting</h3>
-                    <div className="space-y-3">
+                    <h3 className="text-base font-semibold text-gray-900 border-b pb-2">Company & Accounting</h3>
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="grid gap-1">
                         <Label className="text-sm font-medium text-gray-700">Company</Label>
                         <Select>
@@ -735,21 +723,6 @@ export default function StoreManagementPage() {
                         </Select>
                       </div>
                       <div className="grid gap-1">
-                        <Label className="text-sm font-medium text-gray-700">Accounting Software</Label>
-                        <Select>
-                          <SelectTrigger className="h-9">
-                            <SelectValue placeholder="Select accounting software" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {accountingSoftwareOptions.map((software) => (
-                              <SelectItem key={software} value={software}>
-                                {software}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-1">
                         <Label className="text-sm font-medium text-gray-700">Tracking Option</Label>
                         <Select>
                           <SelectTrigger className="h-9">
@@ -763,89 +736,95 @@ export default function StoreManagementPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <div className="p-2 bg-blue-50 rounded text-xs text-blue-600">
-                          Note: If no options appear, please ensure the company is connected to external accounting software.
-                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Column - Additional Info */}
+                {/* Right Column - Additional Information */}
                 <div className="space-y-4">
+                  {/* Additional Information Section */}
                   <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Additional Information</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-semibold text-gray-900 border-b pb-2 flex-1">Additional Information</h3>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Used by the invoice agent to assign invoices to the correct store.
+                    </div>
+                    
                     <div className="space-y-3">
-                      <div className="text-sm text-gray-600">
-                        This additional information is used by the invoice agent to assign invoices to the correct store.
-                      </div>
-                      
-                      {/* Additional Information Table */}
-                      <div className="border rounded-lg">
-                        <div className="grid grid-cols-2 gap-0 bg-gray-50 border-b text-xs font-medium text-gray-700">
-                          <div className="p-2 border-r">Information Type</div>
-                          <div className="p-2">Information</div>
-                        </div>
-                        <div className="max-h-40 overflow-y-auto">
-                          {storeAdditionalInfo.length === 0 ? (
-                            <div className="p-4 text-center text-sm text-gray-500">
-                              No additional information added yet
-                            </div>
-                          ) : (
-                            storeAdditionalInfo.map((info, index) => (
-                              <div key={index} className="grid grid-cols-2 gap-0 border-b last:border-b-0 text-sm">
-                                <div className="p-2 border-r font-medium">{info.infoType}</div>
-                                <div className="p-2 flex justify-between items-center">
-                                  <span className="font-mono text-blue-600">{info.information}</span>
-                                  <button
-                                    onClick={() => removeStoreAdditionalInfo(index)}
-                                    className="text-red-500 hover:text-red-700 text-xs"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Add New Information */}
+                      {/* Add New Information Row */}
                       <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-700">Add Information:</div>
-                        <div className="flex gap-2">
+                        <div className="grid gap-2">
+                          <Label className="text-xs font-medium text-gray-700">Information Type</Label>
                           <Input
-                            placeholder="Information Type"
+                            placeholder="e.g. WorldPay Reference Number"
                             value={newInfoType}
                             onChange={(e) => setNewInfoType(e.target.value)}
                             className="h-8 text-sm"
                           />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label className="text-xs font-medium text-gray-700">Information</Label>
                           <Input
-                            placeholder="Information"
+                            placeholder="e.g. WP12345"
                             value={newInformation}
                             onChange={(e) => setNewInformation(e.target.value)}
                             className="h-8 text-sm"
                           />
-                          <Button
-                            onClick={addStoreAdditionalInfo}
-                            size="sm"
-                            className="h-8 px-3 text-xs"
-                            disabled={!newInfoType.trim() || !newInformation.trim()}
-                          >
-                            Add
-                          </Button>
                         </div>
+                        <Button
+                          onClick={addStoreAdditionalInfo}
+                          size="sm"
+                          className="h-8 w-full text-xs"
+                          disabled={!newInfoType.trim() || !newInformation.trim()}
+                        >
+                          Add Information
+                        </Button>
                       </div>
 
-                      <div className="p-2 bg-gray-50 rounded text-xs text-gray-600">
-                        Examples: WorldPay Reference Number, British Gas Unique Billing Code, Insurance Policy Number, etc.
+                      {/* Information Table */}
+                      <div className="border rounded-lg bg-white max-h-40 overflow-y-auto">
+                        <div className="grid grid-cols-3 gap-0 bg-gray-50 border-b text-xs font-medium text-gray-700 sticky top-0">
+                          <div className="p-2 border-r">Type</div>
+                          <div className="p-2 border-r">Information</div>
+                          <div className="p-2 text-center">Action</div>
+                        </div>
+                        {storeAdditionalInfo.length === 0 ? (
+                          <div className="p-3 text-center text-sm text-gray-500">
+                            No additional information added yet
+                          </div>
+                        ) : (
+                          storeAdditionalInfo.map((info, index) => (
+                            <div key={index} className="grid grid-cols-3 gap-0 border-b last:border-b-0 text-sm hover:bg-gray-50">
+                              <div className="p-2 border-r font-medium text-gray-900 text-xs">{info.infoType}</div>
+                              <div className="p-2 border-r">
+                                <span className="font-mono text-blue-600 bg-blue-50 px-1 py-0.5 rounded text-xs">
+                                  {info.information}
+                                </span>
+                              </div>
+                              <div className="p-2 text-center">
+                                <button
+                                  onClick={() => removeStoreAdditionalInfo(index)}
+                                  className="text-red-500 hover:text-red-700 text-xs font-medium px-1 py-0.5 rounded hover:bg-red-50"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      <div className="text-xs text-gray-500">
+                        Examples: WorldPay Reference Number, British Gas Account, Insurance Policy Number, etc.
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <DialogFooter className="border-t pt-3">
+              <DialogFooter className="border-t pt-4 mt-6">
                 <Button variant="outline" onClick={() => {
                   setIsDialogOpen(false)
                   setStoreAdditionalInfo([])
