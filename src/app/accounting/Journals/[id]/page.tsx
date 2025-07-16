@@ -67,6 +67,8 @@ export default function JournalDetailsPage() {
     }
   }, [params.id]);
 
+
+
   // Set initial selected document
   useEffect(() => {
     if (!journal) return;
