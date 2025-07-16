@@ -67,8 +67,8 @@ export default function JournalDetailsPage() {
 
   // Reset selected month if it's not in the current journal's breakdown
   React.useEffect(() => {
-    if (journalData && selectedMonth) {
-      const monthExists = monthlyBreakdown.some(b => b.month === selectedMonth);
+    if (journalData && selectedMonth && journalData.monthlyBreakdown) {
+      const monthExists = journalData.monthlyBreakdown.some(b => b.month === selectedMonth);
       if (!monthExists) {
         setSelectedMonth(null);
       }
