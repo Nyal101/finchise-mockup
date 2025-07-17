@@ -128,7 +128,17 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
     }];
     setLocalStoreAllocations(initialAllocations);
     setIsMultiStoreMode(initialAllocations.length > 1);
-  }, [journal.id]);
+  }, [
+    journal.id,
+    journal.storeAllocations,
+    journal.store,
+    journal.totalAmount,
+    journal.expensePaidMonth,
+    journal.periodStartDate,
+    journal.periodEndDate,
+    journal.accountCode,
+    journal.monthlyAccountCode
+  ]);
 
   // Sync local allocations when journal.storeAllocations changes from external source
   const prevStoreAllocationsRef = React.useRef<string>('');
@@ -175,7 +185,7 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
         onUpdate({ type: detectedType });
       }
     }
-  }, [journal.expensePaidMonth, journal.periodStartDate, journal.periodEndDate, journal.type, journal.store, journal.totalAmount, journal.accountCode, journal.monthlyAccountCode, isMultiStoreMode]);
+  }, [journal.expensePaidMonth, journal.periodStartDate, journal.periodEndDate, journal.type, journal.store, journal.totalAmount, journal.accountCode, journal.monthlyAccountCode, isMultiStoreMode, onUpdate]);
 
   // Auto-update journal type when store allocations change (for multi-store mode)
   React.useEffect(() => {
@@ -205,7 +215,7 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
         onUpdate({ type: detectedType });
       }
     }
-  }, [storeAllocations, journal.type, isMultiStoreMode]);
+  }, [storeAllocations, journal.type, isMultiStoreMode, onUpdate]);
 
   const updateStoreAllocations = React.useCallback((allocations: StoreAllocation[]) => {
     try {
@@ -266,7 +276,7 @@ export function AccrualJournalDetails({ journal, onUpdate }: AccrualJournalDetai
       console.error('Error updating store allocations:', error);
       // Don't crash the app, just log the error
     }
-  }, []);
+  }, [onUpdate]);
 
   const addStoreAllocation = () => {
     // Create dates that are definitely different and safe
