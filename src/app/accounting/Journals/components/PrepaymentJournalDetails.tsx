@@ -109,21 +109,39 @@ export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJourna
   const [isMultiStoreMode, setIsMultiStoreMode] = React.useState(false);
   const [localStoreAllocations, setLocalStoreAllocations] = React.useState<StoreAllocation[]>([]);
 
-  // Initialize store allocations on mount and when journal changes
+  // Initialize store allocations on mount and when journal ID changes
   React.useEffect(() => {
+    // Create safe default dates if journal doesn't have them
+    const paidDate = new Date(2024, 0, 1); // January 1, 2024
+    const startDate = new Date(2024, 2, 1); // March 1, 2024 
+    const endDate = new Date(2024, 2, 31); // March 31, 2024
+    
     const initialAllocations = journal.storeAllocations || [{
       id: '1',
       store: journal.store || '',
-      totalAmount: journal.totalAmount || 0,
-      expensePaidMonth: journal.expensePaidMonth || new Date(),
-      periodStartDate: journal.periodStartDate || new Date(),
-      periodEndDate: journal.periodEndDate || new Date(),
-      accountCode: journal.accountCode || '',
-      monthlyAccountCode: journal.monthlyAccountCode || '',
+      totalAmount: journal.totalAmount || 100,
+      expensePaidMonth: journal.expensePaidMonth || paidDate,
+      periodStartDate: journal.periodStartDate || startDate,
+      periodEndDate: journal.periodEndDate || endDate,
+      accountCode: journal.accountCode || '1400',
+      monthlyAccountCode: journal.monthlyAccountCode || '6500',
     }];
     setLocalStoreAllocations(initialAllocations);
     setIsMultiStoreMode(initialAllocations.length > 1);
-  }, [journal]);
+  }, [journal.id]);
+
+  // Sync local allocations when journal.storeAllocations changes from external source
+  const prevStoreAllocationsRef = React.useRef<string>('');
+  React.useEffect(() => {
+    if (journal.storeAllocations && journal.storeAllocations.length > 0) {
+      const newStr = JSON.stringify(journal.storeAllocations);
+      if (prevStoreAllocationsRef.current !== newStr) {
+        prevStoreAllocationsRef.current = newStr;
+        setLocalStoreAllocations(journal.storeAllocations);
+        setIsMultiStoreMode(journal.storeAllocations.length > 1);
+      }
+    }
+  }, [journal.storeAllocations]);
 
   // Auto-update journal type when dates change (for single store mode)
   React.useEffect(() => {
@@ -154,7 +172,7 @@ export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJourna
         onUpdate({ type: detectedType });
       }
     }
-  }, [journal.expensePaidMonth, journal.periodStartDate, journal.periodEndDate, journal.type, journal.store, journal.totalAmount, journal.accountCode, journal.monthlyAccountCode, isMultiStoreMode, onUpdate]);
+  }, [journal.expensePaidMonth, journal.periodStartDate, journal.periodEndDate, journal.type, journal.store, journal.totalAmount, journal.accountCode, journal.monthlyAccountCode, isMultiStoreMode]);
 
   // Auto-update journal type when store allocations change (for multi-store mode)
   React.useEffect(() => {
@@ -184,62 +202,94 @@ export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJourna
         onUpdate({ type: detectedType });
       }
     }
-  }, [localStoreAllocations, journal.type, isMultiStoreMode, onUpdate]);
+  }, [localStoreAllocations, journal.type, isMultiStoreMode]);
 
-  const updateStoreAllocations = (allocations: StoreAllocation[]) => {
-    setLocalStoreAllocations(allocations);
-    
-    // Auto-detect journal type based on allocations
-    let hasPrepayment = false;
-    let hasAccrual = false;
+  const updateStoreAllocations = React.useCallback((allocations: StoreAllocation[]) => {
+    try {
+      // Validate allocations before updating
+      const validAllocations = allocations.filter(allocation => {
+        // Check if required fields exist
+        return allocation.id && 
+               allocation.expensePaidMonth && 
+               allocation.periodStartDate && 
+               allocation.periodEndDate;
+      });
 
-    for (const allocation of allocations) {
-      const allocationType = getAllocationType(allocation);
-      if (allocationType === 'prepayment') {
-        hasPrepayment = true;
-      } else if (allocationType === 'accrual') {
-        hasAccrual = true;
-      }
+      setLocalStoreAllocations(prevAllocations => {
+        // Check if allocations have actually changed to prevent unnecessary updates
+        const currentAllocationsStr = JSON.stringify(prevAllocations);
+        const newAllocationsStr = JSON.stringify(validAllocations);
+        
+        if (currentAllocationsStr === newAllocationsStr) {
+          return prevAllocations; // No change, don't update
+        }
+
+        // Auto-detect journal type based on allocations
+        let hasPrepayment = false;
+        let hasAccrual = false;
+
+        for (const allocation of validAllocations) {
+          const allocationType = getAllocationType(allocation);
+          if (allocationType === 'prepayment') {
+            hasPrepayment = true;
+          } else if (allocationType === 'accrual') {
+            hasAccrual = true;
+          }
+        }
+
+        let detectedType: "prepayment" | "accrual" | "mixed";
+        if (hasPrepayment && hasAccrual) {
+          detectedType = "mixed";
+        } else if (hasPrepayment) {
+          detectedType = "prepayment";
+        } else {
+          detectedType = "accrual";
+        }
+
+        onUpdate({ 
+          storeAllocations: validAllocations,
+          type: detectedType,
+          // Also update the legacy fields for backwards compatibility
+          totalAmount: validAllocations.reduce((sum, allocation) => sum + allocation.totalAmount, 0),
+          store: validAllocations.length > 0 ? validAllocations[0].store : '',
+          expensePaidMonth: validAllocations.length > 0 ? validAllocations[0].expensePaidMonth : new Date(2024, 0, 1),
+          periodStartDate: validAllocations.length > 0 ? validAllocations[0].periodStartDate : new Date(2024, 2, 1),
+          periodEndDate: validAllocations.length > 0 ? validAllocations[0].periodEndDate : new Date(2024, 2, 31),
+        });
+
+        return validAllocations;
+      });
+    } catch (error) {
+      console.error('Error updating store allocations:', error);
+      // Don't crash the app, just log the error
     }
-
-    let detectedType: "prepayment" | "accrual" | "mixed";
-    if (hasPrepayment && hasAccrual) {
-      detectedType = "mixed";
-    } else if (hasPrepayment) {
-      detectedType = "prepayment";
-    } else {
-      detectedType = "accrual";
-    }
-
-    onUpdate({ 
-      storeAllocations: allocations,
-      type: detectedType,
-      // Also update the legacy fields for backwards compatibility
-      totalAmount: allocations.reduce((sum, allocation) => sum + allocation.totalAmount, 0),
-      store: allocations.length > 0 ? allocations[0].store : '',
-      expensePaidMonth: allocations.length > 0 ? allocations[0].expensePaidMonth : new Date(),
-      periodStartDate: allocations.length > 0 ? allocations[0].periodStartDate : new Date(),
-      periodEndDate: allocations.length > 0 ? allocations[0].periodEndDate : new Date(),
-    });
-  };
+  }, []);
 
   const addStoreAllocation = () => {
+    // Create dates that are definitely different and safe
+    const paidDate = new Date(2024, 0, 1); // January 1, 2024
+    const startDate = new Date(2024, 2, 1); // March 1, 2024 
+    const endDate = new Date(2024, 2, 31); // March 31, 2024
+    
     const newAllocation: StoreAllocation = {
       id: Date.now().toString(),
       store: '',
-      totalAmount: 0,
-      expensePaidMonth: new Date(),
-      periodStartDate: new Date(),
-      periodEndDate: new Date(),
-      accountCode: journal.accountCode || '',
-      monthlyAccountCode: journal.monthlyAccountCode || '',
+      totalAmount: 100, // Non-zero amount to avoid any division issues
+      expensePaidMonth: paidDate, // Paid in Jan
+      periodStartDate: startDate, // Recognition starts in Mar
+      periodEndDate: endDate, // Recognition ends in Mar
+      accountCode: journal.accountCode || '1400',
+      monthlyAccountCode: journal.monthlyAccountCode || '6500',
     };
-    updateStoreAllocations([...localStoreAllocations, newAllocation]);
+    
+    const newAllocations = [...localStoreAllocations, newAllocation];
+    updateStoreAllocations(newAllocations);
   };
 
   const removeStoreAllocation = (id: string) => {
     if (localStoreAllocations.length > 1) {
-      updateStoreAllocations(localStoreAllocations.filter(allocation => allocation.id !== id));
+      const filteredAllocations = localStoreAllocations.filter(allocation => allocation.id !== id);
+      updateStoreAllocations(filteredAllocations);
     }
   };
 
@@ -263,22 +313,29 @@ export function PrepaymentJournalDetails({ journal, onUpdate }: PrepaymentJourna
       }
       return allocation;
     });
+    
     updateStoreAllocations(updatedAllocations);
   };
 
   const enableMultiStoreMode = () => {
     setIsMultiStoreMode(true);
+    
+    // Create safe default dates if journal doesn't have them
+    const paidDate = new Date(2024, 0, 1); // January 1, 2024
+    const startDate = new Date(2024, 2, 1); // March 1, 2024 
+    const endDate = new Date(2024, 2, 31); // March 31, 2024
+    
     // Create initial store allocations from current journal data
     const initialAllocations = [
       {
         id: '1',
         store: journal.store || '',
-        totalAmount: journal.totalAmount || 0,
-        expensePaidMonth: journal.expensePaidMonth || new Date(),
-        periodStartDate: journal.periodStartDate || new Date(),
-        periodEndDate: journal.periodEndDate || new Date(),
-        accountCode: journal.accountCode || '',
-        monthlyAccountCode: journal.monthlyAccountCode || '',
+        totalAmount: journal.totalAmount || 100,
+        expensePaidMonth: journal.expensePaidMonth || paidDate,
+        periodStartDate: journal.periodStartDate || startDate,
+        periodEndDate: journal.periodEndDate || endDate,
+        accountCode: journal.accountCode || '1400',
+        monthlyAccountCode: journal.monthlyAccountCode || '6500',
       }
     ];
     updateStoreAllocations(initialAllocations);
