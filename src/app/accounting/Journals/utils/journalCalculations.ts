@@ -140,13 +140,36 @@ function calculateMultiStoreJournal(input: JournalCalculationInput): JournalCalc
   let hasAccrual = false;
 
   for (const allocation of storeAllocations) {
-    const isPrepayment = allocation.expensePaidMonth < allocation.periodStartDate;
-    const isAccrual = allocation.expensePaidMonth > allocation.periodEndDate;
+    // Validate dates before comparison
+    if (!allocation.expensePaidMonth || !allocation.periodStartDate || !allocation.periodEndDate) {
+      console.warn('Invalid dates in store allocation:', allocation);
+      continue; // Skip this allocation if dates are invalid
+    }
+
+    // Ensure dates are Date objects
+    const expensePaidMonth = allocation.expensePaidMonth instanceof Date 
+      ? allocation.expensePaidMonth 
+      : new Date(allocation.expensePaidMonth);
+    const periodStartDate = allocation.periodStartDate instanceof Date 
+      ? allocation.periodStartDate 
+      : new Date(allocation.periodStartDate);
+    const periodEndDate = allocation.periodEndDate instanceof Date 
+      ? allocation.periodEndDate 
+      : new Date(allocation.periodEndDate);
+
+    // Validate that dates are valid
+    if (isNaN(expensePaidMonth.getTime()) || isNaN(periodStartDate.getTime()) || isNaN(periodEndDate.getTime())) {
+      console.warn('Invalid date values in store allocation:', allocation);
+      continue; // Skip this allocation if dates are invalid
+    }
+
+    const isPrepayment = expensePaidMonth < periodStartDate;
+    const isAccrual = expensePaidMonth > periodEndDate;
     
     if (isPrepayment || (!isPrepayment && !isAccrual)) {
       // Either clear prepayment or paid during period (treated as prepayment by midpoint rule)
-      const periodMidpoint = new Date((allocation.periodStartDate.getTime() + allocation.periodEndDate.getTime()) / 2);
-      if (isPrepayment || allocation.expensePaidMonth <= periodMidpoint) {
+      const periodMidpoint = new Date((periodStartDate.getTime() + periodEndDate.getTime()) / 2);
+      if (isPrepayment || expensePaidMonth <= periodMidpoint) {
         hasPrepayment = true;
       } else {
         hasAccrual = true;
@@ -170,12 +193,35 @@ function calculateMultiStoreJournal(input: JournalCalculationInput): JournalCalc
   const allResults: JournalCalculationResult[] = [];
   
   for (const allocation of storeAllocations) {
+    // Validate allocation before processing
+    if (!allocation.expensePaidMonth || !allocation.periodStartDate || !allocation.periodEndDate) {
+      console.warn('Skipping invalid allocation:', allocation);
+      continue; // Skip invalid allocations
+    }
+
+    // Ensure dates are Date objects
+    const expensePaidMonth = allocation.expensePaidMonth instanceof Date 
+      ? allocation.expensePaidMonth 
+      : new Date(allocation.expensePaidMonth);
+    const periodStartDate = allocation.periodStartDate instanceof Date 
+      ? allocation.periodStartDate 
+      : new Date(allocation.periodStartDate);
+    const periodEndDate = allocation.periodEndDate instanceof Date 
+      ? allocation.periodEndDate 
+      : new Date(allocation.periodEndDate);
+
+    // Validate that dates are valid
+    if (isNaN(expensePaidMonth.getTime()) || isNaN(periodStartDate.getTime()) || isNaN(periodEndDate.getTime())) {
+      console.warn('Skipping allocation with invalid dates:', allocation);
+      continue; // Skip invalid allocations
+    }
+
     const allocationInput: JournalCalculationInput = {
       ...input,
       totalAmount: allocation.totalAmount,
-      expensePaidMonth: allocation.expensePaidMonth,
-      periodStartDate: allocation.periodStartDate,
-      periodEndDate: allocation.periodEndDate,
+      expensePaidMonth,
+      periodStartDate,
+      periodEndDate,
       store: allocation.store,
       accountCode: allocation.accountCode,
       monthlyAccountCode: allocation.monthlyAccountCode,
@@ -192,6 +238,15 @@ function calculateMultiStoreJournal(input: JournalCalculationInput): JournalCalc
       };
     }
     allResults.push(result);
+  }
+
+  // If no valid results, return empty breakdown
+  if (allResults.length === 0) {
+    return {
+      type,
+      monthlyBreakdown: [],
+      weeklyBreakdown: []
+    };
   }
 
   // Combine results from all allocations
@@ -332,23 +387,46 @@ function calculateMonthlyJournal(input: JournalCalculationInput): JournalCalcula
     status,
   } = input;
 
-  // Validate dates
-  if (isSameMonth(expensePaidMonth, periodStartDate)) {
+  // Validate that dates exist and are valid
+  if (!expensePaidMonth || !periodStartDate || !periodEndDate) {
     return {
-      type: expensePaidMonth <= periodStartDate ? "prepayment" : "accrual",
+      type: 'prepayment',
       monthlyBreakdown: [],
-      error: "Expense paid month cannot be in the same month as the recognition start date"
+      error: "Missing required dates for journal calculation"
+    };
+  }
+
+  // Ensure dates are Date objects
+  const validExpensePaidMonth = expensePaidMonth instanceof Date ? expensePaidMonth : new Date(expensePaidMonth);
+  const validPeriodStartDate = periodStartDate instanceof Date ? periodStartDate : new Date(periodStartDate);
+  const validPeriodEndDate = periodEndDate instanceof Date ? periodEndDate : new Date(periodEndDate);
+
+  // Validate that dates are valid
+  if (isNaN(validExpensePaidMonth.getTime()) || isNaN(validPeriodStartDate.getTime()) || isNaN(validPeriodEndDate.getTime())) {
+    return {
+      type: 'prepayment',
+      monthlyBreakdown: [],
+      error: "Invalid date values provided for journal calculation"
+    };
+  }
+
+  // More lenient validation - only error if dates are exactly the same day
+  if (validExpensePaidMonth.getTime() === validPeriodStartDate.getTime()) {
+    return {
+      type: validExpensePaidMonth <= validPeriodStartDate ? "prepayment" : "accrual",
+      monthlyBreakdown: [],
+      error: "Expense paid date cannot be the same as the recognition start date"
     };
   }
 
   // Determine journal type based on dates
-  const type: JournalType = expensePaidMonth <= periodStartDate ? "prepayment" : "accrual";
+  const type: JournalType = validExpensePaidMonth <= validPeriodStartDate ? "prepayment" : "accrual";
 
   // Get the paid month in YYYY-MM format
-  const paidMonthStr = `${expensePaidMonth.getFullYear()}-${String(expensePaidMonth.getMonth() + 1).padStart(2, '0')}`;
+  const paidMonthStr = `${validExpensePaidMonth.getFullYear()}-${String(validExpensePaidMonth.getMonth() + 1).padStart(2, '0')}`;
 
   // Get monthly periods with day counts
-  const periods = getMonthlyPeriods(periodStartDate, periodEndDate);
+  const periods = getMonthlyPeriods(validPeriodStartDate, validPeriodEndDate);
 
   // Create the monthly breakdown array
   const monthlyBreakdown: MonthlyBreakdownWithBalances[] = [];
@@ -415,8 +493,8 @@ function calculateMonthlyJournal(input: JournalCalculationInput): JournalCalcula
       totalAmount,
       period,
       scheduleType,
-      periodStartDate,
-      periodEndDate,
+      validPeriodStartDate,
+      validPeriodEndDate,
       i,
       periods.length,
       runningExpenseTotal
@@ -594,27 +672,52 @@ function calculateWeeklyJournal(input: JournalCalculationInput): JournalCalculat
     status,
   } = input;
 
-  // Validate dates
-  if (isSameMonth(expensePaidMonth, periodStartDate)) {
+  // Validate that dates exist and are valid
+  if (!expensePaidMonth || !periodStartDate || !periodEndDate) {
     return {
-      type: expensePaidMonth <= periodStartDate ? "prepayment" : "accrual",
+      type: 'prepayment',
       monthlyBreakdown: [],
       weeklyBreakdown: [],
-      error: "Expense paid month cannot be in the same month as the recognition start date"
+      error: "Missing required dates for journal calculation"
+    };
+  }
+
+  // Ensure dates are Date objects
+  const validExpensePaidMonth = expensePaidMonth instanceof Date ? expensePaidMonth : new Date(expensePaidMonth);
+  const validPeriodStartDate = periodStartDate instanceof Date ? periodStartDate : new Date(periodStartDate);
+  const validPeriodEndDate = periodEndDate instanceof Date ? periodEndDate : new Date(periodEndDate);
+
+  // Validate that dates are valid
+  if (isNaN(validExpensePaidMonth.getTime()) || isNaN(validPeriodStartDate.getTime()) || isNaN(validPeriodEndDate.getTime())) {
+    return {
+      type: 'prepayment',
+      monthlyBreakdown: [],
+      weeklyBreakdown: [],
+      error: "Invalid date values provided for journal calculation"
+    };
+  }
+
+  // More lenient validation - only error if dates are exactly the same day
+  if (validExpensePaidMonth.getTime() === validPeriodStartDate.getTime()) {
+    return {
+      type: validExpensePaidMonth <= validPeriodStartDate ? "prepayment" : "accrual",
+      monthlyBreakdown: [],
+      weeklyBreakdown: [],
+      error: "Expense paid date cannot be the same as the recognition start date"
     };
   }
 
   // Determine journal type based on dates
-  const type: JournalType = expensePaidMonth <= periodStartDate ? "prepayment" : "accrual";
+  const type: JournalType = validExpensePaidMonth <= validPeriodStartDate ? "prepayment" : "accrual";
 
   // Get the paid month in YYYY-MM format
-  const paidMonthStr = `${expensePaidMonth.getFullYear()}-${String(expensePaidMonth.getMonth() + 1).padStart(2, '0')}`;
+  const paidMonthStr = `${validExpensePaidMonth.getFullYear()}-${String(validExpensePaidMonth.getMonth() + 1).padStart(2, '0')}`;
 
   // Get weekly periods
-  const weeklyPeriods = getWeeklyPeriods(periodStartDate, periodEndDate);
+  const weeklyPeriods = getWeeklyPeriods(validPeriodStartDate, validPeriodEndDate);
   
   // Calculate total days in the recognition period
-  const totalDays = getDaysInPeriod(periodStartDate, periodEndDate);
+  const totalDays = getDaysInPeriod(validPeriodStartDate, validPeriodEndDate);
   
   // Calculate daily rate
   const dailyRate = totalAmount / totalDays;

@@ -43,6 +43,7 @@ export default function JournalDetailsPage() {
   const [selectedMonth, setSelectedMonth] = React.useState<string | null>(null);
   const [selectedWeek, setSelectedWeek] = React.useState<string | null>(null);
   const [showDocuments, setShowDocuments] = React.useState(false);
+  const [hasError, setHasError] = React.useState(false);
   
   // Reset journal data when ID changes
   const [journalData, setJournalData] = React.useState<JournalEntry | undefined>(undefined);
@@ -79,15 +80,16 @@ export default function JournalDetailsPage() {
 
   // Calculate breakdown using the appropriate calculation function
   const { monthlyBreakdown, weeklyBreakdown } = React.useMemo(() => {
-    if (!journal) return { monthlyBreakdown: [], weeklyBreakdown: [] };
-    
-    if (journal.type === 'stock') {
-      // For stock journals, use the stock calculation
-      if (!journal.openingStockDate || !journal.closingStockDate || 
-          journal.openingStockValue === undefined || journal.closingStockValue === undefined ||
-          !journal.stockMovementAccountCode || !journal.stockAccountCode) {
-        return { monthlyBreakdown: [], weeklyBreakdown: [] };
-      }
+    try {
+      if (!journal) return { monthlyBreakdown: [], weeklyBreakdown: [] };
+      
+      if (journal.type === 'stock') {
+        // For stock journals, use the stock calculation
+        if (!journal.openingStockDate || !journal.closingStockDate || 
+            journal.openingStockValue === undefined || journal.closingStockValue === undefined ||
+            !journal.stockMovementAccountCode || !journal.stockAccountCode) {
+          return { monthlyBreakdown: [], weeklyBreakdown: [] };
+        }
       
       const result = calculateStockJournal({
         description: journal.description,
@@ -131,6 +133,10 @@ export default function JournalDetailsPage() {
       monthlyBreakdown: result.monthlyBreakdown, 
       weeklyBreakdown: result.weeklyBreakdown || []
     };
+    }
+    } catch (error) {
+      console.error('Error calculating journal breakdown:', error);
+      return { monthlyBreakdown: [], weeklyBreakdown: [] };
     }
   }, [journal]);
 
@@ -232,14 +238,49 @@ export default function JournalDetailsPage() {
 
   // Handle journal updates
   const handleJournalUpdate = (updates: Partial<JournalEntry>) => {
-    setJournalData(prev => prev ? { ...prev, ...updates } : prev);
+    try {
+      setJournalData(prev => prev ? { ...prev, ...updates } : prev);
+    } catch (error) {
+      console.error('Error updating journal:', error);
+      // Don't crash the app, just log the error
+    }
   };
 
   if (!journal) {
     return <div>Journal not found</div>;
   }
 
-  return (
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h2>
+          <p className="text-gray-600 mb-4">There was an error loading this journal.</p>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => {
+                setHasError(false);
+                window.location.reload();
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => router.push("/accounting/Journals")}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Back to Journals
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Wrap the main content in error handling
+  try {
+    return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Left Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
@@ -615,6 +656,9 @@ export default function JournalDetailsPage() {
                     <div className={journal.type === 'stock' ? 'p-3' : 'overflow-x-auto'}>
                       <div className={journal.type === 'stock' ? '' : `flex gap-3 p-3`} style={journal.type !== 'stock' ? { minWidth: `${monthlyBreakdown.length * 260}px` } : {}}>
                         {monthlyBreakdown
+                          .filter((breakdown, index, array) => 
+                            array.findIndex(b => b.month === breakdown.month) === index
+                          )
                           .sort((a, b) => new Date(a.month + '-01').getTime() - new Date(b.month + '-01').getTime())
                           .map((breakdown) => {
                             const monthDate = new Date(breakdown.month + "-01");
@@ -622,7 +666,7 @@ export default function JournalDetailsPage() {
                             const isSelected = selectedMonth === breakdown.month;
 
                     return (
-                              <div key={breakdown.month} className={journal.type === 'stock' ? 'w-full' : 'w-[260px]'}>
+                              <div key={`${params.id}-month-${breakdown.month}`} className={journal.type === 'stock' ? 'w-full' : 'w-[260px]'}>
                                 <div
                                   className={`p-4 rounded-lg border transition-all duration-200 text-sm cursor-pointer ${
                                     breakdown.status === 'published'
@@ -865,4 +909,9 @@ export default function JournalDetailsPage() {
       )}
     </div>
   );
+  } catch (error) {
+    console.error('Error rendering journal page:', error);
+    setHasError(true);
+    return null; // This will trigger the error state on next render
+  }
 } 

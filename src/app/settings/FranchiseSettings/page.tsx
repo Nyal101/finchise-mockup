@@ -18,7 +18,7 @@ export default function FranchiseSettingsPage() {
         <TabsList>
           <TabsTrigger value="purchase">Purchase Invoice Settings</TabsTrigger>
           <TabsTrigger value="sales">Sales Invoice Settings</TabsTrigger>
-          <TabsTrigger value="pos">POS Settings</TabsTrigger>
+          <TabsTrigger value="agent">Agent Settings</TabsTrigger>
           <TabsTrigger value="payroll">Payroll Settings</TabsTrigger>
         </TabsList>
         
