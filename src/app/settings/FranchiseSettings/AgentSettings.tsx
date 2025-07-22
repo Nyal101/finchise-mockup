@@ -11,242 +11,351 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Bot, 
-  FileText, 
-  BookOpen, 
-  BarChart3, 
-  Settings2, 
-  CheckCircle,
-  AlertCircle,
-  Info
-} from "lucide-react"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { AlertCircle, Bot, FileText, BarChart3, Info, ChevronDown, ChevronRight } from "lucide-react"
 
 export default function AgentSettings() {
-  // State for agent settings
   const [journalsThreshold, setJournalsThreshold] = useState("10000")
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [expandedSettings, setExpandedSettings] = useState<string[]>([])
   
-  // Handle changes and mark as unsaved
   const handleJournalsThresholdChange = (value: string) => {
     setJournalsThreshold(value)
     setHasUnsavedChanges(true)
   }
 
-  // Save settings
   const handleSaveSettings = () => {
-    // Here you would typically save to your backend/state management
     console.log("Saving agent settings:", {
       journalsThreshold: parseFloat(journalsThreshold)
     })
     setHasUnsavedChanges(false)
   }
 
-  // Reset to defaults
   const handleResetToDefaults = () => {
     setJournalsThreshold("10000")
     setHasUnsavedChanges(true)
   }
 
-  const formatCurrency = (value: string) => {
-    const num = parseFloat(value)
-    if (isNaN(num)) return "£0.00"
-    return new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: "GBP",
-      minimumFractionDigits: 2,
-    }).format(num)
+  const toggleSettings = (agentId: string) => {
+    setExpandedSettings(prev => 
+      prev.includes(agentId) 
+        ? prev.filter(id => id !== agentId)
+        : [...prev, agentId]
+    )
   }
 
+  const isExpanded = (agentId: string) => expandedSettings.includes(agentId)
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header Section */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100">
-            <Bot className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Agent Settings</h1>
-            <p className="text-sm text-gray-600">Configure AI agent behaviors and thresholds</p>
-          </div>
+    <div className="space-y-4">
+      {hasUnsavedChanges && (
+        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200 mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">You have unsaved changes</span>
         </div>
-        
-        {hasUnsavedChanges && (
-          <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">You have unsaved changes</span>
-          </div>
-        )}
+      )}
+
+      {/* About Section */}
+      <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 mt-6">
+        <Info className="h-4 w-4 text-gray-500" />
+        <span className="font-medium text-gray-700">About Agent Settings:</span>
+        <span className="text-gray-600">Configure AI agent behaviors and thresholds. Changes take effect immediately.</span>
       </div>
 
-      {/* Agent Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      {/* 3x3 Grid of Agent Cards */}
+      <div className="grid grid-cols-3 gap-4 mt-6">
+        {/* Active Agent Cards */}
         {/* Invoices Agent */}
         <Card className="relative">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100">
-                <FileText className="h-5 w-5 text-green-600" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-green-600" />
+                <CardTitle className="text-sm">Invoices Agent</CardTitle>
               </div>
-              <div>
-                <CardTitle className="text-lg">Invoices Agent</CardTitle>
-                <p className="text-sm text-gray-600">AI-powered invoice processing</p>
-              </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                Active
+              </Badge>
             </div>
-            <Badge variant="outline" className="w-fit bg-green-50 text-green-700 border-green-200">
-              Active
-            </Badge>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm text-gray-900">Current Capabilities</h4>
-              <ul className="space-y-1 text-xs text-gray-600">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  OCR text extraction
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Data validation
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Auto-categorization
-                </li>
-              </ul>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-600">OCR and validation enabled</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 hover:bg-green-50"
+                onClick={() => toggleSettings('invoices')}
+              >
+                {isExpanded('invoices') ? (
+                  <ChevronDown className="h-4 w-4 text-green-600" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-green-600" />
+                )}
+              </Button>
             </div>
-            
-            <Separator />
-            
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm text-gray-900">Status</h4>
-              <p className="text-xs text-gray-600">No configuration required. Agent is ready to process invoices.</p>
-            </div>
+            {isExpanded('invoices') && (
+              <div className="mt-2 space-y-2 border-t pt-2">
+                <div className="text-xs text-gray-600">Additional settings coming soon</div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Journals Agent */}
+        {/* Accruals & Prepayments Agent */}
         <Card className="relative">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-100">
-                <BookOpen className="h-5 w-5 text-purple-600" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-purple-600" />
+                <CardTitle className="text-sm">Journals Agent</CardTitle>
               </div>
-              <div>
-                <CardTitle className="text-lg">Accruals & Prepayments Agent</CardTitle>
-                <p className="text-sm text-gray-600">Automated journal entry creation</p>
-              </div>
+              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                Active
+              </Badge>
             </div>
-            <Badge variant="outline" className="w-fit bg-purple-50 text-purple-700 border-purple-200">
-              Active
-            </Badge>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="journals-threshold" className="text-sm font-medium">
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-600">Auto-journaling enabled</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 hover:bg-purple-50"
+                onClick={() => toggleSettings('journals')}
+              >
+                {isExpanded('journals') ? (
+                  <ChevronDown className="h-4 w-4 text-purple-600" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-purple-600" />
+                )}
+              </Button>
+            </div>
+            {isExpanded('journals') && (
+              <div className="mt-2 space-y-2 border-t pt-2">
+                <div className="space-y-1">
+                  <Label htmlFor="journals-threshold" className="text-xs font-medium">
                     Invoice Journaling Threshold
                   </Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="h-3 w-3 text-gray-400" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">Invoices above this amount will be automatically journaled</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className="space-y-1">
-                  <Input
-                    id="journals-threshold"
-                    type="number"
-                    value={journalsThreshold}
-                    onChange={(e) => handleJournalsThresholdChange(e.target.value)}
-                    placeholder="10000"
-                    className="text-sm"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Current threshold: {formatCurrency(journalsThreshold)}
-                  </p>
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">£</span>
+                    <Input
+                      id="journals-threshold"
+                      type="number"
+                      value={journalsThreshold}
+                      onChange={(e) => handleJournalsThresholdChange(e.target.value)}
+                      placeholder="10000"
+                      className="text-xs h-7 pl-5"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm text-gray-900">Current Capabilities</h4>
-              <ul className="space-y-1 text-xs text-gray-600">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Automatic prepayment journals
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Accrual calculations
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Stock movement tracking
-                </li>
-              </ul>
-            </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Analytics Agent */}
         <Card className="relative">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-blue-600" />
+                <CardTitle className="text-sm">Analytics Agent</CardTitle>
               </div>
-              <div>
-                <CardTitle className="text-lg">Analytics Agent</CardTitle>
-                <p className="text-sm text-gray-600">Intelligent business insights</p>
-              </div>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                Active
+              </Badge>
             </div>
-            <Badge variant="outline" className="w-fit bg-blue-50 text-blue-700 border-blue-200">
-              Active
-            </Badge>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm text-gray-900">Current Capabilities</h4>
-              <ul className="space-y-1 text-xs text-gray-600">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Performance analytics
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Trend analysis
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
-                  Predictive insights
-                </li>
-              </ul>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-600">Trend analysis enabled</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 hover:bg-blue-50"
+                onClick={() => toggleSettings('analytics')}
+              >
+                {isExpanded('analytics') ? (
+                  <ChevronDown className="h-4 w-4 text-blue-600" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-blue-600" />
+                )}
+              </Button>
             </div>
-            
-            <Separator />
-            
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm text-gray-900">Status</h4>
-              <p className="text-xs text-gray-600">No configuration required. Agent is ready to provide insights.</p>
+            {isExpanded('analytics') && (
+              <div className="mt-2 space-y-2 border-t pt-2">
+                <div className="text-xs text-gray-600">Additional settings coming soon</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Future Agent Cards - Each one written out for easy title modification */}
+        {/* Future Agent 1 - Payroll */}
+        <Card className="relative opacity-50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+                <CardTitle className="text-sm text-gray-500">Payroll Agent</CardTitle>
+              </div>
+              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 text-xs">
+                Planned
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Coming soon</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2"
+                disabled
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Future Agent 2 - Loans */}
+        <Card className="relative opacity-50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+                <CardTitle className="text-sm text-gray-500">Loans Agent</CardTitle>
+              </div>
+              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 text-xs">
+                Planned
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Coming soon</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2"
+                disabled
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Future Agent 3 - Assests */}
+        <Card className="relative opacity-50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+                <CardTitle className="text-sm text-gray-500">Assets Agent</CardTitle>
+              </div>
+              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 text-xs">
+                Planned
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Coming soon</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2"
+                disabled
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Future Agent 4 - Audit */}
+        <Card className="relative opacity-50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+                <CardTitle className="text-sm text-gray-500">Audit Agent</CardTitle>
+              </div>
+              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 text-xs">
+                Planned
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Coming soon</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2"
+                disabled
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Future Agent 5 - Reporting */}
+        <Card className="relative opacity-50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+                <CardTitle className="text-sm text-gray-500">Reporting Agent</CardTitle>
+              </div>
+              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 text-xs">
+                Planned
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Coming soon</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2"
+                disabled
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Future Agent 6 - Future Agent... */}
+        <Card className="relative opacity-50">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-gray-300 rounded"></div>
+                <CardTitle className="text-sm text-gray-500">Future Agent</CardTitle>
+              </div>
+              <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 text-xs">
+                Planned
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500">Coming soon</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2"
+                disabled
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -257,9 +366,7 @@ export default function AgentSettings() {
         <Button 
           variant="outline" 
           onClick={handleResetToDefaults}
-          className="flex items-center gap-2"
         >
-          <Settings2 className="h-4 w-4" />
           Reset to Defaults
         </Button>
         
@@ -274,31 +381,11 @@ export default function AgentSettings() {
           <Button 
             onClick={handleSaveSettings}
             disabled={!hasUnsavedChanges}
-            className="bg-blue-600 hover:bg-blue-700"
           >
             Save Changes
           </Button>
         </div>
       </div>
-
-      {/* Help Section */}
-      <Card className="bg-gray-50 border-gray-200">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 mt-0.5">
-              <Info className="h-4 w-4 text-blue-600" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-medium text-sm text-gray-900">About Agent Settings</h3>
-              <p className="text-xs text-gray-600 leading-relaxed">
-                These settings control how AI agents behave within your franchise management system. 
-                The Journals Agent threshold determines which invoices are automatically processed for journaling. 
-                Changes to these settings will take effect immediately across all stores.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 } 
