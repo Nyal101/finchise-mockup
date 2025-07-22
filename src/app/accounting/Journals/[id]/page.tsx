@@ -104,36 +104,36 @@ export default function JournalDetailsPage() {
       });
 
       return { monthlyBreakdown: result.monthlyBreakdown, weeklyBreakdown: [] };
-    } else {
-      // For prepayment/accrual journals, use the existing calculation
-      if (!journal.periodStartDate || !journal.periodEndDate || !journal.expensePaidMonth || !journal.scheduleType) {
-        return { monthlyBreakdown: [], weeklyBreakdown: [] };
+      } else {
+        // For prepayment/accrual journals, use the existing calculation
+        if (!journal.periodStartDate || !journal.periodEndDate || !journal.expensePaidMonth || !journal.scheduleType) {
+          return { monthlyBreakdown: [], weeklyBreakdown: [] };
+        }
+      
+        const result = calculateJournal({
+          description: journal.description,
+          totalAmount: journal.totalAmount,
+          expensePaidMonth: journal.expensePaidMonth,
+          periodStartDate: journal.periodStartDate,
+          periodEndDate: journal.periodEndDate,
+          scheduleType: journal.scheduleType,
+          accountCode: journal.accountCode,
+          monthlyAccountCode: journal.monthlyAccountCode,
+          store: journal.store,
+          status: journal.status as 'published' | 'review' | 'archived',
+          storeAllocations: journal.storeAllocations,
+        });
+
+        if (result.error) {
+          console.error(result.error);
+          return { monthlyBreakdown: [], weeklyBreakdown: [] };
+        }
+
+        return { 
+          monthlyBreakdown: result.monthlyBreakdown, 
+          weeklyBreakdown: result.weeklyBreakdown || []
+        };
       }
-    
-    const result = calculateJournal({
-      description: journal.description,
-      totalAmount: journal.totalAmount,
-      expensePaidMonth: journal.expensePaidMonth,
-      periodStartDate: journal.periodStartDate,
-      periodEndDate: journal.periodEndDate,
-      scheduleType: journal.scheduleType,
-      accountCode: journal.accountCode,
-      monthlyAccountCode: journal.monthlyAccountCode,
-      store: journal.store,
-      status: journal.status as 'published' | 'review' | 'archived',
-      storeAllocations: journal.storeAllocations,
-    });
-
-    if (result.error) {
-      console.error(result.error);
-      return { monthlyBreakdown: [], weeklyBreakdown: [] };
-    }
-
-    return { 
-      monthlyBreakdown: result.monthlyBreakdown, 
-      weeklyBreakdown: result.weeklyBreakdown || []
-    };
-    }
     } catch (error) {
       console.error('Error calculating journal breakdown:', error);
       return { monthlyBreakdown: [], weeklyBreakdown: [] };

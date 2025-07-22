@@ -4,7 +4,7 @@ import * as React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import PurchaseInvoiceSettings from "./PurchaseInvoiceSettings"
 import SalesInvoiceSettings from "./SalesInvoiceSettings"
-import POSSettings from "./POSSettings"
+import AgentSettings from "./AgentSettings"
 import DOMPayrollSettings from "./DOMPayrollSettings"
 
 export default function FranchiseSettingsPage() {
@@ -30,8 +30,8 @@ export default function FranchiseSettingsPage() {
           <SalesInvoiceSettings />
         </TabsContent>
         
-        <TabsContent value="pos" className="space-y-4">
-          <POSSettings />
+        <TabsContent value="agent" className="space-y-4">
+          <AgentSettings />
         </TabsContent>
 
         <TabsContent value="payroll" className="space-y-4">
